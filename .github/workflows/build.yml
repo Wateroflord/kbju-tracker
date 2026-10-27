@@ -4,6 +4,9 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -48,3 +51,13 @@ jobs:
         with:
           name: KBJU-Tracker-APK
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Publish release with APK
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk KBJU-Tracker.apk
+          gh release create "build-${{ github.run_number }}" KBJU-Tracker.apk \
+            --title "КБЖУ Трекер, сборка ${{ github.run_number }}" \
+            --notes "Скачай KBJU-Tracker.apk и установи на телефон." \
+            --latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
