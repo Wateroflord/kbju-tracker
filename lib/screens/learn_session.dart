@@ -9,7 +9,6 @@ import '../learn/tts.dart';
 import '../learn/words.dart';
 import '../store.dart';
 import '../theme.dart';
-import '../util.dart';
 import '../widgets/common.dart';
 
 enum LearnMode { learn, review, quiz, listen }
