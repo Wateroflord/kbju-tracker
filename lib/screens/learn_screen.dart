@@ -260,13 +260,6 @@ class LearnScreen extends StatelessWidget {
             SectionLabel(tr('Темы — от самых нужных')),
             for (final t in topics) _TopicRow(topic: t, lang: lang),
           ],
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right, color: AppColors.muted),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );
