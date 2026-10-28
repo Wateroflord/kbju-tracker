@@ -47,6 +47,11 @@ class KbjuApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      // Всё приложение (и нижние панели) — выше системных кнопок телефона.
+      builder: (context, child) => ColoredBox(
+        color: AppColors.surface,
+        child: SafeArea(top: false, left: false, right: false, child: child ?? const SizedBox()),
+      ),
       home: const _RootGate(),
     );
   }

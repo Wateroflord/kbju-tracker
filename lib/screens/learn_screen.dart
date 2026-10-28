@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../i18n/i18n.dart';
 import '../learn/learn_logic.dart';
@@ -260,21 +259,7 @@ class LearnScreen extends StatelessWidget {
             ),
             SectionLabel(tr('Темы — от самых нужных')),
             for (final t in topics) _TopicRow(topic: t, lang: lang),
-            const SectionLabel(''),
-            AppCard(
-              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MethodScreen())),
-              child: Row(
-                children: [
-                  const Icon(Icons.school_outlined, color: AppColors.accent),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(tr('Метод 20 часов'), style: Txt.body.copyWith(fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 2),
-                        Text(tr('Шпаргалка и 3 промпта для нейросети'), style: Txt.small),
-                      ],
+          ],
                     ),
                   ),
                   const Icon(Icons.chevron_right, color: AppColors.muted),
@@ -451,127 +436,6 @@ class TopicScreen extends StatelessWidget {
             const Icon(Icons.volume_up_outlined, size: 20, color: AppColors.muted),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// Шпаргалка метода 20 часов и промпты для нейросети.
-class MethodScreen extends StatelessWidget {
-  const MethodScreen({super.key});
-
-  static const _prompts = [
-    (
-      'Разобрать навык по принципу Парето',
-      'Разбей навык [английский для работы] на 5 ключевых поднавыков по правилу Парето для абсолютного новичка. Что мне нужно освоить в первые 2 часа, чтобы получить нормальный результат?',
-      'Помогает не изучать всё подряд, а сразу найти самые важные элементы навыка.',
-    ),
-    (
-      'Метод Фейнмана — проверить знания',
-      'Представь, что ты 10-летний ребёнок. Я сейчас объясню тебе, как работает [тема], а ты найди ошибки в моём объяснении и покажи, где у меня пробелы.',
-      'Показывает, действительно ли ты разобрался или тебе только кажется.',
-    ),
-    (
-      'Нейросеть как личный репетитор',
-      'Задавай мне практические вопросы по [тема]. Жди мой ответ и после каждого разбирай, где я ошибся.',
-      'Вместо чтения теории ты активно вспоминаешь, отвечаешь и получаешь обратную связь.',
-    ),
-  ];
-
-  static const _steps = [
-    ('Шаг 1. Выбери финиш', 'Один конкретный навык + конкретный результат. Плохо: «выучить английский». Хорошо: «уметь заказать еду в ресторане».'),
-    ('Шаг 2. Взломай навык', 'Разбей навык на поднавыки и найди «детали лего», которые дают 80% результата. Здесь темы уже разложены от самых нужных.'),
-    ('Шаг 3. Минимум теории', 'Узнай только необходимое для старта и сразу практикуйся: ошибка → обратная связь → исправление.'),
-    ('Шаг 4. Настрой трение', 'Сделай практику максимально доступной (приложение на главном экране, напоминание) и убери отвлечения (уведомления на время занятия).'),
-    ('Набери 20 часов', 'Примерно 45 минут в день в течение месяца. 20 часов — это первый реальный результат, дальше можно ставить новые цели.'),
-    ('Переживи кринж', 'Разреши себе ошибаться первые 20 часов. Первые попытки почти всегда кажутся плохими — это нормальная часть обучения.'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      appBar: subAppBar(tr('Метод 20 часов')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
-        children: [
-          AppCard(
-            child: Text(
-              tr('Чтобы начать говорить на языке или освоить новый навык, не нужны годы: около 20 часов осознанной практики дают первый реальный результат.'),
-              style: Txt.body,
-            ),
-          ),
-          SectionLabel(tr('Схема')),
-          for (var i = 0; i < _steps.length; i++)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: AppCard(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 26,
-                      height: 26,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.accent.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text('${i + 1}', style: Txt.num(13, color: AppColors.accent)),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(tr(_steps[i].$1), style: Txt.section),
-                          const SizedBox(height: 4),
-                          Text(tr(_steps[i].$2), style: Txt.body.copyWith(fontSize: 13.5)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          SectionLabel(tr('3 промпта для нейросети')),
-          for (final p in _prompts)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(tr(p.$1), style: Txt.section),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface2,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Text('«${tr(p.$2)}»', style: Txt.body.copyWith(fontSize: 13.5)),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(tr(p.$3), style: Txt.small),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton.icon(
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: tr(p.$2)));
-                          showToast(context, tr('Промпт скопирован'));
-                        },
-                        icon: const Icon(Icons.copy, size: 16, color: AppColors.accent),
-                        label: Text(tr('Копировать'), style: const TextStyle(color: AppColors.accent)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-        ],
       ),
     );
   }
