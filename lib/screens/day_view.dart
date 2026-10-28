@@ -258,8 +258,74 @@ class _DayViewState extends State<DayView> {
         ),
       );
 
+  void _copyFrom(AppStore store, String fromKey, Meal m) {
+    final n = store.copyMeal(fromKey, m, dkey(date), m);
+    if (n > 0) showToast(context, trf('Добавлено позиций: {0}', [n]));
+  }
+
+  Future<void> _copySheet(AppStore store, Meal m) async {
+    final days = <String>[];
+    for (var i = 1; i <= 21 && days.length < 10; i++) {
+      final k = dkey(addDays(date, -i));
+      if (store.mealEntries(k, m).isNotEmpty) days.add(k);
+    }
+    await showAppSheet<void>(
+      context,
+      SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SheetHandle(),
+            Text(trf('Повторить: {0}', [m.title]), style: Txt.h2),
+            const SizedBox(height: 4),
+            Text(tr('Выбери день — все блюда этого приёма пищи скопируются сюда.'), style: Txt.small),
+            const SizedBox(height: 12),
+            if (days.isEmpty) Text(tr('За последние 3 недели записей нет.'), style: Txt.small),
+            for (final k in days)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Builder(builder: (ctx) {
+                  final list = store.mealEntries(k, m);
+                  final kcal = list.fold<double>(0, (s, e) => s + e.kcal);
+                  final d = parseKey(k);
+                  return AppCard(
+                    padding: const EdgeInsets.all(12),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _copyFrom(store, k, m);
+                    },
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(daysBetween(d, date) == 1 ? tr('Вчера') : '${weekdaysShort[d.weekday - 1]}, ${fmtDate(d)}',
+                                  style: Txt.body.copyWith(fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 2),
+                              Text(list.map((e) => e.name).join(', '),
+                                  maxLines: 2, overflow: TextOverflow.ellipsis, style: Txt.small),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(trf('{0} ккал', [fmtInt(kcal)]), style: Txt.num(14, color: AppColors.accent)),
+                      ],
+                    ),
+                  );
+                }),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   List<Widget> _mealSection(AppStore store, Meal m, List<FoodEntry> list) {
     final kcal = list.fold<double>(0, (s, e) => s + e.kcal);
+    final yKey = dkey(addDays(date, -1));
+    final yList = list.isEmpty ? store.mealEntries(yKey, m) : const <FoodEntry>[];
     return [
       SectionLabel(
         m.title,
@@ -267,7 +333,15 @@ class _DayViewState extends State<DayView> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (list.isNotEmpty) Text(trf('{0} ккал', [fmtInt(kcal)]), style: Txt.num(12, color: AppColors.muted)),
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => _copySheet(store, m),
+              child: Tooltip(
+                message: tr('Повторить из другого дня'),
+                child: const Icon(Icons.replay, size: 20, color: AppColors.muted),
+              ),
+            ),
+            const SizedBox(width: 10),
             GestureDetector(
               onTap: () => _openAdd(m),
               child: const Icon(Icons.add_circle_outline, size: 20, color: AppColors.accent),
@@ -283,7 +357,13 @@ class _DayViewState extends State<DayView> {
             children: [
               Icon(m.icon, color: AppColors.muted, size: 20),
               const SizedBox(width: 10),
-              Text(tr('Пусто — нажми, чтобы добавить'), style: Txt.small),
+              Expanded(child: Text(tr('Пусто — нажми, чтобы добавить'), style: Txt.small)),
+              if (yList.isNotEmpty)
+                Pill(
+                  trf('Как вчера · {0} ккал', [fmtInt(yList.fold<double>(0, (s, e) => s + e.kcal))]),
+                  icon: Icons.replay,
+                  onTap: () => _copyFrom(store, yKey, m),
+                ),
             ],
           ),
         )

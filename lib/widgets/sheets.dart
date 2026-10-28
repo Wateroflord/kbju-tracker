@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../food/food_models.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
@@ -138,6 +139,25 @@ class _EntryEditorState extends State<EntryEditor> {
             children: [
               Expanded(child: Text(tr('Запись'), style: Txt.h2)),
               Text(fmtDate(parseKey(widget.entry.date)), style: Txt.small),
+              IconButton(
+                tooltip: tr('Избранное'),
+                icon: Icon(store.food.isFavorite(f.name.text) ? Icons.star : Icons.star_border,
+                    color: store.food.isFavorite(f.name.text) ? AppColors.fat : AppColors.muted),
+                onPressed: () {
+                  if (!f.isValid) return;
+                  final added = store.food.toggleFavorite(FavFood(
+                    id: store.food.newId('fav'),
+                    name: f.name.text.trim(),
+                    grams: f.gramsV,
+                    kcal: f.kcalV,
+                    protein: f.proteinV,
+                    fat: f.fatV,
+                    carbs: f.carbsV,
+                  ));
+                  setState(() {});
+                  showToast(context, added ? tr('Добавлено в избранное') : tr('Убрано из избранного'));
+                },
+              ),
             ],
           ),
           const SizedBox(height: 14),

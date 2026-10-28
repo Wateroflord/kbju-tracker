@@ -16,6 +16,7 @@ dependencies:
   health: '>=11.0.0 <14.0.0'
   http: ^1.2.2
   image_picker: ^1.1.2
+  mobile_scanner: ^7.0.0
   path_provider: ^2.1.4
   permission_handler: '>=11.3.0 <13.0.0'
   timezone: ^0.9.4

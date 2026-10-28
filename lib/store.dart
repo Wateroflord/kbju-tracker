@@ -7,6 +7,8 @@ import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'calc.dart';
+import 'food/food_models.dart';
+import 'food/food_store.dart';
 import 'life/life_store.dart';
 import 'models.dart';
 import 'util.dart';
@@ -31,6 +33,9 @@ class AppStore extends ChangeNotifier {
 
   /// Привычки, шаги, сон, тренировки, уход, напоминания.
   late final LifeStore life = LifeStore(_changed);
+
+  /// Избранное, штрихкоды, замеры, голодание, расходы.
+  late final FoodStore food = FoodStore(_changed);
 
   String _docs = '';
   int _idCounter = 0;
@@ -74,6 +79,7 @@ class AppStore extends ChangeNotifier {
         'apiKey': apiKey,
         'model': model,
         'life': life.toJson(),
+        'food': food.toJson(),
       };
 
   void _fromJson(Map<String, dynamic> j, {bool keepApi = false}) {
@@ -104,6 +110,7 @@ class AppStore extends ChangeNotifier {
           .whereType<Map>()
           .map((m) => GoalChange.fromJson(Map<String, dynamic>.from(m))));
     life.load(j['life']);
+    food.load(j['food']);
     final l = j['lang']?.toString() ?? '';
     // Старые данные без языка — пользователь пользовался русской версией.
     lang = l.isNotEmpty ? l : (profile != null ? 'ru' : '');
@@ -277,6 +284,57 @@ class AppStore extends ChangeNotifier {
     _changed();
   }
 
+  List<FoodEntry> mealEntries(String key, Meal meal) =>
+      entriesFor(key).where((e) => e.meal == meal).toList();
+
+  /// Скопировать приём пищи из одного дня в другой («как вчера»).
+  int copyMeal(String fromKey, Meal fromMeal, String toKey, Meal toMeal) {
+    final src = mealEntries(fromKey, fromMeal);
+    if (src.isEmpty) return 0;
+    final now = DateTime.now();
+    final d = parseKey(toKey);
+    final time = DateTime(d.year, d.month, d.day, now.hour, now.minute, now.second).millisecondsSinceEpoch;
+    addEntries([
+      for (var n = 0; n < src.length; n++)
+        FoodEntry(
+          id: newId(),
+          date: toKey,
+          time: time + n,
+          meal: toMeal,
+          name: src[n].name,
+          grams: src[n].grams,
+          kcal: src[n].kcal,
+          protein: src[n].protein,
+          fat: src[n].fat,
+          carbs: src[n].carbs,
+          photo: src[n].photo,
+        ),
+    ]);
+    return src.length;
+  }
+
+  /// Недавно съеденные продукты без повторов (последние сверху).
+  List<FavFood> recentFoods({int limit = 60}) {
+    final sorted = [...entries]..sort((a, b) => b.time.compareTo(a.time));
+    final seen = <String>{};
+    final out = <FavFood>[];
+    for (final e in sorted) {
+      final n = e.name.trim().toLowerCase();
+      if (n.isEmpty || !seen.add(n)) continue;
+      out.add(FavFood(
+        id: e.id,
+        name: e.name,
+        grams: e.grams,
+        kcal: e.kcal,
+        protein: e.protein,
+        fat: e.fat,
+        carbs: e.carbs,
+      ));
+      if (out.length >= limit) break;
+    }
+    return out;
+  }
+
   Future<void> _deleteFile(File? f) async {
     if (f == null) return;
     try {
@@ -363,6 +421,7 @@ class AppStore extends ChangeNotifier {
     dayTargets.clear();
     goalHistory.clear();
     life.reset(silent: true);
+    food.reset(silent: true);
     _changed();
     _deletePhotos();
   }

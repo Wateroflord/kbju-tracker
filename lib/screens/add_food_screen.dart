@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../food/food_models.dart';
+import '../food/speech.dart';
 import '../gemini.dart';
 import '../models.dart';
 import '../store.dart';
@@ -11,6 +13,8 @@ import '../util.dart';
 import '../widgets/common.dart';
 import '../widgets/item_fields.dart';
 import '../i18n/i18n.dart';
+import 'barcode_screen.dart';
+import 'food_picker.dart';
 
 class AddFoodScreen extends StatefulWidget {
   final DateTime date;
@@ -92,20 +96,21 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
         hint: hint.text,
       );
       if (!mounted) return;
-      final old = items;
+      final old = items.where((i) => i.ai).toList();
       setState(() {
-        items = r.items
-            .map((i) => ItemFields(
-                  name: i.name,
-                  grams: i.grams,
-                  kcal: i.kcal,
-                  protein: i.protein,
-                  fat: i.fat,
-                  carbs: i.carbs,
-                ))
-            .toList();
+        items = [
+          ...items.where((i) => !i.ai),
+          ...r.items.map((i) => ItemFields(
+                name: i.name,
+                grams: i.grams,
+                kcal: i.kcal,
+                protein: i.protein,
+                fat: i.fat,
+                carbs: i.carbs,
+              )..ai = true),
+        ];
         note = r.note.isEmpty ? null : r.note;
-        if (items.isEmpty) error = r.note.isEmpty ? tr('ИИ не нашёл еду на фото') : r.note;
+        if (r.items.isEmpty) error = r.note.isEmpty ? tr('ИИ не нашёл еду на фото') : r.note;
       });
       _disposeLater(old);
     } on GeminiException catch (e) {
@@ -115,6 +120,59 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     } finally {
       if (mounted) setState(() => loading = false);
     }
+  }
+
+  void _addItems(List<AiFoodItem> list) {
+    if (list.isEmpty) return;
+    setState(() {
+      items = [
+        ...items,
+        for (final i in list)
+          ItemFields(name: i.name, grams: i.grams, kcal: i.kcal, protein: i.protein, fat: i.fat, carbs: i.carbs),
+      ];
+      error = null;
+    });
+  }
+
+  Future<void> _barcode() async {
+    final it = await scanBarcodeFlow(context);
+    if (it != null) _addItems([it]);
+  }
+
+  Future<void> _pickSaved(bool favorites) async {
+    final list = await showFoodPicker(context, favorites: favorites);
+    if (list != null) _addItems(list);
+  }
+
+  Future<void> _voice() async {
+    try {
+      final text = await Speech.listen();
+      if (text == null || !mounted) return;
+      final cur = hint.text.trim();
+      hint.text = cur.isEmpty ? text : '$cur, $text';
+      setState(() {});
+      if (StoreScope.read(context).apiKey.isNotEmpty) _analyze();
+    } on SpeechException catch (e) {
+      if (mounted) setState(() => error = e.message);
+    }
+  }
+
+  void _toggleFav(ItemFields f) {
+    if (!f.isValid) {
+      showToast(context, tr('Введи название'));
+      return;
+    }
+    final store = StoreScope.read(context);
+    final added = store.food.toggleFavorite(FavFood(
+      id: store.food.newId('fav'),
+      name: f.name.text.trim(),
+      grams: f.gramsV,
+      kcal: f.kcalV,
+      protein: f.proteinV,
+      fat: f.fatV,
+      carbs: f.carbsV,
+    ));
+    showToast(context, added ? tr('Добавлено в избранное') : tr('Убрано из избранного'));
   }
 
   void _addManual() {
@@ -214,6 +272,16 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
             const SizedBox(height: 14),
           ],
           _photoBlock(hasKey),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(child: _quickBtn(Icons.qr_code_scanner, tr('Штрихкод'), _barcode)),
+              const SizedBox(width: 8),
+              Expanded(child: _quickBtn(Icons.history, tr('Недавние'), () => _pickSaved(false))),
+              const SizedBox(width: 8),
+              Expanded(child: _quickBtn(Icons.star_border, tr('Избранное'), () => _pickSaved(true))),
+            ],
+          ),
           const SizedBox(height: 12),
           TextField(
             controller: hint,
@@ -222,8 +290,14 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
             textCapitalization: TextCapitalization.sentences,
             style: Txt.body,
             decoration: fieldDeco(
-              image == null ? tr('Или опиши еду текстом') : tr('Уточнение (необязательно)'),
-              hint: tr('например: 200 г гречки, куриная грудка 150 г'),
+              image == null ? tr('Или опиши еду текстом или голосом') : tr('Уточнение (необязательно)'),
+              hint: tr('например: 2 яйца, тост с маслом и кофе с молоком'),
+            ).copyWith(
+              suffixIcon: IconButton(
+                tooltip: tr('Сказать голосом'),
+                icon: const Icon(Icons.mic_none, color: AppColors.accent),
+                onPressed: _voice,
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -304,6 +378,8 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                     f: it,
                     onChanged: () => setState(() {}),
                     onRemove: () => _remove(it),
+                    favorite: store.food.isFavorite(it.name.text),
+                    onFavorite: () => _toggleFav(it),
                   ),
                 ),
               ),
@@ -382,6 +458,21 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
       ],
     );
   }
+
+  Widget _quickBtn(IconData icon, String text, VoidCallback onTap) => AppCard(
+        onTap: onTap,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+        child: Column(
+          children: [
+            Icon(icon, color: AppColors.accent, size: 22),
+            const SizedBox(height: 6),
+            Text(text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Txt.small.copyWith(color: AppColors.text, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      );
 
   Widget _iconOver(IconData icon, VoidCallback onTap) => Material(
         color: Colors.black.withValues(alpha: 0.55),

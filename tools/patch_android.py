@@ -19,6 +19,7 @@ permissions = [
     "android.permission.FOREGROUND_SERVICE",
     "android.permission.FOREGROUND_SERVICE_HEALTH",
     "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
+    "android.permission.CAMERA",
 ]
 for p in permissions:
     if p not in text:
@@ -39,6 +40,9 @@ if "com.google.android.apps.healthdata" not in text:
         "        </intent>\n"
         "        <intent>\n"
         '            <action android:name="android.intent.action.TTS_SERVICE"/>\n'
+        "        </intent>\n"
+        "        <intent>\n"
+        '            <action android:name="android.speech.action.RECOGNIZE_SPEECH"/>\n'
         "        </intent>\n"
         "    </queries>\n"
     )

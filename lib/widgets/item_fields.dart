@@ -14,6 +14,9 @@ class ItemFields {
   final TextEditingController fat;
   final TextEditingController carbs;
 
+  /// Позиция пришла от ИИ (при пересчёте заменяется новыми).
+  bool ai = false;
+
   // Значения на 1 грамм — для пропорционального пересчёта.
   double _dk = 0, _dp = 0, _df = 0, _dc = 0;
 
@@ -79,8 +82,17 @@ class ItemFieldsEditor extends StatelessWidget {
   final ItemFields f;
   final VoidCallback onChanged;
   final VoidCallback? onRemove;
+  final bool? favorite;
+  final VoidCallback? onFavorite;
 
-  const ItemFieldsEditor({super.key, required this.f, required this.onChanged, this.onRemove});
+  const ItemFieldsEditor({
+    super.key,
+    required this.f,
+    required this.onChanged,
+    this.onRemove,
+    this.favorite,
+    this.onFavorite,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -97,6 +109,13 @@ class ItemFieldsEditor extends StatelessWidget {
                 decoration: fieldDeco(tr('Название')),
               ),
             ),
+            if (onFavorite != null)
+              IconButton(
+                onPressed: onFavorite,
+                icon: Icon(favorite == true ? Icons.star : Icons.star_border,
+                    color: favorite == true ? AppColors.fat : AppColors.muted),
+                tooltip: tr('Избранное'),
+              ),
             if (onRemove != null) ...[
               const SizedBox(width: 6),
               IconButton(
