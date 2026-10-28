@@ -9,6 +9,8 @@ import '../widgets/nav.dart';
 import '../widgets/sheets.dart';
 import 'add_food_screen.dart';
 import 'calendar_screen.dart';
+import 'expenses_screen.dart';
+import 'fasting_screen.dart';
 import '../i18n/i18n.dart';
 
 /// Экран одного дня: калории, БЖУ, вода, приёмы пищи.
@@ -74,6 +76,16 @@ class _DayViewState extends State<DayView> {
             _calorieCard(tot, t),
             const SizedBox(height: 12),
             _waterCard(store, key, t),
+            if (widget.isRoot) ...[
+              const SizedBox(height: 12),
+              const Row(
+                children: [
+                  Expanded(child: FastingMiniCard()),
+                  SizedBox(width: 10),
+                  Expanded(child: ExpensesMiniCard()),
+                ],
+              ),
+            ],
             for (final m in Meal.values) ..._mealSection(store, m, entries.where((e) => e.meal == m).toList()),
           ],
         ),

@@ -10,7 +10,10 @@ import '../widgets/charts.dart';
 import '../widgets/common.dart';
 import '../widgets/nav.dart';
 import '../widgets/sheets.dart';
+import '../food/body.dart';
+import 'measures_screen.dart';
 import 'progress_extra.dart';
+import 'report_screen.dart';
 import '../i18n/i18n.dart';
 
 class ProgressScreen extends StatefulWidget {
@@ -60,6 +63,10 @@ class _ProgressScreenState extends State<ProgressScreen> {
             ),
             const SizedBox(height: 12),
             _weightCard(store, from),
+            const SizedBox(height: 12),
+            const WeeklyReportCard(),
+            const SizedBox(height: 12),
+            const MeasuresCard(),
             const SizedBox(height: 12),
             const PhotosCard(),
             const SizedBox(height: 12),
@@ -126,6 +133,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
             const SizedBox(height: 14),
             _targetProgress(series.first.value, current, target),
           ],
+          ..._forecast(store),
           const SizedBox(height: 16),
           if (inRange.length >= 2)
             LineChart(
@@ -190,6 +198,38 @@ class _ProgressScreenState extends State<ProgressScreen> {
         ],
       ),
     );
+  }
+
+  List<Widget> _forecast(AppStore store) {
+    final f = weightForecast(store);
+    if (f == null) return const [];
+    final r = f.ratePerWeek;
+    final rate = r.abs() < 0.05
+        ? tr('вес стабилен')
+        : trf('{0}{1} кг в неделю', [r > 0 ? '+' : '−', fmt1(r.abs())]);
+    String text;
+    if (store.profile?.targetWeightKg == null) {
+      text = trf('Темп за 5 недель: {0}. Укажи желаемый вес в профиле — покажу, когда его достигнешь.', [rate]);
+    } else if (f.awayFromTarget) {
+      text = trf('Темп: {0} — сейчас вес движется от цели. Проверь калории в «Питании».', [rate]);
+    } else if (f.eta == null) {
+      text = trf('Темп: {0}. При таком темпе до цели больше года или вес почти не меняется.', [rate]);
+    } else if (!f.eta!.isAfter(today())) {
+      text = trf('Темп: {0}. Ты уже у цели!', [rate]);
+    } else {
+      text = trf('Темп: {0}. Цель примерно {1}.', [rate, fmtDate(f.eta!, year: f.eta!.year != today().year)]);
+    }
+    return [
+      const SizedBox(height: 10),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.trending_up, size: 16, color: f.awayFromTarget ? AppColors.over : AppColors.accent2),
+          const SizedBox(width: 8),
+          Expanded(child: Text(text, style: Txt.small)),
+        ],
+      ),
+    ];
   }
 
   Widget _targetProgress(double start, double current, double target) {

@@ -74,6 +74,48 @@ class GeminiService {
     throw GeminiException(lastError);
   }
 
+  /// Произвольный запрос к ИИ: текст (или JSON при [json] = true). Используется для
+  /// недельного отчёта и генератора программ.
+  static Future<String> generate({
+    required String apiKey,
+    required String model,
+    required String prompt,
+    bool json = false,
+  }) async {
+    final key = apiKey.trim();
+    if (key.isEmpty) {
+      throw GeminiException(tr('Добавь API-ключ Gemini во вкладке «Профиль».'));
+    }
+    final first = model.trim().isEmpty ? fallbackModels.first : model.trim();
+    final models = <String>[first, ...fallbackModels.where((m) => m != first)];
+    String lastError = tr('Не удалось получить ответ от ИИ');
+    for (final m in models) {
+      try {
+        return await _post(key, m, [
+          {'text': prompt}
+        ], json);
+      } on _TryNextModel catch (e) {
+        lastError = e.message;
+      }
+    }
+    throw GeminiException(lastError);
+  }
+
+  /// Язык ответа ИИ (язык интерфейса), по-английски — для промпта.
+  static String get outLang => _outLang;
+
+  /// Достать JSON-объект из ответа ИИ.
+  static Map<String, dynamic> parseJsonObject(String text) {
+    final s = text.indexOf('{');
+    final e = text.lastIndexOf('}');
+    if (s < 0 || e <= s) throw GeminiException(tr('Не удалось разобрать ответ ИИ.'));
+    try {
+      final d = jsonDecode(text.substring(s, e + 1));
+      if (d is Map) return Map<String, dynamic>.from(d);
+    } catch (_) {}
+    throw GeminiException(tr('Не удалось разобрать ответ ИИ.'));
+  }
+
   /// Проверка ключа: запрашиваем список моделей.
   static Future<String?> testKey(String apiKey) async {
     try {
@@ -140,11 +182,15 @@ class GeminiService {
         'inlineData': {'mimeType': _mime(image), 'data': base64Encode(image)},
       });
     }
+    return _parse(await _post(key, model, parts, true));
+  }
+
+  static Future<String> _post(String key, String model, List<Map<String, dynamic>> parts, bool json) async {
     final body = jsonEncode({
       'contents': [
         {'role': 'user', 'parts': parts},
       ],
-      'generationConfig': {'responseMimeType': 'application/json'},
+      if (json) 'generationConfig': {'responseMimeType': 'application/json'},
     });
 
     final http.Response res;
@@ -203,7 +249,8 @@ class GeminiService {
         .where((p) => p['thought'] != true && p['text'] is String)
         .map((p) => p['text'] as String)
         .join();
-    return _parse(text);
+    if (text.trim().isEmpty) throw GeminiException(tr('ИИ вернул пустой ответ.'));
+    return text;
   }
 
   static AiResult _parse(String text) {

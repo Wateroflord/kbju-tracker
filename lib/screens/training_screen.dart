@@ -417,6 +417,32 @@ class ExerciseStatsScreen extends StatelessWidget {
               ],
             ),
           ),
+          if (useW && life.e1rmHistory(exId).isNotEmpty) ...[
+            const SizedBox(height: 12),
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: Text(tr('Сила (расчётный 1ПМ)'), style: Txt.section)),
+                      Text(trf('{0} кг', [fmt1(life.e1rmHistory(exId).last.value)]), style: Txt.num(16, color: AppColors.accent)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(trf('Рекорд {0} кг. Учитывает и вес, и повторы.', [fmt1(life.bestE1rm(exId))]), style: Txt.small),
+                  if (life.e1rmHistory(exId).length >= 2) ...[
+                    const SizedBox(height: 12),
+                    LineChart(
+                      points: [for (final e in life.e1rmHistory(exId)) ChartPoint(parseKey(e.key), e.value)],
+                      color: AppColors.accent2,
+                      height: 150,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
           SectionLabel(tr('По датам')),
           AppCard(
             padding: const EdgeInsets.symmetric(vertical: 4),

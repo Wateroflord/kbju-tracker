@@ -57,6 +57,9 @@ class LifeStore {
   final Map<String, Map<String, int>> learnSeconds = {};
   final Map<String, String> learnGoalText = {};
 
+  // Разминки и растяжка: день -> выполненные комплексы
+  final Map<String, List<String>> routinesDone = {};
+
   int _id = 0;
   String newId(String prefix) => '${prefix}_${DateTime.now().microsecondsSinceEpoch}_${_id++}';
 
@@ -96,6 +99,7 @@ class LifeStore {
     learnCards.clear();
     learnSeconds.clear();
     learnGoalText.clear();
+    routinesDone.clear();
     if (!silent) _notify();
   }
 
@@ -127,6 +131,7 @@ class LifeStore {
         'learnCards': learnCards.map((l, m) => MapEntry(l, m.map((k, v) => MapEntry(k, v.toJson())))),
         'learnSeconds': learnSeconds,
         'learnGoalText': learnGoalText,
+        'routinesDone': routinesDone,
       };
 
   static List<Map<String, dynamic>> _maps(dynamic v) =>
@@ -226,7 +231,22 @@ class LifeStore {
     }
     final lg = j['learnGoalText'];
     if (lg is Map) lg.forEach((k, v) => learnGoalText[k.toString()] = v.toString());
+    final rd = j['routinesDone'];
+    if (rd is Map) {
+      rd.forEach((k, v) {
+        if (v is List) routinesDone[k.toString()] = v.map((e) => e.toString()).toList();
+      });
+    }
   }
+
+  // ---------- разминки ----------
+
+  void markRoutine(String id) {
+    routinesDone.putIfAbsent(todayKey(), () => []).add(id);
+    _notify();
+  }
+
+  int get routinesTotal => routinesDone.values.fold(0, (s, l) => s + l.length);
 
   // ---------- привычки ----------
 

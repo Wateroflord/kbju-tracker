@@ -10,6 +10,7 @@ class Tts {
       'pl' => 'pl-PL',
       'uk' => 'uk-UA',
       'ru' => 'ru-RU',
+      'de' => 'de-DE',
       _ => 'en-US',
     };
     // Подсказки в скобках не озвучиваем: «to go (on foot)» → «to go».

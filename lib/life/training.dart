@@ -10,6 +10,16 @@ class ExerciseRecord {
   const ExerciseRecord(this.value, this.reps, this.date);
 }
 
+/// Расчётный максимум на 1 повтор (формула Эпли). Для 1 повтора — сам вес.
+double e1rm(double weight, int reps) {
+  if (weight <= 0 || reps <= 0) return 0;
+  if (reps == 1) return weight;
+  return weight * (1 + reps / 30);
+}
+
+/// Процент от 1ПМ для заданного числа повторов (обратная формула Эпли).
+double pctForReps(int reps) => reps <= 1 ? 1.0 : 1 / (1 + reps / 30);
+
 /// Расчёты по тренировкам: прогрессия, рекорды, история веса.
 extension TrainingCalc on LifeStore {
   /// Подсказка, что делать сегодня, по прошлой тренировке.
@@ -74,6 +84,34 @@ extension TrainingCalc on LifeStore {
     }
     final list = out.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
     return list;
+  }
+
+  /// Расчётный 1ПМ по датам (лучший подход за тренировку). Только для упражнений с весом.
+  List<MapEntry<String, double>> e1rmHistory(String exId) {
+    final ex = exerciseById(exId);
+    if (ex.bodyweight || ex.timed) return const [];
+    final out = <String, double>{};
+    for (final s in sessions) {
+      if (!s.finished) continue;
+      for (final e in s.exercises) {
+        if (e.exId != exId) continue;
+        for (final set in e.sets) {
+          if (!set.done || set.weight <= 0 || set.reps <= 0 || set.reps > 20) continue;
+          final v = e1rm(set.weight, set.reps);
+          if (v > (out[s.date] ?? 0)) out[s.date] = v;
+        }
+      }
+    }
+    return out.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
+  }
+
+  /// Лучший расчётный 1ПМ за всё время.
+  double bestE1rm(String exId) {
+    var best = 0.0;
+    for (final e in e1rmHistory(exId)) {
+      if (e.value > best) best = e.value;
+    }
+    return best;
   }
 
   /// Упражнения, которые хотя бы раз выполнялись.

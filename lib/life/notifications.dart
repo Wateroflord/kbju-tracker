@@ -57,9 +57,57 @@ class NotificationService {
           await _schedule(i * 100 + d, r, at);
         }
       }
+      await _scheduleFast(store);
     } catch (e) {
       debugPrint('notifications sync failed: $e');
     }
+  }
+
+  static const _fastId = 9000;
+
+  /// Уведомление об окончании голодания (пересоздаётся при старте/стопе).
+  Future<void> syncFasting(AppStore store) async {
+    try {
+      await _init();
+      await _plugin.cancel(_fastId);
+      await _scheduleFast(store);
+    } catch (e) {
+      debugPrint('fasting notification failed: $e');
+    }
+  }
+
+  Future<void> _scheduleFast(AppStore store) async {
+    final f = store.food;
+    if (!f.fasting) return;
+    final end = DateTime.fromMillisecondsSinceEpoch(f.fastStart).add(Duration(hours: f.fastGoalH));
+    if (!end.isAfter(DateTime.now())) return;
+    await _scheduleRaw(
+      _fastId,
+      tr('Голодание завершено'),
+      trf('Прошло {0} ч — цель достигнута. Можно есть!', [f.fastGoalH]),
+      end,
+    );
+  }
+
+  Future<void> _scheduleRaw(int id, String title, String body, DateTime localTime) async {
+    final at = tz.TZDateTime.from(localTime.toUtc(), tz.UTC);
+    await _plugin.zonedSchedule(
+      id,
+      title,
+      body,
+      at,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          'reminders',
+          tr('Напоминания'),
+          channelDescription: tr('Вода, уход, тренировки, сон'),
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+    );
   }
 
   Future<void> _schedule(int id, Reminder r, DateTime localTime) async {
