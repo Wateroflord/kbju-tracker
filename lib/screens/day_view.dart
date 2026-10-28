@@ -5,8 +5,10 @@ import '../store.dart';
 import '../theme.dart';
 import '../util.dart';
 import '../widgets/common.dart';
+import '../widgets/nav.dart';
 import '../widgets/sheets.dart';
 import 'add_food_screen.dart';
+import 'calendar_screen.dart';
 
 /// Экран одного дня: калории, БЖУ, вода, приёмы пищи.
 /// Используется и как вкладка «Сегодня», и для просмотра прошлых дней из календаря.
@@ -79,6 +81,25 @@ class _DayViewState extends State<DayView> {
   }
 
   Widget _header(Goal goal) {
+    if (!widget.isRoot) return _dateRow(goal);
+    return Column(
+      children: [
+        TabHeader('Питание', actions: [
+          SquareIconButton(
+            Icons.calendar_month_outlined,
+            tooltip: 'Календарь',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const CalendarScreen()),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 14),
+        _dateRow(goal),
+      ],
+    );
+  }
+
+  Widget _dateRow(Goal goal) {
     final wd = weekdaysFull[date.weekday - 1];
     return Row(
       children: [
@@ -88,7 +109,7 @@ class _DayViewState extends State<DayView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_isToday ? 'Сегодня' : wd, style: Txt.h1),
+                Text(_isToday ? 'Сегодня' : wd, style: widget.isRoot ? Txt.h2 : Txt.h1),
                 const SizedBox(height: 4),
                 Wrap(
                   spacing: 8,

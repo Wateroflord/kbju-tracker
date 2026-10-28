@@ -5,6 +5,7 @@ import '../gemini.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/nav.dart';
 import 'profile_editor.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -15,13 +16,13 @@ class ProfileScreen extends StatelessWidget {
     final store = StoreScope.of(context);
     return Scaffold(
       backgroundColor: AppColors.bg,
+      appBar: subAppBar('Профиль и настройки'),
       body: SafeArea(
         bottom: false,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 40),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           children: [
-            const Text('Профиль', style: Txt.h1),
             ProfileEditor(
               initial: store.profile,
               submitText: 'Сохранить и пересчитать',

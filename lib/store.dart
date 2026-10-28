@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'calc.dart';
+import 'life/life_store.dart';
 import 'models.dart';
 import 'util.dart';
 
@@ -22,6 +23,9 @@ class AppStore extends ChangeNotifier {
   final List<GoalChange> goalHistory = [];
   String apiKey = '';
   String model = defaultModel;
+
+  /// Привычки, шаги, сон, тренировки, уход, напоминания.
+  late final LifeStore life = LifeStore(_changed);
 
   String _docs = '';
   int _idCounter = 0;
@@ -54,7 +58,7 @@ class AppStore extends ChangeNotifier {
   }
 
   Map<String, dynamic> _toJson() => {
-        'version': 1,
+        'version': 2,
         'profile': profile?.toJson(),
         'entries': entries.map((e) => e.toJson()).toList(),
         'weights': weights,
@@ -63,6 +67,7 @@ class AppStore extends ChangeNotifier {
         'goalHistory': goalHistory.map((g) => g.toJson()).toList(),
         'apiKey': apiKey,
         'model': model,
+        'life': life.toJson(),
       };
 
   void _fromJson(Map<String, dynamic> j, {bool keepApi = false}) {
@@ -92,6 +97,7 @@ class AppStore extends ChangeNotifier {
       ..addAll(((j['goalHistory'] as List?) ?? const [])
           .whereType<Map>()
           .map((m) => GoalChange.fromJson(Map<String, dynamic>.from(m))));
+    life.load(j['life']);
     if (!keepApi) {
       apiKey = j['apiKey']?.toString() ?? '';
       final m = j['model']?.toString() ?? '';
@@ -321,6 +327,7 @@ class AppStore extends ChangeNotifier {
     water.clear();
     dayTargets.clear();
     goalHistory.clear();
+    life.reset(silent: true);
     _changed();
     _deletePhotos();
   }

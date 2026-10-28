@@ -5,6 +5,7 @@ import '../store.dart';
 import '../theme.dart';
 import '../util.dart';
 import '../widgets/common.dart';
+import '../widgets/nav.dart';
 import 'day_view.dart';
 
 class CalendarScreen extends StatefulWidget {
@@ -46,13 +47,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.bg,
+      appBar: subAppBar('Календарь'),
       body: SafeArea(
         bottom: false,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 40),
           children: [
-            const Text('Календарь', style: Txt.h1),
-            const SizedBox(height: 14),
             AppCard(
               padding: const EdgeInsets.fromLTRB(10, 10, 10, 14),
               child: Column(

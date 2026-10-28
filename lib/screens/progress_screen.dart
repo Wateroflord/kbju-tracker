@@ -8,6 +8,7 @@ import '../theme.dart';
 import '../util.dart';
 import '../widgets/charts.dart';
 import '../widgets/common.dart';
+import '../widgets/nav.dart';
 import '../widgets/sheets.dart';
 
 class ProgressScreen extends StatefulWidget {
@@ -47,7 +48,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 40),
           children: [
-            const Text('Прогресс', style: Txt.h1),
+            const TabHeader('Прогресс'),
             const SizedBox(height: 14),
             Segmented<int>(
               values: const [7, 30, 90, 0],

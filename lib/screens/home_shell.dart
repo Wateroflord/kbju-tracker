@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
-import 'calendar_screen.dart';
+import 'coming_soon.dart';
 import 'day_view.dart';
-import 'profile_screen.dart';
 import 'progress_screen.dart';
+import 'today_screen.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -17,11 +17,17 @@ class _HomeShellState extends State<HomeShell> {
   int index = 0;
 
   static const _tabs = [
-    (Icons.today_outlined, Icons.today, 'Сегодня'),
-    (Icons.calendar_month_outlined, Icons.calendar_month, 'Календарь'),
+    (Icons.dashboard_outlined, Icons.dashboard, 'Сегодня'),
+    (Icons.restaurant_outlined, Icons.restaurant, 'Питание'),
+    (Icons.fitness_center_outlined, Icons.fitness_center, 'Тренировки'),
+    (Icons.spa_outlined, Icons.spa, 'Уход'),
     (Icons.show_chart, Icons.show_chart, 'Прогресс'),
-    (Icons.person_outline, Icons.person, 'Профиль'),
   ];
+
+  void _open(int i) {
+    FocusScope.of(context).unfocus();
+    setState(() => index = i);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,11 +35,21 @@ class _HomeShellState extends State<HomeShell> {
       backgroundColor: AppColors.bg,
       body: IndexedStack(
         index: index,
-        children: const [
-          DayView(),
-          CalendarScreen(),
-          ProgressScreen(),
-          ProfileScreen(),
+        children: [
+          TodayScreen(onOpenTab: _open),
+          const DayView(),
+          const ComingSoonScreen(
+            title: 'Тренировки',
+            icon: Icons.fitness_center,
+            text: 'Трекер тренировок появится в следующем обновлении: программы для зала и со своим весом, '
+                'подходы, таймер отдыха и история.',
+          ),
+          const ComingSoonScreen(
+            title: 'Уход',
+            icon: Icons.spa_outlined,
+            text: 'Раздел ухода появится в следующем обновлении: кожа, волосы, тело, стиль и список покупок.',
+          ),
+          const ProgressScreen(),
         ],
       ),
       bottomNavigationBar: Container(
@@ -50,10 +66,7 @@ class _HomeShellState extends State<HomeShell> {
                 for (var i = 0; i < _tabs.length; i++)
                   Expanded(
                     child: InkWell(
-                      onTap: () {
-                        FocusScope.of(context).unfocus();
-                        setState(() => index = i);
-                      },
+                      onTap: () => _open(i),
                       child: _NavItem(
                         icon: index == i ? _tabs[i].$2 : _tabs[i].$1,
                         label: _tabs[i].$3,
