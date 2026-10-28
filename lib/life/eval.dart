@@ -35,6 +35,10 @@ extension LifeEval on AppStore {
         return false;
       case HabitAuto.learn:
         return life.secondsOn(k) >= life.learnGoalMin * 60;
+      case HabitAuto.mind:
+        return life.mindSecondsOn(k) >= 180;
+      case HabitAuto.mood:
+        return life.moods.containsKey(k);
     }
   }
 
@@ -65,6 +69,10 @@ extension LifeEval on AppStore {
         return habitAutoDone(h, d) ? tr('вес записан') : tr('вес не записан');
       case HabitAuto.learn:
         return trf('{0} / {1} мин', [life.secondsOn(k) ~/ 60, life.learnGoalMin]);
+      case HabitAuto.mind:
+        return trf('{0} / 3 мин', [life.mindSecondsOn(k) ~/ 60]);
+      case HabitAuto.mood:
+        return life.moods.containsKey(k) ? tr('записано') : tr('не записано');
     }
   }
 

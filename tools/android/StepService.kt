@@ -133,6 +133,7 @@ class StepService : Service(), SensorEventListener {
             lastShownAt = now
             val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             nm.notify(NOTIF_ID, buildNotification(steps))
+            KbjuWidget.updateAll(this)
         }
     }
 

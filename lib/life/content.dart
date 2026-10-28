@@ -16,6 +16,8 @@ const defaultHabits = <Habit>[
   Habit(id: 'care_am', title: 'Уход утром: умывание, крем, SPF', period: HabitPeriod.daily, icon: 'sun', builtin: true),
   Habit(id: 'care_pm', title: 'Уход вечером: умывание, крем', period: HabitPeriod.daily, icon: 'moon', builtin: true),
   Habit(id: 'learn', title: 'Язык: дневная цель', period: HabitPeriod.daily, auto: HabitAuto.learn, icon: 'book', builtin: true),
+  Habit(id: 'mood', title: 'Отметить настроение', period: HabitPeriod.daily, auto: HabitAuto.mood, icon: 'mood', builtin: true, enabled: false),
+  Habit(id: 'mind', title: 'Дыхание или медитация', period: HabitPeriod.daily, auto: HabitAuto.mind, icon: 'spa', builtin: true, enabled: false),
   Habit(id: 'teeth', title: 'Зубы 2 раза + нить', period: HabitPeriod.daily, icon: 'teeth', builtin: true),
   Habit(id: 'no_screen', title: 'Час без экрана перед сном', period: HabitPeriod.daily, icon: 'phone_off', builtin: true),
   Habit(id: 'workouts', title: '3 тренировки', period: HabitPeriod.weekly, auto: HabitAuto.workouts, icon: 'gym', builtin: true),
@@ -49,6 +51,7 @@ IconData habitIcon(String key) => switch (key) {
       'spa' => Icons.spa_outlined,
       'posture' => Icons.accessibility_new,
       'book' => Icons.menu_book_outlined,
+      'mood' => Icons.sentiment_satisfied_outlined,
       _ => Icons.check_circle_outline,
     };
 

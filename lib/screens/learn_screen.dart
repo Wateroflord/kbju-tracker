@@ -10,6 +10,7 @@ import '../theme.dart';
 import '../util.dart';
 import '../widgets/common.dart';
 import '../widgets/nav.dart';
+import 'dialogue_screen.dart';
 import 'learn_session.dart';
 
 IconData topicIcon(String key) => switch (key) {
@@ -29,7 +30,11 @@ IconData topicIcon(String key) => switch (key) {
       _ => Icons.translate,
     };
 
-String langTitle(String code) => code == 'pl' ? tr('Польский') : tr('Английский');
+String langTitle(String code) => switch (code) {
+      'pl' => tr('Польский'),
+      'de' => tr('Немецкий'),
+      _ => tr('Английский'),
+    };
 
 /// Вкладка «Учёба»: английский и польский по методу 20 часов.
 class LearnScreen extends StatelessWidget {
@@ -112,8 +117,8 @@ class LearnScreen extends StatelessWidget {
             TabHeader(tr('Учёба'), subtitle: tr('Языки по методу 20 часов')),
             const SizedBox(height: 14),
             Segmented<String>(
-              values: const ['en', 'pl'],
-              label: (c) => '${c.toUpperCase()} · ${langTitle(c)}',
+              values: const ['en', 'pl', 'de'],
+              label: langTitle,
               selected: lang,
               onChanged: life.setLearnLang,
             ),
@@ -217,6 +222,30 @@ class LearnScreen extends StatelessWidget {
                     title: tr('Аудирование'),
                     sub: tr('узнай на слух'),
                     onTap: () => _open(context, LearnMode.listen),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _ActionTile(
+                    icon: Icons.keyboard_outlined,
+                    title: tr('Напиши слово'),
+                    sub: tr('вспомни и набери'),
+                    onTap: () => _open(context, LearnMode.type),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _ActionTile(
+                    icon: Icons.forum_outlined,
+                    title: tr('Диалоги'),
+                    sub: tr('сцены из жизни'),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => DialoguesScreen(lang: lang)),
+                    ),
                   ),
                 ),
               ],

@@ -11,7 +11,9 @@ import '../widgets/habit_row.dart';
 import '../widgets/nav.dart';
 import '../widgets/quick_inputs.dart';
 import '../life/steps_service.dart';
+import 'achievements_screen.dart';
 import 'habits_screen.dart';
+import 'mood_screen.dart';
 import 'sleep_screen.dart';
 import 'steps_screen.dart';
 import '../i18n/i18n.dart';
@@ -47,6 +49,8 @@ class TodayScreen extends StatelessWidget {
           children: [
             TabHeader(tr('Сегодня'), subtitle: '${weekdaysFull[now.weekday - 1]}, ${fmtDate(now)}'),
             const SizedBox(height: 14),
+            const LevelCard(),
+            const SizedBox(height: 12),
             AppCard(
               padding: const EdgeInsets.fromLTRB(6, 10, 6, 8),
               child: Row(
@@ -98,6 +102,8 @@ class TodayScreen extends StatelessWidget {
             ],
             const SizedBox(height: 12),
             _WorkoutCard(onOpen: () => onOpenTab(2)),
+            const SizedBox(height: 12),
+            const MoodQuickCard(),
             SectionLabel(
               tr('Привычки на сегодня'),
               trailing: Row(

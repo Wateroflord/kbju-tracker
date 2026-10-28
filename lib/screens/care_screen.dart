@@ -5,9 +5,12 @@ import '../life/content.dart';
 import '../life/models.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../util.dart';
 import '../widgets/common.dart';
 import '../widgets/habit_row.dart';
 import '../widgets/nav.dart';
+import 'breath_screen.dart';
+import 'mood_screen.dart';
 import 'shopping_screen.dart';
 import '../i18n/i18n.dart';
 
@@ -32,7 +35,32 @@ class CareScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 32),
           children: [
-            TabHeader(tr('Уход'), subtitle: tr('Кожа, волосы, тело, стиль')),
+            TabHeader(tr('Уход'), subtitle: tr('Кожа, волосы, тело, стиль, самочувствие')),
+            SectionLabel(tr('Самочувствие')),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _WellTile(
+                      icon: Icons.sentiment_satisfied_outlined,
+                      title: tr('Дневник настроения'),
+                      sub: life.moods.containsKey(dkey(now)) ? tr('сегодня отмечено') : tr('как ты сегодня?'),
+                      page: () => const MoodScreen(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _WellTile(
+                      icon: Icons.air,
+                      title: tr('Дыхание и медитация'),
+                      sub: trf('сегодня {0} мин', [life.mindSecondsOn(dkey(now)) ~/ 60]),
+                      page: () => const BreathScreen(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             if (routineHabits.isNotEmpty) ...[
               SectionLabel(tr('Рутина на сегодня')),
               AppCard(
@@ -308,4 +336,28 @@ class _Quiz extends StatelessWidget {
       ],
     );
   }
+}
+
+class _WellTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String sub;
+  final Widget Function() page;
+  const _WellTile({required this.icon, required this.title, required this.sub, required this.page});
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+        padding: const EdgeInsets.all(12),
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => page())),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: AppColors.accent, size: 22),
+            const SizedBox(height: 8),
+            Text(title, style: Txt.body.copyWith(fontWeight: FontWeight.w700, fontSize: 13.5)),
+            const SizedBox(height: 2),
+            Text(sub, style: Txt.small),
+          ],
+        ),
+      );
 }

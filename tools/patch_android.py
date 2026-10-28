@@ -108,6 +108,18 @@ if ".StepService" not in text:
     )
     text = text.replace("    </application>", step + "    </application>", 1)
 
+# Виджет на главный экран
+if ".KbjuWidget" not in text:
+    widget = (
+        '        <receiver android:name=".KbjuWidget" android:exported="false">\n'
+        "            <intent-filter>\n"
+        '                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>\n'
+        "            </intent-filter>\n"
+        '            <meta-data android:name="android.appwidget.provider" android:resource="@xml/kbju_widget_info"/>\n'
+        "        </receiver>\n"
+    )
+    text = text.replace("    </application>", widget + "    </application>", 1)
+
 text = re.sub(r'android:label="[^"]*"', 'android:label="КБЖУ Трекер"', text, count=1)
 manifest.write_text(text, encoding="utf-8")
 print(text)
@@ -119,12 +131,23 @@ for act in acts:
     act.unlink()
 kotlin_dir = ROOT / "src/main/kotlin/com/kbju/kbju_tracker"
 kotlin_dir.mkdir(parents=True, exist_ok=True)
-for name in ("MainActivity.kt", "StepService.kt"):
+for name in ("MainActivity.kt", "StepService.kt", "KbjuWidget.kt"):
     (kotlin_dir / name).write_text((TOOLS / name).read_text(encoding="utf-8"), encoding="utf-8")
     print("copied", kotlin_dir / name)
 drawable = ROOT / "src/main/res/drawable"
 drawable.mkdir(parents=True, exist_ok=True)
 (drawable / "ic_stat_steps.xml").write_text((TOOLS / "ic_stat_steps.xml").read_text(encoding="utf-8"), encoding="utf-8")
+
+# Ресурсы виджета
+res = ROOT / "src/main/res"
+for sub in ("layout", "xml"):
+    (res / sub).mkdir(parents=True, exist_ok=True)
+W = TOOLS / "widget"
+(res / "layout/kbju_widget.xml").write_text((W / "kbju_widget.xml").read_text(encoding="utf-8"), encoding="utf-8")
+(res / "xml/kbju_widget_info.xml").write_text((W / "kbju_widget_info.xml").read_text(encoding="utf-8"), encoding="utf-8")
+for f in W.glob("widget_*.xml"):
+    (drawable / f.name).write_text(f.read_text(encoding="utf-8"), encoding="utf-8")
+print("widget resources copied")
 
 # ---------- build.gradle(.kts): minSdk 26 (Health Connect) + desugaring (уведомления) ----------
 for name in ("build.gradle.kts", "build.gradle"):

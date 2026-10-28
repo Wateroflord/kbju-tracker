@@ -81,6 +81,21 @@ class MainActivity : FlutterFragmentActivity() {
             }
         }
 
+        // Виджет на главном экране.
+        MethodChannel(messenger, "kbju/widget").setMethodCallHandler { call, result ->
+            when (call.method) {
+                "update" -> {
+                    val args = call.arguments as? Map<*, *>
+                    if (args != null) {
+                        KbjuWidget.save(this, args.entries.associate { it.key.toString() to it.value })
+                    }
+                    KbjuWidget.updateAll(this)
+                    result.success(true)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
         // Не гасить экран во время таймеров (разминка, дыхание).
         MethodChannel(messenger, "kbju/screen").setMethodCallHandler { call, result ->
             when (call.method) {

@@ -11,14 +11,50 @@ import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 
-enum LearnMode { learn, review, quiz, listen }
+enum LearnMode { learn, review, quiz, listen, type }
 
 String learnModeTitle(LearnMode m) => switch (m) {
       LearnMode.learn => tr('Новые слова'),
       LearnMode.review => tr('Повторение'),
       LearnMode.quiz => tr('Тест'),
       LearnMode.listen => tr('Аудирование'),
+      LearnMode.type => tr('Напиши слово'),
     };
+
+/// Сравнение ответа: регистр, знаки препинания и подсказки в скобках не важны.
+String _norm(String s) => s
+    .toLowerCase()
+    .replaceAll(RegExp(r'\([^)]*\)'), '')
+    .replaceAll('’', "'")
+    .replaceAll(RegExp(r'[!?.,…¡¿:;«»"]'), '')
+    .replaceAll(RegExp(r'\s+'), ' ')
+    .trim();
+
+const _plainMap = {
+  'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
+  'ä': 'a', 'ö': 'o', 'ü': 'u', 'ß': 'ss', 'é': 'e', 'è': 'e',
+};
+
+/// Без диакритики и артиклей/частиц: «żółty» ≈ «zolty», «der Tag» ≈ «tag», «to go» ≈ «go».
+String _plain(String s) {
+  var t = _norm(s);
+  final b = StringBuffer();
+  for (final ch in t.split('')) {
+    b.write(_plainMap[ch] ?? ch);
+  }
+  t = b.toString();
+  t = t.replaceFirst(RegExp(r'^(der|die|das|to|the|a|an) '), '');
+  return t;
+}
+
+/// 2 — верно, 1 — почти (опечатка в диакритике, нет артикля), 0 — неверно.
+int checkTyped(String typed, String answer) {
+  final a = _norm(typed);
+  if (a.isEmpty) return 0;
+  if (a == _norm(answer)) return 2;
+  if (_plain(typed) == _plain(answer)) return 1;
+  return 0;
+}
 
 class _Item {
   final W word;
@@ -47,6 +83,8 @@ class _LearnSessionScreenState extends State<LearnSessionScreen> with WidgetsBin
   int? chosen; // выбранный вариант в тесте
   List<W> options = [];
   final Set<String> requeued = {};
+  final typed = TextEditingController();
+  int? typeResult; // результат проверки в режиме «напиши»
 
   // учёт времени
   final Stopwatch _watch = Stopwatch();
@@ -71,6 +109,7 @@ class _LearnSessionScreenState extends State<LearnSessionScreen> with WidgetsBin
   void dispose() {
     _saveTime();
     _flush?.cancel();
+    typed.dispose();
     WidgetsBinding.instance.removeObserver(this);
     Tts.stop();
     super.dispose();
@@ -104,15 +143,17 @@ class _LearnSessionScreenState extends State<LearnSessionScreen> with WidgetsBin
         list = life.dueWords(lang).take(20).toList();
       case LearnMode.quiz:
       case LearnMode.listen:
+      case LearnMode.type:
         final pool = widget.topic != null
             ? wordsOf(widget.topic!)
             : words.where((w) => life.cardOf(lang, w) != null).toList();
         final src = pool.length >= 4 ? pool : wordsOf(topics.first.id);
         list = [...src]..shuffle(_rnd);
-        list = list.take(12).toList();
+        list = list.take(widget.mode == LearnMode.type ? 10 : 12).toList();
     }
     for (final w in list) {
-      final rev = widget.mode == LearnMode.review && _rnd.nextBool() ||
+      final rev = widget.mode == LearnMode.type ||
+          widget.mode == LearnMode.review && _rnd.nextBool() ||
           widget.mode == LearnMode.quiz && _rnd.nextInt(3) == 0;
       queue.add(_Item(w, rev));
     }
@@ -125,6 +166,8 @@ class _LearnSessionScreenState extends State<LearnSessionScreen> with WidgetsBin
   void _prepare() {
     revealed = false;
     chosen = null;
+    typeResult = null;
+    typed.clear();
     if (index >= queue.length) return;
     if (widget.mode == LearnMode.quiz || widget.mode == LearnMode.listen) {
       final w = queue[index].word;
@@ -259,15 +302,17 @@ class _LearnSessionScreenState extends State<LearnSessionScreen> with WidgetsBin
     final item = queue[index];
     final w = item.word;
     final quiz = widget.mode == LearnMode.quiz || widget.mode == LearnMode.listen;
+    final type = widget.mode == LearnMode.type;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ProgressLine(ratio: index / queue.length, color: AppColors.accent, height: 4, overIsBad: false),
         const SizedBox(height: 18),
         Expanded(
-          child: quiz ? _quizBody(item) : _flashBody(item),
+          child: type ? _typeBody(item) : (quiz ? _quizBody(item) : _flashBody(item)),
         ),
-        if (!quiz) ..._flashButtons(),
+        if (type) ..._typeButtons(item),
+        if (!quiz && !type) ..._flashButtons(),
         if (quiz && chosen != null)
           PrimaryButton(tr('Дальше'), icon: Icons.arrow_forward, onPressed: () => _answer(options[chosen!].id == w.id)),
       ],
@@ -368,6 +413,84 @@ class _LearnSessionScreenState extends State<LearnSessionScreen> with WidgetsBin
               ),
             ),
           ),
+        ],
+      ),
+    ];
+  }
+
+  void _check(_Item item) {
+    final r = checkTyped(typed.text, _target(item.word));
+    setState(() => typeResult = r);
+    _speak(item.word);
+  }
+
+  Widget _typeBody(_Item item) {
+    final w = item.word;
+    final answer = _target(w);
+    final r = typeResult;
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(tr('Напиши на изучаемом языке'), textAlign: TextAlign.center, style: Txt.small),
+          const SizedBox(height: 10),
+          _wordCard(_native(w), speak: false),
+          const SizedBox(height: 14),
+          TextField(
+            controller: typed,
+            autofocus: true,
+            enabled: r == null,
+            autocorrect: false,
+            enableSuggestions: false,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) {
+              if (r == null && typed.text.trim().isNotEmpty) _check(item);
+            },
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.text),
+            decoration: fieldDeco(tr('Твой ответ')),
+          ),
+          if (r != null) ...[
+            const SizedBox(height: 14),
+            AppCard(
+              borderColor: r == 2 ? AppColors.good : (r == 1 ? AppColors.fat : AppColors.over),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    r == 2 ? tr('Верно!') : (r == 1 ? tr('Почти! Обрати внимание на написание:') : tr('Правильный ответ:')),
+                    style: Txt.small.copyWith(color: r == 2 ? AppColors.good : (r == 1 ? AppColors.fat : AppColors.over)),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(answer, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.text)),
+                      ),
+                      IconButton(onPressed: () => _speak(w), icon: const Icon(Icons.volume_up, color: AppColors.accent)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _typeButtons(_Item item) {
+    if (typeResult != null) {
+      return [PrimaryButton(tr('Дальше'), icon: Icons.arrow_forward, onPressed: () => _answer(typeResult! > 0))];
+    }
+    return [
+      Row(
+        children: [
+          GhostButton(tr('Не знаю'), onPressed: () {
+            setState(() => typeResult = 0);
+            _speak(item.word);
+          }),
+          const SizedBox(width: 10),
+          Expanded(child: PrimaryButton(tr('Проверить'), icon: Icons.check, onPressed: () => _check(item))),
         ],
       ),
     ];

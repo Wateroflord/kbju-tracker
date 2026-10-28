@@ -9,7 +9,7 @@ import '../i18n/i18n.dart';
 enum HabitPeriod { daily, weekly, monthly }
 
 /// Как привычка отмечается автоматически.
-enum HabitAuto { none, steps, food, water, sleep, workouts, weigh, learn }
+enum HabitAuto { none, steps, food, water, sleep, workouts, weigh, learn, mind, mood }
 
 class Habit {
   final String id;
@@ -419,4 +419,24 @@ class ProgressPhoto {
   Map<String, dynamic> toJson() => {'date': date, 'path': path};
   factory ProgressPhoto.fromJson(Map<String, dynamic> j) =>
       ProgressPhoto(j['date']?.toString() ?? todayKey(), j['path']?.toString() ?? '');
+}
+
+// ---------------- Самочувствие ----------------
+
+/// Запись дневника: настроение, энергия, стресс (1–5) и заметка.
+class MoodEntry {
+  final int mood;
+  final int energy;
+  final int stress;
+  final String note;
+  const MoodEntry({required this.mood, required this.energy, required this.stress, this.note = ''});
+
+  Map<String, dynamic> toJson() => {'mood': mood, 'energy': energy, 'stress': stress, 'note': note};
+
+  factory MoodEntry.fromJson(Map<String, dynamic> j) => MoodEntry(
+        mood: asInt(j['mood'], 3).clamp(1, 5).toInt(),
+        energy: asInt(j['energy'], 3).clamp(1, 5).toInt(),
+        stress: asInt(j['stress'], 3).clamp(1, 5).toInt(),
+        note: j['note']?.toString() ?? '',
+      );
 }

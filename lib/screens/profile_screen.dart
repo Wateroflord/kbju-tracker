@@ -48,6 +48,22 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
+            SectionLabel(tr('Виджет на главный экран')),
+            AppCard(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.widgets_outlined, color: AppColors.accent),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      tr('Калории, белок, шаги и вода прямо на рабочем столе. Зажми пустое место на главном экране → «Виджеты» → найди «КБЖУ Трекер» и перетащи его.'),
+                      style: Txt.small.copyWith(color: AppColors.text),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             SectionLabel(tr('Распознавание по фото')),
             const _AiCard(),
             SectionLabel(tr('Данные')),

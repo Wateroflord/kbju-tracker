@@ -60,6 +60,13 @@ class LifeStore {
   // Разминки и растяжка: день -> выполненные комплексы
   final Map<String, List<String>> routinesDone = {};
 
+  // Самочувствие: дневник и минуты дыхания/медитации по дням
+  final Map<String, MoodEntry> moods = {};
+  final Map<String, int> mindSeconds = {};
+
+  // Полученные достижения: id -> день
+  final Map<String, String> achievements = {};
+
   int _id = 0;
   String newId(String prefix) => '${prefix}_${DateTime.now().microsecondsSinceEpoch}_${_id++}';
 
@@ -100,6 +107,9 @@ class LifeStore {
     learnSeconds.clear();
     learnGoalText.clear();
     routinesDone.clear();
+    moods.clear();
+    mindSeconds.clear();
+    achievements.clear();
     if (!silent) _notify();
   }
 
@@ -132,6 +142,9 @@ class LifeStore {
         'learnSeconds': learnSeconds,
         'learnGoalText': learnGoalText,
         'routinesDone': routinesDone,
+        'moods': moods.map((k, v) => MapEntry(k, v.toJson())),
+        'mindSeconds': mindSeconds,
+        'achievements': achievements,
       };
 
   static List<Map<String, dynamic>> _maps(dynamic v) =>
@@ -211,7 +224,8 @@ class LifeStore {
 
     photos.addAll(_maps(j['photos']).map(ProgressPhoto.fromJson).where((p) => p.path.isNotEmpty));
 
-    learnLang = j['learnLang']?.toString() == 'pl' ? 'pl' : 'en';
+    final ll = j['learnLang']?.toString() ?? 'en';
+    learnLang = const ['en', 'pl', 'de'].contains(ll) ? ll : 'en';
     learnGoalMin = asInt(j['learnGoalMin'], 45).clamp(5, 180).toInt();
     final lc = j['learnCards'];
     if (lc is Map) {
@@ -231,12 +245,53 @@ class LifeStore {
     }
     final lg = j['learnGoalText'];
     if (lg is Map) lg.forEach((k, v) => learnGoalText[k.toString()] = v.toString());
+    final md = j['moods'];
+    if (md is Map) {
+      md.forEach((k, v) {
+        if (v is Map) moods[k.toString()] = MoodEntry.fromJson(Map<String, dynamic>.from(v));
+      });
+    }
+    final ms = j['mindSeconds'];
+    if (ms is Map) ms.forEach((k, v) => mindSeconds[k.toString()] = asInt(v));
+    final ac = j['achievements'];
+    if (ac is Map) ac.forEach((k, v) => achievements[k.toString()] = v.toString());
     final rd = j['routinesDone'];
     if (rd is Map) {
       rd.forEach((k, v) {
         if (v is List) routinesDone[k.toString()] = v.map((e) => e.toString()).toList();
       });
     }
+  }
+
+  // ---------- самочувствие ----------
+
+  void setMood(String day, MoodEntry e) {
+    moods[day] = e;
+    _notify();
+  }
+
+  void deleteMood(String day) {
+    moods.remove(day);
+    _notify();
+  }
+
+  int mindSecondsOn(String day) => mindSeconds[day] ?? 0;
+
+  void addMindSeconds(int sec) {
+    if (sec <= 0) return;
+    final k = todayKey();
+    mindSeconds[k] = mindSecondsOn(k) + sec;
+    _notify();
+  }
+
+  int get mindTotalMinutes => mindSeconds.values.fold(0, (s, v) => s + v) ~/ 60;
+
+  void unlockAchievements(List<String> ids) {
+    final d = todayKey();
+    for (final id in ids) {
+      achievements.putIfAbsent(id, () => d);
+    }
+    _notify();
   }
 
   // ---------- разминки ----------

@@ -9,7 +9,10 @@ import '../widgets/charts.dart';
 import '../widgets/common.dart';
 import '../widgets/nav.dart';
 import '../widgets/sheets.dart';
+import 'ai_program_screen.dart';
 import 'program_editor.dart';
+import 'routine_screen.dart';
+import 'strength_screen.dart';
 import 'workout_screen.dart';
 import '../i18n/i18n.dart';
 
@@ -73,6 +76,19 @@ class TrainingScreen extends StatelessWidget {
               const SizedBox(height: 12),
             ],
             _NextCard(program: program, next: next),
+            const SizedBox(height: 12),
+            IntrinsicHeight(
+              child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: _ToolTile(Icons.auto_awesome, tr('Программа от ИИ'), () => const AiProgramScreen())),
+                const SizedBox(width: 8),
+                Expanded(child: _ToolTile(Icons.self_improvement, tr('Разминка и растяжка'), () => const RoutinesScreen())),
+                const SizedBox(width: 8),
+                Expanded(child: _ToolTile(Icons.calculate_outlined, tr('Сила и 1ПМ'), () => const OneRmScreen())),
+              ],
+            ),
+            ),
             SectionLabel(tr('Программа'), trailing: GestureDetector(
               onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProgramEditorScreen())),
               child: Text(tr('+ Своя программа'),
@@ -140,6 +156,29 @@ class TrainingScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ToolTile extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  final Widget Function() page;
+  const _ToolTile(this.icon, this.text, this.page);
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => page())),
+        child: Column(
+          children: [
+            Icon(icon, color: AppColors.accent, size: 22),
+            const SizedBox(height: 6),
+            Text(text,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                style: Txt.small.copyWith(color: AppColors.text, fontWeight: FontWeight.w600, fontSize: 12, height: 1.2)),
+          ],
+        ),
+      );
 }
 
 String _weekdaysText(List<int> days) =>
