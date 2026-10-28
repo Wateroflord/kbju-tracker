@@ -362,7 +362,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     return Stack(
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(10),
           child: Image.memory(image!, height: 220, width: double.infinity, fit: BoxFit.cover),
         ),
         Positioned(
@@ -406,7 +406,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
               height: 52,
               decoration: BoxDecoration(
                 color: AppColors.accent.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
               ),
               child: Icon(icon, color: AppColors.accent, size: 26),

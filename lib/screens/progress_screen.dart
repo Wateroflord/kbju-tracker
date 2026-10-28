@@ -132,7 +132,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: AppColors.surface2,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: const Text(
                 'Записывай вес хотя бы раз в неделю —\nздесь появится график',
@@ -216,7 +216,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setD) => AlertDialog(
           backgroundColor: AppColors.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: const Text('Записать вес', style: Txt.h2),
           content: Column(
             mainAxisSize: MainAxisSize.min,

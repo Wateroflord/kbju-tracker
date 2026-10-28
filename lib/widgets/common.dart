@@ -23,7 +23,7 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(16);
+    final radius = BorderRadius.circular(10);
     return Material(
       color: color ?? AppColors.surface,
       borderRadius: radius,
@@ -51,10 +51,10 @@ class SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(2, 22, 2, 10),
+      padding: const EdgeInsets.fromLTRB(2, 20, 2, 8),
       child: Row(
         children: [
-          Text(text.toUpperCase(), style: Txt.label),
+          Text(text, style: Txt.section),
           const Spacer(),
           if (trailing != null) trailing!,
         ],
@@ -75,7 +75,6 @@ class Dot extends StatelessWidget {
         decoration: BoxDecoration(
           color: color,
           shape: BoxShape.circle,
-          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 6)],
         ),
       );
 }
@@ -118,7 +117,6 @@ class ProgressLine extends StatelessWidget {
             decoration: BoxDecoration(
               color: c,
               borderRadius: BorderRadius.circular(height),
-              boxShadow: [BoxShadow(color: c.withValues(alpha: 0.45), blurRadius: 8)],
             ),
           ),
         ],
@@ -189,13 +187,6 @@ class RingPainter extends CustomPainter {
     final main = p.clamp(0.0, 1.0);
     if (main > 0) {
       final sweep = 2 * math.pi * main;
-      final glow = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = stroke
-        ..strokeCap = StrokeCap.round
-        ..color = color.withValues(alpha: 0.35)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-      canvas.drawArc(rect, -math.pi / 2, sweep, false, glow);
       final arc = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = stroke
@@ -206,9 +197,9 @@ class RingPainter extends CustomPainter {
     if (p > 1) {
       final over = Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = stroke * 0.55
+        ..strokeWidth = stroke * 0.45
         ..strokeCap = StrokeCap.round
-        ..color = AppColors.over;
+        ..color = Colors.white;
       canvas.drawArc(rect, -math.pi / 2, 2 * math.pi * (p - 1).clamp(0.0, 1.0), false, over);
     }
   }
@@ -238,7 +229,7 @@ class Segmented<V> extends StatelessWidget {
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: AppColors.surface2,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.border),
       ),
       child: Row(
@@ -254,7 +245,7 @@ class Segmented<V> extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: v == selected ? AppColors.accent : Colors.transparent,
-                    borderRadius: BorderRadius.circular(9),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     label(v),
@@ -263,7 +254,7 @@ class Segmented<V> extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: v == selected ? Colors.black : AppColors.muted,
+                      color: v == selected ? Colors.white : AppColors.muted,
                     ),
                   ),
                 ),
@@ -291,10 +282,10 @@ class PrimaryButton extends StatelessWidget {
       child: FilledButton(
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.accent,
-          foregroundColor: Colors.black,
+          foregroundColor: Colors.white,
           disabledBackgroundColor: AppColors.surface2,
           disabledForegroundColor: AppColors.muted,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
         ),
         onPressed: loading ? null : onPressed,
@@ -334,7 +325,7 @@ class GhostButton extends StatelessWidget {
           foregroundColor: color,
           side: const BorderSide(color: AppColors.border),
           backgroundColor: AppColors.surface2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
           padding: const EdgeInsets.symmetric(horizontal: 14),
         ),
@@ -365,7 +356,7 @@ class StatTile extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface2,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
@@ -439,7 +430,7 @@ class OptionTile extends StatelessWidget {
       child: AppCard(
         onTap: onTap,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        color: selected ? AppColors.accent.withValues(alpha: 0.07) : AppColors.surface,
+        color: selected ? AppColors.accent.withValues(alpha: 0.08) : AppColors.surface,
         borderColor: selected ? AppColors.accent : AppColors.border,
         child: Row(
           children: [
@@ -451,7 +442,7 @@ class OptionTile extends StatelessWidget {
                   color: selected ? AppColors.accent : AppColors.surface2,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, size: 20, color: selected ? Colors.black : AppColors.muted),
+                child: Icon(icon, size: 20, color: selected ? Colors.white : AppColors.muted),
               ),
               const SizedBox(width: 12),
             ],
@@ -515,7 +506,7 @@ void showToast(BuildContext context, String msg) {
       backgroundColor: AppColors.surface2,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         side: const BorderSide(color: AppColors.border),
       ),
     ));
@@ -526,7 +517,7 @@ Future<bool> confirm(BuildContext context, String title, String text, {String ok
     context: context,
     builder: (ctx) => AlertDialog(
       backgroundColor: AppColors.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       title: Text(title, style: Txt.h2),
       content: Text(text, style: Txt.body),
       actions: [

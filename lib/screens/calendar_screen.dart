@@ -271,7 +271,7 @@ class _DayCell extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.accent.withValues(alpha: 0.14) : AppColors.surface2,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: isSelected
                 ? AppColors.accent
@@ -296,9 +296,6 @@ class _DayCell extends StatelessWidget {
               decoration: BoxDecoration(
                 color: status == DayStatus.none ? Colors.transparent : sc,
                 borderRadius: BorderRadius.circular(2),
-                boxShadow: status == DayStatus.none
-                    ? null
-                    : [BoxShadow(color: sc.withValues(alpha: 0.6), blurRadius: 5)],
               ),
             ),
           ],

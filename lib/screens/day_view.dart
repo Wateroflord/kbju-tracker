@@ -54,8 +54,9 @@ class _DayViewState extends State<DayView> {
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'add_$key${widget.isRoot}',
         backgroundColor: AppColors.accent,
-        foregroundColor: Colors.black,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         onPressed: () => _openAdd(null),
         icon: const Icon(Icons.add_a_photo_outlined),
         label: const Text('Еда', style: TextStyle(fontWeight: FontWeight.w800)),
@@ -111,15 +112,15 @@ class _DayViewState extends State<DayView> {
 
   Widget _navBtn(IconData icon, VoidCallback? onTap) => Material(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           onTap: onTap,
           child: Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(color: AppColors.border),
             ),
             child: Icon(icon, color: onTap == null ? AppColors.border : AppColors.text),

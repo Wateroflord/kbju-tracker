@@ -14,7 +14,7 @@ Future<T?> showAppSheet<T>(BuildContext context, Widget child) {
     useSafeArea: true,
     backgroundColor: AppColors.surface,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
     ),
     builder: (ctx) => Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
@@ -142,7 +142,7 @@ class _EntryEditorState extends State<EntryEditor> {
           const SizedBox(height: 14),
           if (photo != null) ...[
             ClipRRect(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(8),
               child: Image.file(photo, height: 150, width: double.infinity, fit: BoxFit.cover),
             ),
             const SizedBox(height: 14),

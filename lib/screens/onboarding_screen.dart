@@ -24,10 +24,9 @@ class OnboardingScreen extends StatelessWidget {
                   height: 44,
                   decoration: BoxDecoration(
                     color: AppColors.accent,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [BoxShadow(color: AppColors.accent.withValues(alpha: 0.45), blurRadius: 18)],
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.bolt, color: Colors.black, size: 28),
+                  child: const Icon(Icons.bolt, color: Colors.white, size: 28),
                 ),
                 const SizedBox(width: 12),
                 const Text('КБЖУ Трекер', style: Txt.h1),

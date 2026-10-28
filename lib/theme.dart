@@ -4,26 +4,27 @@ import 'package:flutter/material.dart';
 
 import 'models.dart';
 
-/// Палитра: Dark Gaming SaaS — графит + неоновые акценты.
+/// Палитра: тёмный плоский интерфейс (как игровое меню настроек) —
+/// почти чёрный фон, графитовые панели и один красный акцент.
 class AppColors {
-  static const bg = Color(0xFF0A0C0F);
-  static const surface = Color(0xFF12151A);
-  static const surface2 = Color(0xFF1A1E25);
-  static const border = Color(0xFF252B34);
-  static const text = Color(0xFFE9EDF2);
-  static const muted = Color(0xFF7D8794);
+  static const bg = Color(0xFF0D0D0F);
+  static const surface = Color(0xFF151517);
+  static const surface2 = Color(0xFF1D1D20);
+  static const border = Color(0xFF29292D);
+  static const text = Color(0xFFEDEDEF);
+  static const muted = Color(0xFF8B8B93);
 
-  static const accent = Color(0xFFC4FF3D); // неоновый лайм
-  static const accent2 = Color(0xFF7C5CFF); // электрик-фиолетовый
+  static const accent = Color(0xFFEF4136); // красный акцент
+  static const accent2 = Color(0xFFD4D4D8); // светло-серый для второстепенного
 
-  static const protein = Color(0xFF4DA3FF);
-  static const fat = Color(0xFFFFB547);
-  static const carbs = Color(0xFFB57BFF);
-  static const water = Color(0xFF3DD9FF);
+  static const protein = Color(0xFF5B9DFF);
+  static const fat = Color(0xFFF2B14C);
+  static const carbs = Color(0xFFA78BFA);
+  static const water = Color(0xFF4CC9F0);
 
-  static const good = Color(0xFF3DFFA2);
-  static const under = Color(0xFFFFC14D);
-  static const over = Color(0xFFFF4D6A);
+  static const good = Color(0xFF3DD68C);
+  static const under = Color(0xFFF2B14C);
+  static const over = Color(0xFFFF5C7A);
 
   static Color status(DayStatus s) => switch (s) {
         DayStatus.good => good,
@@ -48,9 +49,16 @@ class Txt {
 
   static const label = TextStyle(
     fontSize: 11,
-    fontWeight: FontWeight.w700,
-    letterSpacing: 1.4,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.8,
     color: AppColors.muted,
+  );
+
+  /// Заголовок блока, как «Auto Ursa Settings» в референсе.
+  static const section = TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+    color: AppColors.text,
   );
 
   static const h1 = TextStyle(
@@ -78,7 +86,7 @@ ThemeData buildTheme() {
     scaffoldBackgroundColor: AppColors.bg,
     colorScheme: const ColorScheme.dark(
       primary: AppColors.accent,
-      onPrimary: Colors.black,
+      onPrimary: Colors.white,
       secondary: AppColors.accent2,
       onSecondary: Colors.white,
       surface: AppColors.surface,
@@ -93,12 +101,21 @@ ThemeData buildTheme() {
       cursorColor: AppColors.accent,
       selectionHandleColor: AppColors.accent,
     ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected) ? Colors.white : AppColors.muted),
+      trackColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected) ? AppColors.accent : AppColors.surface2),
+      trackOutlineColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected) ? AppColors.accent : AppColors.border),
+    ),
+    dividerColor: AppColors.border,
   );
 }
 
 InputDecoration fieldDeco(String label, {String? suffix, String? hint}) {
   OutlineInputBorder b(Color c, [double w = 1]) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide(color: c, width: w),
       );
   return InputDecoration(

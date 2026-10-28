@@ -122,17 +122,8 @@ class _LinePainter extends CustomPainter {
           ..shader = LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [color.withValues(alpha: 0.28), color.withValues(alpha: 0.0)],
+            colors: [color.withValues(alpha: 0.18), color.withValues(alpha: 0.0)],
           ).createShader(Rect.fromLTWH(left, top, w, h)),
-      );
-      canvas.drawPath(
-        line,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 5
-          ..strokeJoin = StrokeJoin.round
-          ..color = color.withValues(alpha: 0.25)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
       );
       canvas.drawPath(
         line,

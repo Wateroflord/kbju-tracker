@@ -83,23 +83,23 @@ class _NavItem extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: selected ? 22 : 0,
-          height: 3,
-          margin: const EdgeInsets.only(bottom: 7),
+          duration: const Duration(milliseconds: 180),
+          width: 52,
+          height: 28,
           decoration: BoxDecoration(
-            color: AppColors.accent,
-            borderRadius: BorderRadius.circular(3),
-            boxShadow: selected
-                ? [BoxShadow(color: AppColors.accent.withValues(alpha: 0.7), blurRadius: 8)]
-                : null,
+            color: selected ? AppColors.accent.withValues(alpha: 0.16) : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
           ),
+          child: Icon(icon, color: c, size: 21),
         ),
-        Icon(icon, color: c, size: 23),
-        const SizedBox(height: 3),
+        const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(color: c, fontSize: 11, fontWeight: selected ? FontWeight.w700 : FontWeight.w500),
+          style: TextStyle(
+            color: selected ? AppColors.text : AppColors.muted,
+            fontSize: 11,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+          ),
         ),
       ],
     );
