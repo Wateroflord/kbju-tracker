@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'util.dart';
+import 'i18n/i18n.dart';
 
 enum Sex { male, female }
 
@@ -17,15 +18,15 @@ T enumByName<T extends Enum>(List<T> values, dynamic name, T fallback) {
 
 extension GoalX on Goal {
   String get title => switch (this) {
-        Goal.bulk => 'Набор мышц',
-        Goal.cut => 'Сушка',
-        Goal.maintain => 'Поддержание',
+        Goal.bulk => tr('Набор мышц'),
+        Goal.cut => tr('Сушка'),
+        Goal.maintain => tr('Поддержание'),
       };
 
   String get desc => switch (this) {
-        Goal.bulk => 'Профицит ~12%, больше белка и углеводов',
-        Goal.cut => 'Дефицит ~20%, высокий белок для сохранения мышц',
-        Goal.maintain => 'Калории на уровне расхода, стабильный вес',
+        Goal.bulk => tr('Профицит ~12%, больше белка и углеводов'),
+        Goal.cut => tr('Дефицит ~20%, высокий белок для сохранения мышц'),
+        Goal.maintain => tr('Калории на уровне расхода, стабильный вес'),
       };
 
   IconData get icon => switch (this) {
@@ -37,10 +38,10 @@ extension GoalX on Goal {
 
 extension MealX on Meal {
   String get title => switch (this) {
-        Meal.breakfast => 'Завтрак',
-        Meal.lunch => 'Обед',
-        Meal.dinner => 'Ужин',
-        Meal.snack => 'Перекус',
+        Meal.breakfast => tr('Завтрак'),
+        Meal.lunch => tr('Обед'),
+        Meal.dinner => tr('Ужин'),
+        Meal.snack => tr('Перекус'),
       };
 
   IconData get icon => switch (this) {
@@ -242,7 +243,7 @@ class FoodEntry {
         date: j['date']?.toString() ?? todayKey(),
         time: asInt(j['time']),
         meal: enumByName(Meal.values, j['meal'], Meal.snack),
-        name: j['name']?.toString() ?? 'Еда',
+        name: j['name']?.toString() ?? tr('Еда'),
         grams: asDouble(j['grams']),
         kcal: asDouble(j['kcal']),
         protein: asDouble(j['protein']),

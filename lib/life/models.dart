@@ -2,13 +2,14 @@
 
 import '../models.dart' show enumByName;
 import '../util.dart';
+import '../i18n/i18n.dart';
 
 // ---------------- Привычки ----------------
 
 enum HabitPeriod { daily, weekly, monthly }
 
 /// Как привычка отмечается автоматически.
-enum HabitAuto { none, steps, food, water, sleep, workouts, weigh }
+enum HabitAuto { none, steps, food, water, sleep, workouts, weigh, learn }
 
 class Habit {
   final String id;
@@ -137,7 +138,7 @@ class PlanExercise {
   bool get toFailure => repMax == 0;
 
   String get scheme {
-    if (toFailure) return '$sets × до отказа −1–2';
+    if (toFailure) return trf('{0} × до отказа −1–2', [sets]);
     if (repMin == repMax) return '$sets × $repMin';
     return '$sets × $repMin–$repMax';
   }
@@ -304,7 +305,7 @@ class Session {
         date: j['date']?.toString() ?? todayKey(),
         programId: j['program']?.toString() ?? '',
         dayId: j['day']?.toString() ?? '',
-        title: j['title']?.toString() ?? 'Тренировка',
+        title: j['title']?.toString() ?? tr('Тренировка'),
         startedAt: asInt(j['start']),
         finishedAt: asInt(j['finish']),
         exercises: ((j['exercises'] as List?) ?? const [])

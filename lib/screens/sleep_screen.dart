@@ -9,6 +9,7 @@ import '../widgets/common.dart';
 import '../widgets/nav.dart';
 import '../widgets/quick_inputs.dart';
 import 'reminders_screen.dart';
+import '../i18n/i18n.dart';
 
 class SleepScreen extends StatelessWidget {
   const SleepScreen({super.key});
@@ -61,7 +62,7 @@ class SleepScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.bg,
-      appBar: subAppBar('Сон'),
+      appBar: subAppBar(tr('Сон')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
         children: [
@@ -69,14 +70,14 @@ class SleepScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('ПРОШЛОЙ НОЧЬЮ', style: Txt.label),
+                Text(tr('ПРОШЛОЙ НОЧЬЮ'), style: Txt.label),
                 const SizedBox(height: 6),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(last == null ? '—' : fmt1(last.hours),
                         style: Txt.num(34, color: last == null ? AppColors.muted : (last.hours >= 7 ? AppColors.good : AppColors.under))),
-                    const Text('  ч', style: Txt.small),
+                    Text(tr('  ч'), style: Txt.small),
                     const Spacer(),
                     if (last != null) Text('${_time(last.bed)} → ${_time(last.wake)}', style: Txt.num(14, color: AppColors.accent2)),
                   ],
@@ -85,33 +86,33 @@ class SleepScreen extends StatelessWidget {
                 ProgressLine(ratio: last == null ? 0 : last.hours / life.sleepGoal, color: AppColors.carbs, overIsBad: false),
                 const SizedBox(height: 14),
                 if (sleeping)
-                  PrimaryButton('Я проснулся', icon: Icons.wb_sunny_outlined, onPressed: () {
+                  PrimaryButton(tr('Я проснулся'), icon: Icons.wb_sunny_outlined, onPressed: () {
                     final e = life.finishSleep();
-                    if (e != null) showToast(context, 'Записано: ${fmt1(e.hours)} ч сна');
+                    if (e != null) showToast(context, trf('Записано: {0} ч сна', [fmt1(e.hours)]));
                   })
                 else
-                  PrimaryButton('Ложусь спать', icon: Icons.bedtime_outlined, onPressed: () {
+                  PrimaryButton(tr('Ложусь спать'), icon: Icons.bedtime_outlined, onPressed: () {
                     life.startSleep();
-                    showToast(context, 'Спокойной ночи! Утром нажми «Я проснулся»');
+                    showToast(context, tr('Спокойной ночи! Утром нажми «Я проснулся»'));
                   }),
                 if (sleeping) ...[
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      Expanded(child: Text('Лёг в ${_time(life.sleepStartedAt)}', style: Txt.small)),
+                      Expanded(child: Text(trf('Лёг в {0}', [_time(life.sleepStartedAt)]), style: Txt.small)),
                       TextButton(
                         onPressed: life.cancelSleep,
-                        child: const Text('Отменить', style: TextStyle(color: AppColors.muted)),
+                        child: Text(tr('Отменить'), style: TextStyle(color: AppColors.muted)),
                       ),
                     ],
                   ),
                 ],
                 const SizedBox(height: 8),
-                GhostButton('Ввести время вручную', icon: Icons.edit_outlined, onPressed: () => showSleepInput(context, now)),
+                GhostButton(tr('Ввести время вручную'), icon: Icons.edit_outlined, onPressed: () => showSleepInput(context, now)),
               ],
             ),
           ),
-          SectionLabel('Неделя', trailing: Text('цель ${fmt1(life.sleepGoal)} ч', style: Txt.small)),
+          SectionLabel(tr('Неделя'), trailing: Text(trf('цель {0} ч', [fmt1(life.sleepGoal)]), style: Txt.small)),
           AppCard(
             child: Column(
               children: [
@@ -119,9 +120,9 @@ class SleepScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(child: StatTile(label: 'В среднем', value: cnt > 0 ? '${fmt1(sum / cnt)} ч' : '—', sub: 'за $cnt ноч.')),
+                    Expanded(child: StatTile(label: tr('В среднем'), value: cnt > 0 ? trf('{0} ч', [fmt1(sum / cnt)]) : '—', sub: trf('за {0} ноч.', [cnt]))),
                     const SizedBox(width: 8),
-                    Expanded(child: StatTile(label: 'Средний отбой', value: bedAvg ?? '—', sub: spread == null ? 'нужно 3+ ночи' : 'разброс ${spread ~/ 60} ч ${spread % 60} мин')),
+                    Expanded(child: StatTile(label: tr('Средний отбой'), value: bedAvg ?? '—', sub: spread == null ? tr('нужно 3+ ночи') : trf('разброс {0} ч {1} мин', [spread ~/ 60, spread % 60]))),
                   ],
                 ),
               ],
@@ -131,26 +132,25 @@ class SleepScreen extends StatelessWidget {
             const SizedBox(height: 10),
             AppCard(
               borderColor: AppColors.under.withValues(alpha: 0.5),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(Icons.schedule, color: AppColors.under, size: 20),
                   SizedBox(width: 10),
                   Expanded(
-                    child: Text('Время отбоя гуляет больше чем на час. Попробуй ложиться в одно время — '
-                        'включи напоминание «Пора спать».', style: Txt.small),
+                    child: Text(tr('Время отбоя гуляет больше чем на час. Попробуй ложиться в одно время — включи напоминание «Пора спать».'), style: Txt.small),
                   ),
                 ],
               ),
             ),
           ],
-          const SectionLabel('Настройки'),
+          SectionLabel(tr('Настройки')),
           AppCard(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Column(
               children: [
                 ListTile(
                   leading: const Icon(Icons.flag_outlined, color: AppColors.muted),
-                  title: const Text('Цель сна', style: Txt.body),
+                  title: Text(tr('Цель сна'), style: Txt.body),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -158,7 +158,7 @@ class SleepScreen extends StatelessWidget {
                         onPressed: () => life.setSleepGoal(life.sleepGoal - 0.5),
                         icon: const Icon(Icons.remove, size: 18),
                       ),
-                      Text('${fmt1(life.sleepGoal)} ч', style: Txt.num(14)),
+                      Text(trf('{0} ч', [fmt1(life.sleepGoal)]), style: Txt.num(14)),
                       IconButton(
                         onPressed: () => life.setSleepGoal(life.sleepGoal + 0.5),
                         icon: const Icon(Icons.add, size: 18),
@@ -168,14 +168,14 @@ class SleepScreen extends StatelessWidget {
                 ),
                 ListTile(
                   leading: const Icon(Icons.notifications_none, color: AppColors.muted),
-                  title: const Text('Напоминание ложиться спать', style: Txt.body),
+                  title: Text(tr('Напоминание ложиться спать'), style: Txt.body),
                   trailing: const Icon(Icons.chevron_right, color: AppColors.muted),
                   onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RemindersScreen())),
                 ),
               ],
             ),
           ),
-          const SectionLabel('Последние ночи'),
+          SectionLabel(tr('Последние ночи')),
           for (var i = 0; i < 14; i++) _row(context, life.sleepFor(dkey(addDays(now, -i))), addDays(now, -i)),
         ],
       ),
@@ -193,15 +193,15 @@ class SleepScreen extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                sameDay(d, DateTime.now()) ? 'Сегодня' : '${weekdaysShort[d.weekday - 1]}, ${fmtDate(d)}',
+                sameDay(d, DateTime.now()) ? tr('Сегодня') : '${weekdaysShort[d.weekday - 1]}, ${fmtDate(d)}',
                 style: Txt.body.copyWith(fontSize: 13),
               ),
             ),
             if (e != null) ...[
               Text('${_time(e.bed)}–${_time(e.wake)}  ', style: Txt.small),
-              Text('${fmt1(e.hours)} ч', style: Txt.num(14)),
+              Text(trf('{0} ч', [fmt1(e.hours)]), style: Txt.num(14)),
             ] else
-              const Text('нет записи', style: Txt.small),
+              Text(tr('нет записи'), style: Txt.small),
           ],
         ),
       ),

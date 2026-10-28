@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
 import 'util.dart';
+import 'i18n/i18n.dart';
 
 class AiFoodItem {
   final String name;
@@ -57,12 +58,12 @@ class GeminiService {
   }) async {
     final key = apiKey.trim();
     if (key.isEmpty) {
-      throw GeminiException('Добавь API-ключ Gemini во вкладке «Профиль».');
+      throw GeminiException(tr('Добавь API-ключ Gemini во вкладке «Профиль».'));
     }
     final first = model.trim().isEmpty ? fallbackModels.first : model.trim();
     final models = <String>[first, ...fallbackModels.where((m) => m != first)];
 
-    String lastError = 'Не удалось получить ответ от ИИ';
+    String lastError = tr('Не удалось получить ответ от ИИ');
     for (final m in models) {
       try {
         return await _call(key, m, image, hint.trim());
@@ -82,34 +83,43 @@ class GeminiService {
       ).timeout(const Duration(seconds: 20));
       if (res.statusCode == 200) return null;
       if (res.statusCode == 400 || res.statusCode == 401 || res.statusCode == 403) {
-        return 'Ключ не принят: ${_errMsg(res.bodyBytes)}';
+        return trf('Ключ не принят: {0}', [_errMsg(res.bodyBytes)]);
       }
-      return 'Ошибка ${res.statusCode}: ${_errMsg(res.bodyBytes)}';
+      return trf('Ошибка {0}: {1}', [res.statusCode, _errMsg(res.bodyBytes)]);
     } on TimeoutException {
-      return 'Сервер не ответил. Проверь интернет.';
+      return tr('Сервер не ответил. Проверь интернет.');
     } catch (e) {
-      return 'Нет соединения: $e';
+      return trf('Нет соединения: {0}', [e]);
     }
   }
 
+  /// Язык, на котором ИИ пишет названия блюд и комментарий.
+  static String get _outLang => switch (appLang) {
+        AppLang.ru => 'Russian',
+        AppLang.uk => 'Ukrainian',
+        AppLang.en => 'English',
+        AppLang.pl => 'Polish',
+      };
+
   static String _prompt(String hint, bool hasImage) {
     final b = StringBuffer()
-      ..writeln('Ты — опытный нутрициолог.')
+      ..writeln('You are an experienced nutritionist.')
       ..writeln(hasImage
-          ? 'Посмотри на фото еды. Определи каждое блюдо или продукт на фото.'
-          : 'Пользователь описал съеденную еду текстом. Определи каждое блюдо или продукт.')
-      ..writeln('Оцени вес порции в граммах и рассчитай калории, белки, жиры и углеводы '
-          'для всей порции (НЕ на 100 г).')
-      ..writeln('Если видна упаковка с этикеткой — используй данные с неё.')
-      ..writeln('Учитывай масло, соусы и способ приготовления.');
+          ? 'Look at the food photo. Identify every dish or product in it.'
+          : 'The user described the food they ate in text. Identify every dish or product.')
+      ..writeln('Estimate the portion weight in grams and calculate calories, protein, fat and carbs '
+          'for the whole portion (NOT per 100 g).')
+      ..writeln('If a package label is visible, use its data.')
+      ..writeln('Take oil, sauces and the cooking method into account.');
     if (hint.isNotEmpty) {
-      b.writeln('Уточнение от пользователя (доверяй ему больше, чем своей оценке): $hint');
+      b.writeln('Clarification from the user (trust it more than your own estimate): $hint');
     }
     b
-      ..writeln('Ответь строго одним JSON-объектом без markdown и пояснений:')
-      ..writeln('{"items":[{"name":"Название на русском","grams":150,"kcal":250,'
-          '"protein":20,"fat":10,"carbs":15}],"note":"короткий комментарий на русском"}')
-      ..writeln('Если еды нет — верни пустой список items и объясни причину в note.');
+      ..writeln('Write dish names and the note in $_outLang.')
+      ..writeln('Answer with exactly one JSON object, no markdown, no explanations:')
+      ..writeln('{"items":[{"name":"Dish name","grams":150,"kcal":250,'
+          '"protein":20,"fat":10,"carbs":15}],"note":"short comment"}')
+      ..writeln('If there is no food, return an empty items list and explain why in note.');
     return b.toString();
   }
 
@@ -150,41 +160,41 @@ class GeminiService {
           )
           .timeout(const Duration(seconds: 90));
     } on TimeoutException {
-      throw GeminiException('ИИ слишком долго отвечает. Попробуй ещё раз.');
+      throw GeminiException(tr('ИИ слишком долго отвечает. Попробуй ещё раз.'));
     } catch (e) {
-      throw GeminiException('Нет соединения с интернетом.');
+      throw GeminiException(tr('Нет соединения с интернетом.'));
     }
 
     final code = res.statusCode;
     if (code == 404 || code >= 500) {
-      throw _TryNextModel('Модель $model недоступна ($code). Попробуй позже.');
+      throw _TryNextModel(trf('Модель {0} недоступна ({1}). Попробуй позже.', [model, code]));
     }
     if (code == 429) {
-      throw GeminiException('Превышен лимит запросов Gemini. Подожди минуту и попробуй снова.');
+      throw GeminiException(tr('Превышен лимит запросов Gemini. Подожди минуту и попробуй снова.'));
     }
     if (code != 200) {
       final msg = _errMsg(res.bodyBytes);
       final low = msg.toLowerCase();
       if (low.contains('api key') || low.contains('api_key')) {
-        throw GeminiException('Неверный API-ключ. Проверь его во вкладке «Профиль».');
+        throw GeminiException(tr('Неверный API-ключ. Проверь его во вкладке «Профиль».'));
       }
       if (code == 400 && low.contains('model')) {
-        throw _TryNextModel('Модель $model не подходит: $msg');
+        throw _TryNextModel(trf('Модель {0} не подходит: {1}', [model, msg]));
       }
-      throw GeminiException('Ошибка запроса ($code): $msg');
+      throw GeminiException(trf('Ошибка запроса ({0}): {1}', [code, msg]));
     }
 
     final Map<String, dynamic> j;
     try {
       j = Map<String, dynamic>.from(jsonDecode(utf8.decode(res.bodyBytes)) as Map);
     } catch (_) {
-      throw GeminiException('Сервер вернул непонятный ответ.');
+      throw GeminiException(tr('Сервер вернул непонятный ответ.'));
     }
     final cands = j['candidates'];
     if (cands is! List || cands.isEmpty) {
       final fb = j['promptFeedback'];
       final reason = fb is Map ? fb['blockReason'] : null;
-      throw GeminiException('ИИ не вернул ответ${reason != null ? ' ($reason)' : ''}.');
+      throw GeminiException(trf('ИИ не вернул ответ{0}.', [reason != null ? ' ($reason)' : '']));
     }
     final content = (cands.first as Map)['content'];
     final rawParts = content is Map ? content['parts'] : null;
@@ -199,14 +209,14 @@ class GeminiService {
   static AiResult _parse(String text) {
     final s = text.indexOf('{');
     final e = text.lastIndexOf('}');
-    if (s < 0 || e <= s) throw GeminiException('Не удалось разобрать ответ ИИ.');
+    if (s < 0 || e <= s) throw GeminiException(tr('Не удалось разобрать ответ ИИ.'));
     final dynamic data;
     try {
       data = jsonDecode(text.substring(s, e + 1));
     } catch (_) {
-      throw GeminiException('Не удалось разобрать ответ ИИ.');
+      throw GeminiException(tr('Не удалось разобрать ответ ИИ.'));
     }
-    if (data is! Map) throw GeminiException('Не удалось разобрать ответ ИИ.');
+    if (data is! Map) throw GeminiException(tr('Не удалось разобрать ответ ИИ.'));
     final raw = data['items'];
     final items = <AiFoodItem>[];
     if (raw is List) {
@@ -232,9 +242,9 @@ class GeminiService {
     try {
       final j = jsonDecode(utf8.decode(bytes));
       if (j is Map && j['error'] is Map) {
-        return (j['error'] as Map)['message']?.toString() ?? 'неизвестная ошибка';
+        return (j['error'] as Map)['message']?.toString() ?? tr('неизвестная ошибка');
       }
     } catch (_) {}
-    return 'неизвестная ошибка';
+    return tr('неизвестная ошибка');
   }
 }

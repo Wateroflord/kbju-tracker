@@ -8,6 +8,7 @@ import '../theme.dart';
 import '../util.dart';
 import '../widgets/common.dart';
 import '../widgets/nav.dart';
+import '../i18n/i18n.dart';
 
 /// Все привычки: статистика, календарь выполнения, включение/выключение, свои привычки.
 class HabitsScreen extends StatefulWidget {
@@ -25,7 +26,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
     final store = StoreScope.of(context);
     return Scaffold(
       backgroundColor: AppColors.bg,
-      appBar: subAppBar('Привычки'),
+      appBar: subAppBar(tr('Привычки')),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.accent,
         foregroundColor: Colors.white,
@@ -33,18 +34,18 @@ class _HabitsScreenState extends State<HabitsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         onPressed: () => _addHabit(context),
         icon: const Icon(Icons.add),
-        label: const Text('Своя привычка', style: TextStyle(fontWeight: FontWeight.w700)),
+        label: Text(tr('Своя привычка'), style: TextStyle(fontWeight: FontWeight.w700)),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
         children: [
           Row(
             children: [
-              Expanded(child: StatTile(label: 'Серия', value: '${store.dayStreak()}', sub: 'дней ≥ 80%', color: AppColors.accent)),
+              Expanded(child: StatTile(label: tr('Серия'), value: '${store.dayStreak()}', sub: tr('дней ≥ 80%'), color: AppColors.accent)),
               const SizedBox(width: 8),
-              Expanded(child: StatTile(label: 'За 7 дней', value: '${store.dailyCompletionPercent(7)}%', sub: 'выполнено')),
+              Expanded(child: StatTile(label: tr('За 7 дней'), value: '${store.dailyCompletionPercent(7)}%', sub: tr('выполнено'))),
               const SizedBox(width: 8),
-              Expanded(child: StatTile(label: 'За 30 дней', value: '${store.dailyCompletionPercent(30)}%', sub: 'выполнено')),
+              Expanded(child: StatTile(label: tr('За 30 дней'), value: '${store.dailyCompletionPercent(30)}%', sub: tr('выполнено'))),
             ],
           ),
           const SizedBox(height: 12),
@@ -61,9 +62,8 @@ class _HabitsScreenState extends State<HabitsScreen> {
             ),
           ],
           const SizedBox(height: 12),
-          const Text(
-            'Привычки с молнией отмечаются сами: шаги, еда, вода, сон, тренировки и взвешивание. '
-            'Остальные отмечай вручную на экране «Сегодня».',
+          Text(
+            tr('Привычки с молнией отмечаются сами: шаги, еда, вода, сон, тренировки и взвешивание. Остальные отмечай вручную на экране «Сегодня».'),
             style: Txt.small,
           ),
         ],
@@ -82,9 +82,9 @@ class _HabitsScreenState extends State<HabitsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(h.title, style: Txt.body.copyWith(fontSize: 13.5, color: h.enabled ? AppColors.text : AppColors.muted)),
+                Text(tr(h.title), style: Txt.body.copyWith(fontSize: 13.5, color: h.enabled ? AppColors.text : AppColors.muted)),
                 if (h.auto != HabitAuto.none)
-                  const Text('автоматически', style: TextStyle(fontSize: 11, color: AppColors.muted)),
+                  Text(tr('автоматически'), style: TextStyle(fontSize: 11, color: AppColors.muted)),
               ],
             ),
           ),
@@ -92,7 +92,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
             IconButton(
               icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.muted),
               onPressed: () async {
-                final ok = await confirm(context, 'Удалить привычку?', h.title, ok: 'Удалить');
+                final ok = await confirm(context, tr('Удалить привычку?'), tr(h.title), ok: tr('Удалить'));
                 if (ok) store.life.deleteHabit(h.id);
               },
             ),
@@ -170,7 +170,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
             },
           ),
           const SizedBox(height: 8),
-          const Text('Чем ярче день, тем больше привычек выполнено', style: Txt.small),
+          Text(tr('Чем ярче день, тем больше привычек выполнено'), style: Txt.small),
         ],
       ),
     );
@@ -186,7 +186,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
         builder: (ctx, setD) => AlertDialog(
           backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: const Text('Новая привычка', style: Txt.h2),
+          title: Text(tr('Новая привычка'), style: Txt.h2),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -197,15 +197,15 @@ class _HabitsScreenState extends State<HabitsScreen> {
                   autofocus: true,
                   textCapitalization: TextCapitalization.sentences,
                   style: Txt.body,
-                  decoration: fieldDeco('Название', hint: 'например: 10 минут растяжки'),
+                  decoration: fieldDeco(tr('Название'), hint: tr('например: 10 минут растяжки')),
                 ),
                 const SizedBox(height: 12),
                 Segmented<HabitPeriod>(
                   values: HabitPeriod.values,
                   label: (p) => switch (p) {
-                    HabitPeriod.daily => 'День',
-                    HabitPeriod.weekly => 'Неделя',
-                    HabitPeriod.monthly => 'Месяц',
+                    HabitPeriod.daily => tr('День'),
+                    HabitPeriod.weekly => tr('Неделя'),
+                    HabitPeriod.monthly => tr('Месяц'),
                   },
                   selected: period,
                   onChanged: (p) => setD(() => period = p),
@@ -237,11 +237,11 @@ class _HabitsScreenState extends State<HabitsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Отмена', style: TextStyle(color: AppColors.muted)),
+              child: Text(tr('Отмена'), style: TextStyle(color: AppColors.muted)),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Добавить', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700)),
+              child: Text(tr('Добавить'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700)),
             ),
           ],
         ),

@@ -7,6 +7,7 @@ import '../util.dart';
 import '../widgets/common.dart';
 import '../widgets/nav.dart';
 import '../widgets/sheets.dart';
+import '../i18n/i18n.dart';
 
 /// Создание и редактирование своей программы тренировок.
 class ProgramEditorScreen extends StatefulWidget {
@@ -28,8 +29,8 @@ class _ProgramEditorScreenState extends State<ProgramEditorScreen> {
   late final TextEditingController name = TextEditingController(text: widget.program?.title ?? '');
   late List<int> weekdays = [...(widget.program?.weekdays ?? const [1, 3, 5])];
   late final List<_DayDraft> days = widget.program == null
-      ? [_DayDraft('D1', 'Тренировка 1', [])]
-      : [for (final d in widget.program!.days) _DayDraft(d.id, d.title, [...d.exercises])];
+      ? [_DayDraft('D1', tr('Тренировка 1'), [])]
+      : [for (final d in widget.program!.days) _DayDraft(d.id, tr(d.title), [...d.exercises])];
 
   @override
   void dispose() {
@@ -44,23 +45,23 @@ class _ProgramEditorScreenState extends State<ProgramEditorScreen> {
     final store = StoreScope.read(context);
     final title = name.text.trim();
     if (title.isEmpty) {
-      showToast(context, 'Введи название программы');
+      showToast(context, tr('Введи название программы'));
       return;
     }
     final valid = days.where((d) => d.exercises.isNotEmpty).toList();
     if (valid.isEmpty) {
-      showToast(context, 'Добавь хотя бы одно упражнение');
+      showToast(context, tr('Добавь хотя бы одно упражнение'));
       return;
     }
     final p = Program(
       id: widget.program?.id ?? store.life.newId('p'),
       title: title,
-      desc: 'Своя программа',
+      desc: tr('Своя программа'),
       days: [
         for (var i = 0; i < valid.length; i++)
           WorkoutDay(
             id: valid[i].id,
-            title: valid[i].title.text.trim().isEmpty ? 'Тренировка ${i + 1}' : valid[i].title.text.trim(),
+            title: valid[i].title.text.trim().isEmpty ? trf('Тренировка {0}', [i + 1]) : valid[i].title.text.trim(),
             exercises: valid[i].exercises,
           ),
       ],
@@ -75,7 +76,7 @@ class _ProgramEditorScreenState extends State<ProgramEditorScreen> {
   Future<void> _delete() async {
     final p = widget.program;
     if (p == null) return;
-    final ok = await confirm(context, 'Удалить программу?', p.title, ok: 'Удалить');
+    final ok = await confirm(context, tr('Удалить программу?'), tr(p.title), ok: tr('Удалить'));
     if (!ok || !mounted) return;
     StoreScope.read(context).life.deleteProgram(p.id);
     Navigator.pop(context);
@@ -100,18 +101,18 @@ class _ProgramEditorScreenState extends State<ProgramEditorScreen> {
         builder: (ctx, setD) => AlertDialog(
           backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: Text(ex.name, style: Txt.h2),
+          title: Text(tr(ex.name), style: Txt.h2),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              NumField(sets, 'Подходов'),
+              NumField(sets, tr('Подходов')),
               const SizedBox(height: 8),
               if (!failure)
                 Row(
                   children: [
-                    Expanded(child: NumField(min, ex.timed ? 'От, сек' : 'Повторов от')),
+                    Expanded(child: NumField(min, ex.timed ? tr('От, сек') : tr('Повторов от'))),
                     const SizedBox(width: 8),
-                    Expanded(child: NumField(max, ex.timed ? 'До, сек' : 'до')),
+                    Expanded(child: NumField(max, ex.timed ? tr('До, сек') : tr('до'))),
                   ],
                 ),
               if (!ex.timed)
@@ -119,7 +120,7 @@ class _ProgramEditorScreenState extends State<ProgramEditorScreen> {
                   contentPadding: EdgeInsets.zero,
                   value: failure,
                   activeColor: AppColors.accent,
-                  title: const Text('До отказа минус 1–2', style: Txt.body),
+                  title: Text(tr('До отказа минус 1–2'), style: Txt.body),
                   onChanged: (v) => setD(() => failure = v ?? false),
                 ),
             ],
@@ -127,11 +128,11 @@ class _ProgramEditorScreenState extends State<ProgramEditorScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Отмена', style: TextStyle(color: AppColors.muted)),
+              child: Text(tr('Отмена'), style: TextStyle(color: AppColors.muted)),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Готово', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700)),
+              child: Text(tr('Готово'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -155,7 +156,7 @@ class _ProgramEditorScreenState extends State<ProgramEditorScreen> {
     final life = StoreScope.of(context).life;
     return Scaffold(
       backgroundColor: AppColors.bg,
-      appBar: subAppBar(widget.program == null ? 'Новая программа' : 'Программа', actions: [
+      appBar: subAppBar(widget.program == null ? tr('Новая программа') : tr('Программа'), actions: [
         if (widget.program != null)
           IconButton(onPressed: _delete, icon: const Icon(Icons.delete_outline, color: AppColors.muted)),
       ]),
@@ -163,7 +164,7 @@ class _ProgramEditorScreenState extends State<ProgramEditorScreen> {
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: PrimaryButton('Сохранить', icon: Icons.check, onPressed: _save),
+          child: PrimaryButton(tr('Сохранить'), icon: Icons.check, onPressed: _save),
         ),
       ),
       body: ListView(
@@ -174,9 +175,9 @@ class _ProgramEditorScreenState extends State<ProgramEditorScreen> {
             controller: name,
             textCapitalization: TextCapitalization.sentences,
             style: Txt.body,
-            decoration: fieldDeco('Название программы', hint: 'например: Верх / Низ'),
+            decoration: fieldDeco(tr('Название программы'), hint: tr('например: Верх / Низ')),
           ),
-          const SectionLabel('Дни недели'),
+          SectionLabel(tr('Дни недели')),
           Row(
             children: [
               for (var d = 1; d <= 7; d++) ...[
@@ -207,15 +208,15 @@ class _ProgramEditorScreenState extends State<ProgramEditorScreen> {
             ],
           ),
           const SizedBox(height: 6),
-          const Text('Дни программы чередуются по кругу: 1, 2, 1, 2…', style: Txt.small),
+          Text(tr('Дни программы чередуются по кругу: 1, 2, 1, 2…'), style: Txt.small),
           for (var i = 0; i < days.length; i++) ...[
-            SectionLabel('День ${i + 1}', trailing: days.length > 1
+            SectionLabel(trf('День {0}', [i + 1]), trailing: days.length > 1
                 ? GestureDetector(
                     onTap: () => setState(() {
                       final d = days.removeAt(i);
                       WidgetsBinding.instance.addPostFrameCallback((_) => d.title.dispose());
                     }),
-                    child: const Text('Удалить день', style: TextStyle(color: AppColors.muted, fontSize: 13)),
+                    child: Text(tr('Удалить день'), style: TextStyle(color: AppColors.muted, fontSize: 13)),
                   )
                 : null),
             AppCard(
@@ -225,14 +226,14 @@ class _ProgramEditorScreenState extends State<ProgramEditorScreen> {
                   TextField(
                     controller: days[i].title,
                     style: Txt.body,
-                    decoration: fieldDeco('Название дня'),
+                    decoration: fieldDeco(tr('Название дня')),
                   ),
                   const SizedBox(height: 8),
                   for (var j = 0; j < days[i].exercises.length; j++)
                     Row(
                       children: [
                         Expanded(
-                          child: Text(life.exerciseById(days[i].exercises[j].exId).name,
+                          child: Text(tr(life.exerciseById(days[i].exercises[j].exId).name),
                               style: Txt.body.copyWith(fontSize: 13.5)),
                         ),
                         TextButton(
@@ -251,15 +252,15 @@ class _ProgramEditorScreenState extends State<ProgramEditorScreen> {
                       ],
                     ),
                   const SizedBox(height: 4),
-                  GhostButton('Добавить упражнение', icon: Icons.add, onPressed: () => _pickExercise(days[i])),
+                  GhostButton(tr('Добавить упражнение'), icon: Icons.add, onPressed: () => _pickExercise(days[i])),
                 ],
               ),
             ),
           ],
           const SizedBox(height: 12),
           if (days.length < 4)
-            GhostButton('Добавить день', icon: Icons.add, onPressed: () => setState(() {
-              days.add(_DayDraft('D${DateTime.now().millisecondsSinceEpoch}', 'Тренировка ${days.length + 1}', []));
+            GhostButton(tr('Добавить день'), icon: Icons.add, onPressed: () => setState(() {
+              days.add(_DayDraft('D${DateTime.now().millisecondsSinceEpoch}', trf('Тренировка {0}', [days.length + 1]), []));
             })),
         ],
       ),
@@ -289,7 +290,7 @@ class _ExercisePickerState extends State<_ExercisePicker> {
         builder: (ctx, setD) => AlertDialog(
           backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: const Text('Новое упражнение', style: Txt.h2),
+          title: Text(tr('Новое упражнение'), style: Txt.h2),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -299,7 +300,7 @@ class _ExercisePickerState extends State<_ExercisePicker> {
                   autofocus: true,
                   textCapitalization: TextCapitalization.sentences,
                   style: Txt.body,
-                  decoration: fieldDeco('Название'),
+                  decoration: fieldDeco(tr('Название')),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -308,20 +309,20 @@ class _ExercisePickerState extends State<_ExercisePicker> {
                   maxLines: 4,
                   textCapitalization: TextCapitalization.sentences,
                   style: Txt.body,
-                  decoration: fieldDeco('Техника (необязательно)'),
+                  decoration: fieldDeco(tr('Техника (необязательно)')),
                 ),
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   value: bodyweight,
                   activeColor: AppColors.accent,
-                  title: const Text('Без веса (свой вес)', style: Txt.body),
+                  title: Text(tr('Без веса (свой вес)'), style: Txt.body),
                   onChanged: (v) => setD(() => bodyweight = v ?? false),
                 ),
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   value: timed,
                   activeColor: AppColors.accent,
-                  title: const Text('На время (секунды)', style: Txt.body),
+                  title: Text(tr('На время (секунды)'), style: Txt.body),
                   onChanged: (v) => setD(() => timed = v ?? false),
                 ),
               ],
@@ -330,11 +331,11 @@ class _ExercisePickerState extends State<_ExercisePicker> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Отмена', style: TextStyle(color: AppColors.muted)),
+              child: Text(tr('Отмена'), style: TextStyle(color: AppColors.muted)),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Создать', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700)),
+              child: Text(tr('Создать'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -356,7 +357,7 @@ class _ExercisePickerState extends State<_ExercisePicker> {
   @override
   Widget build(BuildContext context) {
     final life = StoreScope.of(context).life;
-    final list = life.allExercises.where((e) => q.isEmpty || e.name.toLowerCase().contains(q.toLowerCase())).toList();
+    final list = life.allExercises.where((e) => q.isEmpty || tr(e.name).toLowerCase().contains(q.toLowerCase())).toList();
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.75,
       child: Column(
@@ -366,7 +367,7 @@ class _ExercisePickerState extends State<_ExercisePicker> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: TextField(
               style: Txt.body,
-              decoration: fieldDeco('Поиск упражнения'),
+              decoration: fieldDeco(tr('Поиск упражнения')),
               onChanged: (v) => setState(() => q = v),
             ),
           ),
@@ -376,14 +377,14 @@ class _ExercisePickerState extends State<_ExercisePicker> {
               children: [
                 ListTile(
                   leading: const Icon(Icons.add, color: AppColors.accent),
-                  title: const Text('Создать своё упражнение', style: TextStyle(color: AppColors.accent)),
+                  title: Text(tr('Создать своё упражнение'), style: TextStyle(color: AppColors.accent)),
                   onTap: _create,
                 ),
                 for (final e in list)
                   ListTile(
-                    title: Text(e.name, style: Txt.body),
+                    title: Text(tr(e.name), style: Txt.body),
                     subtitle: Text(
-                      e.timed ? 'на время' : (e.bodyweight ? 'свой вес' : 'с весом'),
+                      e.timed ? tr('на время') : (e.bodyweight ? tr('свой вес') : tr('с весом')),
                       style: Txt.small,
                     ),
                     trailing: e.custom

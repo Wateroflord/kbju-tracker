@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../theme.dart';
+import '../i18n/i18n.dart';
 
 class AppCard extends StatelessWidget {
   final Widget child;
@@ -153,7 +154,7 @@ class MacroBar extends StatelessWidget {
             Text(label, style: Txt.body.copyWith(fontSize: 13)),
             const Spacer(),
             Text('${value.round()}', style: Txt.num(14)),
-            Text(' / $target $unit', style: Txt.small),
+            Text(' / $target ${tr(unit)}', style: Txt.small),
           ],
         ),
         const SizedBox(height: 8),
@@ -523,11 +524,11 @@ Future<bool> confirm(BuildContext context, String title, String text, {String ok
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Отмена', style: TextStyle(color: AppColors.muted)),
+          child: Text(tr('Отмена'), style: TextStyle(color: AppColors.muted)),
         ),
         TextButton(
           onPressed: () => Navigator.pop(ctx, true),
-          child: Text(ok, style: const TextStyle(color: AppColors.over, fontWeight: FontWeight.w700)),
+          child: Text(tr(ok), style: const TextStyle(color: AppColors.over, fontWeight: FontWeight.w700)),
         ),
       ],
     ),

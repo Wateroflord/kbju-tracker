@@ -7,6 +7,7 @@ import '../util.dart';
 import '../widgets/common.dart';
 import '../widgets/nav.dart';
 import 'day_view.dart';
+import '../i18n/i18n.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -47,7 +48,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.bg,
-      appBar: subAppBar('Календарь'),
+      appBar: subAppBar(tr('Календарь')),
       body: SafeArea(
         bottom: false,
         child: ListView(
@@ -108,14 +109,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     },
                   ),
                   const SizedBox(height: 10),
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _Legend(AppColors.good, 'в норме'),
+                      _Legend(AppColors.good, tr('в норме')),
                       SizedBox(width: 14),
-                      _Legend(AppColors.under, 'недобор'),
+                      _Legend(AppColors.under, tr('недобор')),
                       SizedBox(width: 14),
-                      _Legend(AppColors.over, 'перебор'),
+                      _Legend(AppColors.over, tr('перебор')),
                     ],
                   ),
                 ],
@@ -124,20 +125,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: StatTile(label: 'Дней с записями', value: '$logged')),
+                Expanded(child: StatTile(label: tr('Дней с записями'), value: '$logged')),
                 const SizedBox(width: 8),
                 Expanded(
                   child: StatTile(
-                    label: 'В норме',
+                    label: tr('В норме'),
                     value: '$good',
-                    sub: logged > 0 ? '${(good * 100 / logged).round()}% дней' : null,
+                    sub: logged > 0 ? trf('{0}% дней', [(good * 100 / logged).round()]) : null,
                     color: AppColors.good,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: StatTile(
-                    label: 'Сред. ккал',
+                    label: tr('Сред. ккал'),
                     value: logged > 0 ? fmtInt(sum / logged) : '—',
                   ),
                 ),
@@ -175,9 +176,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
               if (status != DayStatus.none)
                 Pill(
                   switch (status) {
-                    DayStatus.good => 'в норме',
-                    DayStatus.under => 'недобор',
-                    DayStatus.over => 'перебор',
+                    DayStatus.good => tr('в норме'),
+                    DayStatus.under => tr('недобор'),
+                    DayStatus.over => tr('перебор'),
                     DayStatus.none => '',
                   },
                   color: AppColors.status(status),
@@ -186,13 +187,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
           const SizedBox(height: 14),
           if (t.count == 0)
-            const Text('Нет записей о еде за этот день.', style: Txt.small)
+            Text(tr('Нет записей о еде за этот день.'), style: Txt.small)
           else ...[
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(fmtInt(t.kcal), style: Txt.num(26)),
-                Text('  / ${fmtInt(tg.kcal)} ккал', style: Txt.small),
+                Text(trf('  / {0} ккал', [fmtInt(tg.kcal)]), style: Txt.small),
               ],
             ),
             const SizedBox(height: 10),
@@ -200,9 +201,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
             const SizedBox(height: 14),
             Row(
               children: [
-                _mini('Белки', t.protein, tg.protein, AppColors.protein),
-                _mini('Жиры', t.fat, tg.fat, AppColors.fat),
-                _mini('Углеводы', t.carbs, tg.carbs, AppColors.carbs),
+                _mini(tr('Белки'), t.protein, tg.protein, AppColors.protein),
+                _mini(tr('Жиры'), t.fat, tg.fat, AppColors.fat),
+                _mini(tr('Углеводы'), t.carbs, tg.carbs, AppColors.carbs),
               ],
             ),
           ],
@@ -212,15 +213,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
               spacing: 8,
               runSpacing: 6,
               children: [
-                if (water > 0) Pill('Вода ${fmtInt(water)} мл', color: AppColors.water, icon: Icons.water_drop_outlined),
-                if (w != null) Pill('Вес ${fmt1(w)} кг', color: AppColors.accent2, icon: Icons.monitor_weight_outlined),
+                if (water > 0) Pill(trf('Вода {0} мл', [fmtInt(water)]), color: AppColors.water, icon: Icons.water_drop_outlined),
+                if (w != null) Pill(trf('Вес {0} кг', [fmt1(w)]), color: AppColors.accent2, icon: Icons.monitor_weight_outlined),
               ],
             ),
           ],
           if (!isFuture) ...[
             const SizedBox(height: 16),
             PrimaryButton(
-              t.count == 0 ? 'Добавить еду за этот день' : 'Открыть день',
+              t.count == 0 ? tr('Добавить еду за этот день') : tr('Открыть день'),
               icon: t.count == 0 ? Icons.add : Icons.open_in_new,
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => DayScreen(date: selected)),
@@ -240,7 +241,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             const SizedBox(height: 4),
             Text.rich(TextSpan(children: [
               TextSpan(text: '${v.round()}', style: Txt.num(15)),
-              TextSpan(text: ' / $target г', style: Txt.small),
+              TextSpan(text: trf(' / {0} г', [target]), style: Txt.small),
             ])),
           ],
         ),

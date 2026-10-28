@@ -14,6 +14,7 @@ import '../life/steps_service.dart';
 import 'habits_screen.dart';
 import 'sleep_screen.dart';
 import 'steps_screen.dart';
+import '../i18n/i18n.dart';
 
 /// Главный экран: кольца дня, тренировка, привычки, совет дня.
 class TodayScreen extends StatelessWidget {
@@ -44,7 +45,7 @@ class TodayScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 32),
           children: [
-            TabHeader('Сегодня', subtitle: '${weekdaysFull[now.weekday - 1]}, ${fmtDate(now)}'),
+            TabHeader(tr('Сегодня'), subtitle: '${weekdaysFull[now.weekday - 1]}, ${fmtDate(now)}'),
             const SizedBox(height: 14),
             AppCard(
               padding: const EdgeInsets.fromLTRB(6, 10, 6, 8),
@@ -54,7 +55,7 @@ class TodayScreen extends StatelessWidget {
                     child: MiniRing(
                       ratio: t.kcal > 0 ? tot.kcal / t.kcal : 0,
                       value: fmtInt(tot.kcal),
-                      label: 'из ${fmtInt(t.kcal)} ккал',
+                      label: trf('из {0} ккал', [fmtInt(t.kcal)]),
                       color: AppColors.accent,
                       onTap: () => onOpenTab(1),
                     ),
@@ -63,7 +64,7 @@ class TodayScreen extends StatelessWidget {
                     child: MiniRing(
                       ratio: steps / life.stepGoal,
                       value: fmtInt(steps),
-                      label: 'шагов',
+                      label: tr('шагов'),
                       color: AppColors.good,
                       onTap: onOpenSteps ??
                           () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const StepsScreen())),
@@ -73,7 +74,7 @@ class TodayScreen extends StatelessWidget {
                     child: MiniRing(
                       ratio: t.waterMl > 0 ? water / t.waterMl : 0,
                       value: fmt1(water / 1000),
-                      label: 'л воды',
+                      label: tr('л воды'),
                       color: AppColors.water,
                       onTap: () => showWaterSheet(context, now),
                     ),
@@ -82,7 +83,7 @@ class TodayScreen extends StatelessWidget {
                     child: MiniRing(
                       ratio: sleep == null ? 0 : sleep.hours / life.sleepGoal,
                       value: sleep == null ? '—' : fmt1(sleep.hours),
-                      label: 'ч сна',
+                      label: tr('ч сна'),
                       color: AppColors.carbs,
                       onTap: onOpenSleep ??
                           () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SleepScreen())),
@@ -98,19 +99,19 @@ class TodayScreen extends StatelessWidget {
             const SizedBox(height: 12),
             _WorkoutCard(onOpen: () => onOpenTab(2)),
             SectionLabel(
-              'Привычки на сегодня',
+              tr('Привычки на сегодня'),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (streak > 0) ...[
-                    Pill('$streak дн. подряд', icon: Icons.local_fire_department_outlined),
+                    Pill(trf('{0} дн. подряд', [streak]), icon: Icons.local_fire_department_outlined),
                     const SizedBox(width: 8),
                   ],
                   GestureDetector(
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const HabitsScreen()),
                     ),
-                    child: const Text('Все',
+                    child: Text(tr('Все'),
                         style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600, fontSize: 13)),
                   ),
                 ],
@@ -121,7 +122,7 @@ class TodayScreen extends StatelessWidget {
             _PeriodSummary(period: HabitPeriod.weekly, date: now),
             const SizedBox(height: 8),
             _PeriodSummary(period: HabitPeriod.monthly, date: now),
-            const SectionLabel('Совет дня'),
+            SectionLabel(tr('Совет дня')),
             AppCard(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,24 +160,24 @@ class _WorkoutCard extends StatelessWidget {
     IconData icon;
     Color color;
     if (active != null) {
-      title = '${active.title} идёт';
-      sub = 'Нажми, чтобы продолжить';
+      title = trf('{0} идёт', [tr(active.title)]);
+      sub = tr('Нажми, чтобы продолжить');
       icon = Icons.timer_outlined;
       color = AppColors.accent;
     } else if (doneToday) {
       final s = todays.lastWhere((s) => s.finished);
-      title = '${s.title} — сделано';
-      sub = '${s.doneSets} подходов${s.volume > 0 ? ' · ${fmtInt(s.volume)} кг объём' : ''}';
+      title = trf('{0} — сделано', [tr(s.title)]);
+      sub = trf('{0} подходов{1}', [s.doneSets, s.volume > 0 ? trf(' · {0} кг объём', [fmtInt(s.volume)]) : '']);
       icon = Icons.check_circle_outline;
       color = AppColors.good;
     } else if (trainingDay) {
-      title = 'Сегодня: ${next.title}';
-      sub = '${life.activeProgram.title} · ${next.exercises.length} упражнений';
+      title = trf('Сегодня: {0}', [tr(next.title)]);
+      sub = trf('{0} · {1} упражнений', [tr(life.activeProgram.title), next.exercises.length]);
       icon = Icons.fitness_center;
       color = AppColors.accent;
     } else {
-      title = 'День отдыха';
-      sub = 'Следующая: ${next.title} · ${life.activeProgram.title}';
+      title = tr('День отдыха');
+      sub = trf('Следующая: {0} · {1}', [tr(next.title), tr(life.activeProgram.title)]);
       icon = Icons.self_improvement;
       color = AppColors.muted;
     }
@@ -223,7 +224,7 @@ class _HabitsCard extends StatelessWidget {
     final store = StoreScope.of(context);
     final list = store.life.habitsOf(period);
     if (list.isEmpty) {
-      return const AppCard(child: Text('Нет включённых привычек. Включи их в разделе «Все».', style: Txt.small));
+      return AppCard(child: Text(tr('Нет включённых привычек. Включи их в разделе «Все».'), style: Txt.small));
     }
     return AppCard(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -258,7 +259,7 @@ class _PeriodSummaryState extends State<_PeriodSummary> {
     final list = store.life.habitsOf(widget.period);
     if (list.isEmpty) return const SizedBox.shrink();
     final done = list.where((h) => store.habitDoneOn(h, widget.date)).length;
-    final title = widget.period == HabitPeriod.weekly ? 'На этой неделе' : 'В этом месяце';
+    final title = widget.period == HabitPeriod.weekly ? tr('На этой неделе') : tr('В этом месяце');
     return AppCard(
       padding: EdgeInsets.zero,
       child: Column(
@@ -309,18 +310,16 @@ class _StepsPromptState extends State<_StepsPrompt> {
   Future<void> _enable() async {
     final ok = await confirm(
       context,
-      'Автоподсчёт шагов',
-      'Шагомер будет считать шаги сам, когда ты ходишь с телефоном, даже если приложение закрыто. '
-          'Android попросит доступ к «Физической активности» и к уведомлениям — в шторке будет '
-          'тихое уведомление с шагами за сегодня.',
-      ok: 'Включить',
+      tr('Автоподсчёт шагов'),
+      tr('Шагомер будет считать шаги сам, когда ты ходишь с телефоном, даже если приложение закрыто. Android попросит доступ к «Физической активности» и к уведомлениям — в шторке будет тихое уведомление с шагами за сегодня.'),
+      ok: tr('Включить'),
     );
     if (!ok || !mounted) return;
     setState(() => busy = true);
     final err = await StepsService.instance.connectSensor();
     if (!mounted) return;
     setState(() => busy = false);
-    showToast(context, err ?? 'Шагомер включён — просто ходи с телефоном');
+    showToast(context, err ?? tr('Шагомер включён — просто ходи с телефоном'));
   }
 
   @override
@@ -331,28 +330,28 @@ class _StepsPromptState extends State<_StepsPrompt> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(Icons.directions_walk, color: AppColors.good, size: 20),
               SizedBox(width: 10),
               Expanded(
-                child: Text('Включить автоподсчёт шагов?', style: Txt.section),
+                child: Text(tr('Включить автоподсчёт шагов?'), style: Txt.section),
               ),
             ],
           ),
           const SizedBox(height: 6),
-          const Text('Шаги будут считаться сами, пока телефон с тобой — вводить вручную не нужно.', style: Txt.small),
+          Text(tr('Шаги будут считаться сами, пока телефон с тобой — вводить вручную не нужно.'), style: Txt.small),
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: PrimaryButton('Включить', icon: Icons.check, loading: busy, onPressed: _enable)),
+              Expanded(child: PrimaryButton(tr('Включить'), icon: Icons.check, loading: busy, onPressed: _enable)),
               const SizedBox(width: 8),
               TextButton(
                 onPressed: () {
                   life.stepsPromptHidden = true;
                   life.touch();
                 },
-                child: const Text('Не сейчас', style: TextStyle(color: AppColors.muted)),
+                child: Text(tr('Не сейчас'), style: TextStyle(color: AppColors.muted)),
               ),
             ],
           ),

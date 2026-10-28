@@ -11,6 +11,7 @@ import '../widgets/nav.dart';
 import '../widgets/sheets.dart';
 import 'program_editor.dart';
 import 'workout_screen.dart';
+import '../i18n/i18n.dart';
 
 class TrainingScreen extends StatelessWidget {
   const TrainingScreen({super.key});
@@ -46,7 +47,7 @@ class TrainingScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 32),
           children: [
-            TabHeader('Тренировки', subtitle: '${life.sessionsLast7()} за последние 7 дней'),
+            TabHeader(tr('Тренировки'), subtitle: trf('{0} за последние 7 дней', [life.sessionsLast7()])),
             const SizedBox(height: 14),
             if (active != null) ...[
               AppCard(
@@ -60,8 +61,8 @@ class TrainingScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('${active.title} идёт', style: Txt.body.copyWith(fontWeight: FontWeight.w600)),
-                          Text('${active.doneSets} подходов сделано · нажми, чтобы продолжить', style: Txt.small),
+                          Text(trf('{0} идёт', [tr(active.title)]), style: Txt.body.copyWith(fontWeight: FontWeight.w600)),
+                          Text(trf('{0} подходов сделано · нажми, чтобы продолжить', [active.doneSets]), style: Txt.small),
                         ],
                       ),
                     ),
@@ -72,16 +73,16 @@ class TrainingScreen extends StatelessWidget {
               const SizedBox(height: 12),
             ],
             _NextCard(program: program, next: next),
-            SectionLabel('Программа', trailing: GestureDetector(
+            SectionLabel(tr('Программа'), trailing: GestureDetector(
               onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProgramEditorScreen())),
-              child: const Text('+ Своя программа',
+              child: Text(tr('+ Своя программа'),
                   style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600, fontSize: 13)),
             )),
             for (final p in life.programs)
               OptionTile(
                 icon: p.custom ? Icons.edit_note : Icons.fitness_center,
-                title: p.title,
-                desc: '${p.days.map((d) => d.title).join(' / ')} · ${_weekdaysText(life.weekdaysOf(p))}',
+                title: tr(p.title),
+                desc: '${p.days.map((d) => tr(d.title)).join(' / ')} · ${_weekdaysText(life.weekdaysOf(p))}',
                 selected: p.id == life.activeProgramId,
                 onTap: () => life.setActiveProgram(p.id),
               ),
@@ -94,17 +95,17 @@ class TrainingScreen extends StatelessWidget {
                     MaterialPageRoute(builder: (_) => ProgramEditorScreen(program: program)),
                   ),
                   icon: const Icon(Icons.edit_outlined, size: 16, color: AppColors.accent),
-                  label: const Text('Изменить программу', style: TextStyle(color: AppColors.accent)),
+                  label: Text(tr('Изменить программу'), style: TextStyle(color: AppColors.accent)),
                 ),
               ),
-            SectionLabel('Рекорды', trailing: GestureDetector(
+            SectionLabel(tr('Рекорды'), trailing: GestureDetector(
               onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RecordsScreen())),
-              child: const Text('Все', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600, fontSize: 13)),
+              child: Text(tr('Все'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600, fontSize: 13)),
             )),
             _RecordsPreview(),
-            const SectionLabel('История'),
+            SectionLabel(tr('История')),
             if (finished.isEmpty)
-              const AppCard(child: Text('Здесь появятся завершённые тренировки.', style: Txt.small))
+              AppCard(child: Text(tr('Здесь появятся завершённые тренировки.'), style: Txt.small))
             else
               for (final s in finished.take(15))
                 Padding(
@@ -120,11 +121,10 @@ class TrainingScreen extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(s.title, style: Txt.body.copyWith(fontWeight: FontWeight.w600)),
+                              Text(tr(s.title), style: Txt.body.copyWith(fontWeight: FontWeight.w600)),
                               const SizedBox(height: 2),
                               Text(
-                                '${fmtDate(parseKey(s.date), year: true)} · ${s.doneSets} подходов'
-                                '${s.volume > 0 ? ' · ${fmtInt(s.volume)} кг' : ''}',
+                                trf('{0} · {1} подходов{2}', [fmtDate(parseKey(s.date), year: true), s.doneSets, s.volume > 0 ? trf(' · {0} кг', [fmtInt(s.volume)]) : '']),
                                 style: Txt.small,
                               ),
                             ],
@@ -143,7 +143,7 @@ class TrainingScreen extends StatelessWidget {
 }
 
 String _weekdaysText(List<int> days) =>
-    days.isEmpty ? 'дни не выбраны' : days.map((d) => weekdaysShort[d - 1]).join(', ');
+    days.isEmpty ? tr('дни не выбраны') : days.map((d) => weekdaysShort[d - 1]).join(', ');
 
 class _NextCard extends StatelessWidget {
   final Program program;
@@ -165,21 +165,21 @@ class _NextCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(isDay ? 'Сегодня по плану' : 'Следующая тренировка', style: Txt.label),
+                    Text(isDay ? tr('Сегодня по плану') : tr('Следующая тренировка'), style: Txt.label),
                     const SizedBox(height: 4),
-                    Text(next.title, style: Txt.h2),
+                    Text(tr(next.title), style: Txt.h2),
                   ],
                 ),
               ),
               if (program.days.length > 1)
                 PopupMenuButton<WorkoutDay>(
-                  tooltip: 'Другой день',
+                  tooltip: tr('Другой день'),
                   color: AppColors.surface2,
                   icon: const Icon(Icons.swap_horiz, color: AppColors.muted),
                   onSelected: (d) => TrainingScreen.start(context, program, d),
                   itemBuilder: (_) => [
                     for (final d in program.days)
-                      PopupMenuItem(value: d, child: Text('Начать: ${d.title}', style: Txt.body)),
+                      PopupMenuItem(value: d, child: Text(trf('Начать: {0}', [tr(d.title)]), style: Txt.body)),
                   ],
                 ),
             ],
@@ -192,9 +192,9 @@ class _NextCard extends StatelessWidget {
                 children: [
                   const Dot(AppColors.accent, size: 5),
                   const SizedBox(width: 10),
-                  Expanded(child: Text(life.exerciseById(pe.exId).name, style: Txt.body.copyWith(fontSize: 13.5))),
+                  Expanded(child: Text(tr(life.exerciseById(pe.exId).name), style: Txt.body.copyWith(fontSize: 13.5))),
                   Text(
-                    '${pe.scheme}${life.exerciseById(pe.exId).timed ? ' с' : ''}',
+                    '${pe.scheme}${life.exerciseById(pe.exId).timed ? tr(' с') : ''}',
                     style: Txt.num(12.5, color: AppColors.accent2, weight: FontWeight.w500),
                   ),
                 ],
@@ -202,7 +202,7 @@ class _NextCard extends StatelessWidget {
             ),
           const SizedBox(height: 12),
           PrimaryButton(
-            life.activeSession != null ? 'Продолжить тренировку' : 'Начать тренировку',
+            life.activeSession != null ? tr('Продолжить тренировку') : tr('Начать тренировку'),
             icon: Icons.play_arrow,
             onPressed: next.exercises.isEmpty ? null : () => TrainingScreen.start(context, program, next),
           ),
@@ -211,10 +211,10 @@ class _NextCard extends StatelessWidget {
             children: [
               const Icon(Icons.timer_outlined, size: 16, color: AppColors.muted),
               const SizedBox(width: 6),
-              Expanded(child: Text('Отдых между подходами: ${life.restSeconds} с', style: Txt.small)),
+              Expanded(child: Text(trf('Отдых между подходами: {0} с', [life.restSeconds]), style: Txt.small)),
               TextButton(
                 onPressed: () => _pickRest(context),
-                child: const Text('Изменить', style: TextStyle(color: AppColors.accent, fontSize: 13)),
+                child: Text(tr('Изменить'), style: TextStyle(color: AppColors.accent, fontSize: 13)),
               ),
             ],
           ),
@@ -233,7 +233,7 @@ class _NextCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SheetHandle(),
-            const Text('Отдых между подходами', style: Txt.h2),
+            Text(tr('Отдых между подходами'), style: Txt.h2),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
@@ -241,7 +241,7 @@ class _NextCard extends StatelessWidget {
               children: [
                 for (final v in const [60, 90, 120, 150, 180, 240])
                   ChoiceChip(
-                    label: Text('$v с'),
+                    label: Text(trf('{0} с', [v])),
                     selected: life.restSeconds == v,
                     selectedColor: AppColors.accent,
                     backgroundColor: AppColors.surface2,
@@ -310,7 +310,7 @@ class _RecordsPreview extends StatelessWidget {
     final life = StoreScope.of(context).life;
     final ids = life.trainedExerciseIds();
     if (ids.isEmpty) {
-      return const AppCard(child: Text('Рекорды появятся после первой тренировки.', style: Txt.small));
+      return AppCard(child: Text(tr('Рекорды появятся после первой тренировки.'), style: Txt.small));
     }
     return AppCard(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -336,8 +336,8 @@ class _RecordRow extends StatelessWidget {
     final value = r == null
         ? '—'
         : useW
-            ? '${fmt1(r.value)} кг × ${r.reps}'
-            : '${r.value.round()} ${ex.timed ? 'с' : 'повт.'}';
+            ? trf('{0} кг × {1}', [fmt1(r.value), r.reps])
+            : '${r.value.round()} ${ex.timed ? tr('с') : tr('повт.')}';
     return InkWell(
       onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ExerciseStatsScreen(exId: exId))),
       child: Padding(
@@ -346,7 +346,7 @@ class _RecordRow extends StatelessWidget {
           children: [
             const Icon(Icons.emoji_events_outlined, size: 18, color: AppColors.accent),
             const SizedBox(width: 10),
-            Expanded(child: Text(ex.name, style: Txt.body.copyWith(fontSize: 13.5))),
+            Expanded(child: Text(tr(ex.name), style: Txt.body.copyWith(fontSize: 13.5))),
             Text(value, style: Txt.num(13.5)),
             const SizedBox(width: 4),
             const Icon(Icons.chevron_right, size: 18, color: AppColors.muted),
@@ -366,12 +366,12 @@ class RecordsScreen extends StatelessWidget {
     final ids = life.trainedExerciseIds();
     return Scaffold(
       backgroundColor: AppColors.bg,
-      appBar: subAppBar('Рекорды'),
+      appBar: subAppBar(tr('Рекорды')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
           if (ids.isEmpty)
-            const AppCard(child: Text('Пока нет завершённых тренировок.', style: Txt.small))
+            AppCard(child: Text(tr('Пока нет завершённых тренировок.'), style: Txt.small))
           else
             AppCard(
               padding: const EdgeInsets.symmetric(vertical: 4),
@@ -394,10 +394,10 @@ class ExerciseStatsScreen extends StatelessWidget {
     final ex = life.exerciseById(exId);
     final hist = life.historyOf(exId);
     final useW = !ex.bodyweight && !ex.timed;
-    final unit = useW ? 'кг' : (ex.timed ? 'с' : 'повт.');
+    final unit = useW ? tr('кг') : (ex.timed ? tr('с') : tr('повт.'));
     return Scaffold(
       backgroundColor: AppColors.bg,
-      appBar: subAppBar(ex.name),
+      appBar: subAppBar(tr(ex.name)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
@@ -405,7 +405,7 @@ class ExerciseStatsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(useW ? 'Рабочий вес' : (ex.timed ? 'Лучшее время' : 'Лучшие повторы'), style: Txt.section),
+                Text(useW ? tr('Рабочий вес') : (ex.timed ? tr('Лучшее время') : tr('Лучшие повторы')), style: Txt.section),
                 const SizedBox(height: 12),
                 if (hist.length >= 2)
                   LineChart(
@@ -413,11 +413,11 @@ class ExerciseStatsScreen extends StatelessWidget {
                     color: AppColors.accent,
                   )
                 else
-                  const Text('График появится после двух тренировок с этим упражнением.', style: Txt.small),
+                  Text(tr('График появится после двух тренировок с этим упражнением.'), style: Txt.small),
               ],
             ),
           ),
-          const SectionLabel('По датам'),
+          SectionLabel(tr('По датам')),
           AppCard(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Column(
@@ -435,9 +435,9 @@ class ExerciseStatsScreen extends StatelessWidget {
               ],
             ),
           ),
-          if (ex.technique.isNotEmpty) ...[
-            const SectionLabel('Техника'),
-            AppCard(child: Text(ex.technique, style: Txt.body)),
+          if (tr(ex.technique).isNotEmpty) ...[
+            SectionLabel(tr('Техника')),
+            AppCard(child: Text(tr(ex.technique), style: Txt.body)),
           ],
         ],
       ),
@@ -459,16 +459,16 @@ class SessionDetailScreen extends StatelessWidget {
     }
     final session = s;
     if (session == null) {
-      return Scaffold(backgroundColor: AppColors.bg, appBar: subAppBar('Тренировка'));
+      return Scaffold(backgroundColor: AppColors.bg, appBar: subAppBar(tr('Тренировка')));
     }
     final mins = session.finished ? ((session.finishedAt - session.startedAt) / 60000).round() : 0;
     return Scaffold(
       backgroundColor: AppColors.bg,
-      appBar: subAppBar(session.title, actions: [
+      appBar: subAppBar(tr(session.title), actions: [
         IconButton(
           icon: const Icon(Icons.delete_outline, color: AppColors.muted),
           onPressed: () async {
-            final ok = await confirm(context, 'Удалить тренировку?', session.title, ok: 'Удалить');
+            final ok = await confirm(context, tr('Удалить тренировку?'), tr(session.title), ok: tr('Удалить'));
             if (!ok || !context.mounted) return;
             life.deleteSession(session.id);
             Navigator.pop(context);
@@ -480,11 +480,11 @@ class SessionDetailScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: StatTile(label: 'Дата', value: fmtShort(parseKey(session.date)))),
+              Expanded(child: StatTile(label: tr('Дата'), value: fmtShort(parseKey(session.date)))),
               const SizedBox(width: 8),
-              Expanded(child: StatTile(label: 'Время', value: '$mins мин')),
+              Expanded(child: StatTile(label: tr('Время'), value: trf('{0} мин', [mins]))),
               const SizedBox(width: 8),
-              Expanded(child: StatTile(label: 'Объём', value: fmtInt(session.volume), sub: 'кг')),
+              Expanded(child: StatTile(label: tr('Объём'), value: fmtInt(session.volume), sub: tr('кг'))),
             ],
           ),
           const SizedBox(height: 12),
@@ -495,7 +495,7 @@ class SessionDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(life.exerciseById(e.exId).name, style: Txt.body.copyWith(fontWeight: FontWeight.w600)),
+                    Text(tr(life.exerciseById(e.exId).name), style: Txt.body.copyWith(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 6),
                     Wrap(
                       spacing: 6,

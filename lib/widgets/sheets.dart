@@ -6,6 +6,7 @@ import '../theme.dart';
 import '../util.dart';
 import 'common.dart';
 import 'item_fields.dart';
+import '../i18n/i18n.dart';
 
 Future<T?> showAppSheet<T>(BuildContext context, Widget child) {
   return showModalBottomSheet<T>(
@@ -47,9 +48,9 @@ Future<void> showGoalSheet(BuildContext context) {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SheetHandle(),
-          const Text('Программа', style: Txt.h2),
+          Text(tr('Программа'), style: Txt.h2),
           const SizedBox(height: 4),
-          const Text('Нормы КБЖУ пересчитаются автоматически. Смена сохранится в истории.', style: Txt.small),
+          Text(tr('Нормы КБЖУ пересчитаются автоматически. Смена сохранится в истории.'), style: Txt.small),
           const SizedBox(height: 14),
           for (final g in [Goal.bulk, Goal.cut, Goal.maintain])
             OptionTile(
@@ -60,7 +61,7 @@ Future<void> showGoalSheet(BuildContext context) {
               onTap: () {
                 store.setGoal(g);
                 Navigator.pop(ctx);
-                showToast(context, 'Программа: ${g.title}');
+                showToast(context, trf('Программа: {0}', [g.title]));
               },
             ),
         ],
@@ -101,7 +102,7 @@ class _EntryEditorState extends State<EntryEditor> {
 
   void _save() {
     if (!f.isValid) {
-      showToast(context, 'Введи название');
+      showToast(context, tr('Введи название'));
       return;
     }
     StoreScope.read(context).updateEntry(widget.entry.copyWith(
@@ -117,7 +118,7 @@ class _EntryEditorState extends State<EntryEditor> {
   }
 
   Future<void> _delete() async {
-    final ok = await confirm(context, 'Удалить запись?', widget.entry.name, ok: 'Удалить');
+    final ok = await confirm(context, tr('Удалить запись?'), widget.entry.name, ok: tr('Удалить'));
     if (!ok || !mounted) return;
     StoreScope.read(context).deleteEntry(widget.entry.id);
     Navigator.pop(context);
@@ -135,7 +136,7 @@ class _EntryEditorState extends State<EntryEditor> {
           const SheetHandle(),
           Row(
             children: [
-              const Expanded(child: Text('Запись', style: Txt.h2)),
+              Expanded(child: Text(tr('Запись'), style: Txt.h2)),
               Text(fmtDate(parseKey(widget.entry.date)), style: Txt.small),
             ],
           ),
@@ -158,9 +159,9 @@ class _EntryEditorState extends State<EntryEditor> {
           const SizedBox(height: 18),
           Row(
             children: [
-              GhostButton('Удалить', icon: Icons.delete_outline, color: AppColors.over, onPressed: _delete),
+              GhostButton(tr('Удалить'), icon: Icons.delete_outline, color: AppColors.over, onPressed: _delete),
               const SizedBox(width: 10),
-              Expanded(child: PrimaryButton('Сохранить', icon: Icons.check, onPressed: _save)),
+              Expanded(child: PrimaryButton(tr('Сохранить'), icon: Icons.check, onPressed: _save)),
             ],
           ),
         ],

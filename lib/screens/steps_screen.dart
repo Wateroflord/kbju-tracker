@@ -11,6 +11,7 @@ import '../widgets/charts.dart';
 import '../widgets/common.dart';
 import '../widgets/nav.dart';
 import '../widgets/quick_inputs.dart';
+import '../i18n/i18n.dart';
 
 class StepsScreen extends StatefulWidget {
   const StepsScreen({super.key});
@@ -41,17 +42,15 @@ class _StepsScreenState extends State<StepsScreen> {
     final err = await f();
     if (!mounted) return;
     setState(() => busy = false);
-    showToast(context, err ?? 'Подключено');
+    showToast(context, err ?? tr('Подключено'));
   }
 
   Future<void> _askSensor() async {
     final ok = await confirm(
       context,
-      'Разрешение на активность',
-      'Шагомер будет считать шаги в фоне, даже когда приложение закрыто. Android попросит доступ '
-          'к «Физической активности» и к уведомлениям — в шторке будет тихое уведомление с шагами за сегодня. '
-          'Данные остаются только на телефоне.',
-      ok: 'Продолжить',
+      tr('Разрешение на активность'),
+      tr('Шагомер будет считать шаги в фоне, даже когда приложение закрыто. Android попросит доступ к «Физической активности» и к уведомлениям — в шторке будет тихое уведомление с шагами за сегодня. Данные остаются только на телефоне.'),
+      ok: tr('Продолжить'),
     );
     if (ok) await _connect(StepsService.instance.connectSensor);
   }
@@ -63,23 +62,23 @@ class _StepsScreenState extends State<StepsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text('Цель по шагам', style: Txt.h2),
+        title: Text(tr('Цель по шагам'), style: Txt.h2),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            NumField(ctrl, 'Шагов в день', suffix: 'шагов'),
+            NumField(ctrl, tr('Шагов в день'), suffix: tr('шагов')),
             const SizedBox(height: 8),
-            const Text('8 км ≈ 10 500 шагов', style: Txt.small),
+            Text(tr('8 км ≈ 10 500 шагов'), style: Txt.small),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Отмена', style: TextStyle(color: AppColors.muted)),
+            child: Text(tr('Отмена'), style: TextStyle(color: AppColors.muted)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Сохранить', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700)),
+            child: Text(tr('Сохранить'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -114,12 +113,12 @@ class _StepsScreenState extends State<StepsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.bg,
-      appBar: subAppBar('Шаги', actions: [
+      appBar: subAppBar(tr('Шаги'), actions: [
         if (life.stepSource == 'health')
           IconButton(
             onPressed: busy ? null : _refresh,
             icon: const Icon(Icons.refresh),
-            tooltip: 'Обновить из Health Connect',
+            tooltip: tr('Обновить из Health Connect'),
           ),
       ]),
       body: ListView(
@@ -138,7 +137,7 @@ class _StepsScreenState extends State<StepsScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(fmtInt(steps), style: Txt.num(24)),
-                          Text('из ${fmtInt(goal)}', style: Txt.small),
+                          Text(trf('из {0}', [fmtInt(goal)]), style: Txt.small),
                         ],
                       ),
                     ),
@@ -149,16 +148,16 @@ class _StepsScreenState extends State<StepsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('ДИСТАНЦИЯ', style: Txt.label),
+                      Text(tr('ДИСТАНЦИЯ'), style: Txt.label),
                       const SizedBox(height: 3),
-                      Text('${fmt1(km)} км', style: Txt.num(20)),
+                      Text(trf('{0} км', [fmt1(km)]), style: Txt.num(20)),
                       const SizedBox(height: 10),
-                      const Text('ВРЕМЯ ХОДЬБЫ', style: Txt.label),
+                      Text(tr('ВРЕМЯ ХОДЬБЫ'), style: Txt.label),
                       const SizedBox(height: 3),
-                      Text('$mins мин', style: Txt.num(20)),
+                      Text(trf('{0} мин', [mins]), style: Txt.num(20)),
                       const SizedBox(height: 10),
                       Text(
-                        steps >= goal ? 'Цель выполнена' : 'Осталось ${fmtInt(math.max(0, goal - steps))}',
+                        steps >= goal ? tr('Цель выполнена') : trf('Осталось {0}', [fmtInt(math.max(0, goal - steps))]),
                         style: Txt.small.copyWith(color: steps >= goal ? AppColors.good : AppColors.accent2),
                       ),
                     ],
@@ -171,15 +170,15 @@ class _StepsScreenState extends State<StepsScreen> {
           Row(
             children: [
               Expanded(
-                child: GhostButton('Ввести вручную', icon: Icons.edit_outlined, onPressed: () => showStepsInput(context, now)),
+                child: GhostButton(tr('Ввести вручную'), icon: Icons.edit_outlined, onPressed: () => showStepsInput(context, now)),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: GhostButton('Цель', icon: Icons.flag_outlined, onPressed: () => _editGoal(store)),
+                child: GhostButton(tr('Цель'), icon: Icons.flag_outlined, onPressed: () => _editGoal(store)),
               ),
             ],
           ),
-          const SectionLabel('Источник шагов'),
+          SectionLabel(tr('Источник шагов')),
           _sourceCard(life),
           ValueListenableBuilder<String>(
             valueListenable: StepsService.instance.status,
@@ -190,11 +189,11 @@ class _StepsScreenState extends State<StepsScreen> {
                     child: Text(msg, style: Txt.small.copyWith(color: AppColors.under)),
                   ),
           ),
-          SectionLabel('История', trailing: SizedBox(
+          SectionLabel(tr('История'), trailing: SizedBox(
             width: 150,
             child: Segmented<int>(
               values: const [7, 30],
-              label: (v) => '$v дн.',
+              label: (v) => trf('{0} дн.', [v]),
               selected: range,
               onChanged: (v) => setState(() => range = v),
             ),
@@ -207,17 +206,17 @@ class _StepsScreenState extends State<StepsScreen> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(child: StatTile(label: 'В среднем', value: cnt > 0 ? fmtInt(sum / cnt) : '—', sub: 'шагов в день')),
+                    Expanded(child: StatTile(label: tr('В среднем'), value: cnt > 0 ? fmtInt(sum / cnt) : '—', sub: tr('шагов в день'))),
                     const SizedBox(width: 8),
-                    Expanded(child: StatTile(label: 'Цель выполнена', value: '$hit', sub: 'из $range дн.', color: AppColors.good)),
+                    Expanded(child: StatTile(label: tr('Цель выполнена'), value: '$hit', sub: trf('из {0} дн.', [range]), color: AppColors.good)),
                   ],
                 ),
               ],
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Нажми на день в истории ниже, чтобы поправить шаги вручную.',
+          Text(
+            tr('Нажми на день в истории ниже, чтобы поправить шаги вручную.'),
             style: Txt.small,
           ),
           const SizedBox(height: 6),
@@ -239,12 +238,12 @@ class _StepsScreenState extends State<StepsScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                sameDay(d, DateTime.now()) ? 'Сегодня' : '${weekdaysShort[d.weekday - 1]}, ${fmtDate(d)}',
+                sameDay(d, DateTime.now()) ? tr('Сегодня') : '${weekdaysShort[d.weekday - 1]}, ${fmtDate(d)}',
                 style: Txt.body.copyWith(fontSize: 13),
               ),
             ),
             Text(fmtInt(v), style: Txt.num(14)),
-            Text('  ${fmt1(LifeStore.stepsToKm(v))} км', style: Txt.small),
+            Text(trf('  {0} км', [fmt1(LifeStore.stepsToKm(v))]), style: Txt.small),
           ],
         ),
       ),
@@ -260,13 +259,13 @@ class _StepsScreenState extends State<StepsScreen> {
 
     return Column(
       children: [
-        option('sensor', Icons.directions_walk, 'Шагомер телефона — рекомендуем',
-            'Считает сам, когда ходишь с телефоном, даже если приложение закрыто и после перезагрузки.',
+        option('sensor', Icons.directions_walk, tr('Шагомер телефона — рекомендуем'),
+            tr('Считает сам, когда ходишь с телефоном, даже если приложение закрыто и после перезагрузки.'),
             _askSensor),
         option('health', Icons.favorite_border, 'Health Connect',
-            'Если носишь часы или браслет: берёт шаги из Google Fit, Samsung Health, Mi Fitness.',
+            tr('Если носишь часы или браслет: берёт шаги из Google Fit, Samsung Health, Mi Fitness.'),
             () => _connect(StepsService.instance.connectHealth)),
-        option('manual', Icons.edit_outlined, 'Вручную', 'Вводишь шаги сам, например с часов.',
+        option('manual', Icons.edit_outlined, tr('Вручную'), tr('Вводишь шаги сам, например с часов.'),
             () => StepsService.instance.useManual()),
         if (src == 'sensor') const _BatteryHint(),
         if (src != 'health')
@@ -274,7 +273,7 @@ class _StepsScreenState extends State<StepsScreen> {
             alignment: Alignment.centerLeft,
             child: TextButton(
               onPressed: () => StepsService.instance.installHealthConnect(),
-              child: const Text('Нет Health Connect? Установить из Google Play',
+              child: Text(tr('Нет Health Connect? Установить из Google Play'),
                   style: TextStyle(color: AppColors.accent, fontSize: 13)),
             ),
           ),
@@ -307,13 +306,13 @@ class _BatteryHintState extends State<_BatteryHint> {
   Widget build(BuildContext context) {
     if (ok == null) return const SizedBox.shrink();
     if (ok!) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.only(top: 2, bottom: 6),
         child: Row(
           children: [
             Icon(Icons.check_circle_outline, size: 16, color: AppColors.good),
             SizedBox(width: 8),
-            Expanded(child: Text('Шагомер работает в фоне без ограничений батареи', style: Txt.small)),
+            Expanded(child: Text(tr('Шагомер работает в фоне без ограничений батареи'), style: Txt.small)),
           ],
         ),
       );
@@ -325,21 +324,20 @@ class _BatteryHintState extends State<_BatteryHint> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(Icons.battery_alert_outlined, color: AppColors.under, size: 20),
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Чтобы телефон не усыплял шагомер, сними для приложения ограничения батареи. '
-                    'Особенно важно на Xiaomi, Huawei, Honor и Samsung.',
+                    tr('Чтобы телефон не усыплял шагомер, сними для приложения ограничения батареи. Особенно важно на Xiaomi, Huawei, Honor и Samsung.'),
                     style: Txt.small,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 10),
-            GhostButton('Снять ограничения', icon: Icons.battery_charging_full, onPressed: () async {
+            GhostButton(tr('Снять ограничения'), icon: Icons.battery_charging_full, onPressed: () async {
               final v = await StepsService.instance.requestNoBatteryLimit();
               if (mounted) setState(() => ok = v);
             }),

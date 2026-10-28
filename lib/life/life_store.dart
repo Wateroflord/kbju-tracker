@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 
+import '../learn/srs.dart';
 import '../util.dart';
 import 'content.dart';
 import 'models.dart';
+import '../i18n/i18n.dart';
 
 /// Данные новых разделов. Сохраняются вместе с остальными данными приложения
 /// (ключ `life` в общем JSON). При любом изменении вызывает [_notify].
@@ -48,6 +50,13 @@ class LifeStore {
   // Фото прогресса
   final List<ProgressPhoto> photos = [];
 
+  // Изучение языков
+  String learnLang = 'en';
+  int learnGoalMin = 45;
+  final Map<String, Map<String, CardState>> learnCards = {};
+  final Map<String, Map<String, int>> learnSeconds = {};
+  final Map<String, String> learnGoalText = {};
+
   int _id = 0;
   String newId(String prefix) => '${prefix}_${DateTime.now().microsecondsSinceEpoch}_${_id++}';
 
@@ -82,6 +91,11 @@ class LifeStore {
       ..clear()
       ..addEntries(defaultReminders.map((r) => MapEntry(r.id, r)));
     photos.clear();
+    learnLang = 'en';
+    learnGoalMin = 45;
+    learnCards.clear();
+    learnSeconds.clear();
+    learnGoalText.clear();
     if (!silent) _notify();
   }
 
@@ -108,6 +122,11 @@ class LifeStore {
         'shopping': shopping.map((s) => s.toJson()).toList(),
         'reminders': reminders.values.map((r) => r.toJson()).toList(),
         'photos': photos.map((p) => p.toJson()).toList(),
+        'learnLang': learnLang,
+        'learnGoalMin': learnGoalMin,
+        'learnCards': learnCards.map((l, m) => MapEntry(l, m.map((k, v) => MapEntry(k, v.toJson())))),
+        'learnSeconds': learnSeconds,
+        'learnGoalText': learnGoalText,
       };
 
   static List<Map<String, dynamic>> _maps(dynamic v) =>
@@ -186,6 +205,27 @@ class LifeStore {
     }
 
     photos.addAll(_maps(j['photos']).map(ProgressPhoto.fromJson).where((p) => p.path.isNotEmpty));
+
+    learnLang = j['learnLang']?.toString() == 'pl' ? 'pl' : 'en';
+    learnGoalMin = asInt(j['learnGoalMin'], 45).clamp(5, 180).toInt();
+    final lc = j['learnCards'];
+    if (lc is Map) {
+      lc.forEach((l, m) {
+        if (m is! Map) return;
+        learnCards[l.toString()] = {
+          for (final e in m.entries)
+            if (e.value is Map) e.key.toString(): CardState.fromJson(Map<String, dynamic>.from(e.value as Map)),
+        };
+      });
+    }
+    final ls = j['learnSeconds'];
+    if (ls is Map) {
+      ls.forEach((l, m) {
+        if (m is Map) learnSeconds[l.toString()] = m.map((k, v) => MapEntry(k.toString(), asInt(v)));
+      });
+    }
+    final lg = j['learnGoalText'];
+    if (lg is Map) lg.forEach((k, v) => learnGoalText[k.toString()] = v.toString());
   }
 
   // ---------- привычки ----------
@@ -332,7 +372,7 @@ class LifeStore {
     for (final e in allExercises) {
       if (e.id == id) return e;
     }
-    return Exercise(id: id, name: 'Упражнение');
+    return Exercise(id: id, name: tr('Упражнение'));
   }
 
   void setActiveProgram(String id) {
@@ -358,7 +398,7 @@ class LifeStore {
   /// Какой день программы следующий (по последней завершённой тренировке этой программы).
   WorkoutDay nextDay([Program? program]) {
     final p = program ?? activeProgram;
-    if (p.days.isEmpty) return const WorkoutDay(id: 'empty', title: 'Тренировка', exercises: []);
+    if (p.days.isEmpty) return WorkoutDay(id: 'empty', title: tr('Тренировка'), exercises: []);
     for (var i = sessions.length - 1; i >= 0; i--) {
       final s = sessions[i];
       if (s.programId == p.id && s.finished) {

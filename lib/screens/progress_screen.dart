@@ -11,6 +11,7 @@ import '../widgets/common.dart';
 import '../widgets/nav.dart';
 import '../widgets/sheets.dart';
 import 'progress_extra.dart';
+import '../i18n/i18n.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
@@ -49,11 +50,11 @@ class _ProgressScreenState extends State<ProgressScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 40),
           children: [
-            const TabHeader('Прогресс'),
+            TabHeader(tr('Прогресс')),
             const SizedBox(height: 14),
             Segmented<int>(
               values: const [7, 30, 90, 0],
-              label: (v) => v == 0 ? 'Всё' : '$v дн.',
+              label: (v) => v == 0 ? tr('Всё') : trf('{0} дн.', [v]),
               selected: range,
               onChanged: (v) => setState(() => range = v),
             ),
@@ -105,9 +106,9 @@ class _ProgressScreenState extends State<ProgressScreen> {
             children: [
               const Icon(Icons.monitor_weight_outlined, color: AppColors.accent2, size: 20),
               const SizedBox(width: 8),
-              const Text('Вес', style: Txt.h2),
+              Text(tr('Вес'), style: Txt.h2),
               const Spacer(),
-              GhostButton('Записать', icon: Icons.add, onPressed: () => _addWeight(store)),
+              GhostButton(tr('Записать'), icon: Icons.add, onPressed: () => _addWeight(store)),
             ],
           ),
           const SizedBox(height: 12),
@@ -115,10 +116,10 @@ class _ProgressScreenState extends State<ProgressScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(fmt1(current), style: Txt.num(32)),
-              const Text(' кг', style: Txt.small),
+              Text(tr(' кг'), style: Txt.small),
               const SizedBox(width: 12),
               if (change != null)
-                Pill('${change > 0 ? '+' : change < 0 ? '−' : ''}${fmt1(change.abs())} кг', color: changeColor),
+                Pill(trf('{0}{1} кг', [change > 0 ? '+' : change < 0 ? '−' : '', fmt1(change.abs())]), color: changeColor),
             ],
           ),
           if (target != null && series.isNotEmpty) ...[
@@ -140,8 +141,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
                 color: AppColors.surface2,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text(
-                'Записывай вес хотя бы раз в неделю —\nздесь появится график',
+              child: Text(
+                tr('Записывай вес хотя бы раз в неделю —\nздесь появится график'),
                 textAlign: TextAlign.center,
                 style: Txt.small,
               ),
@@ -154,7 +155,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Row(
                   children: [
-                    Text(showHistory ? 'Скрыть историю' : 'История взвешиваний',
+                    Text(showHistory ? tr('Скрыть историю') : tr('История взвешиваний'),
                         style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700, fontSize: 13)),
                     Icon(showHistory ? Icons.expand_less : Icons.expand_more, color: AppColors.accent, size: 18),
                   ],
@@ -172,13 +173,13 @@ class _ProgressScreenState extends State<ProgressScreen> {
                     children: [
                       Text(fmtDate(parseKey(e.key), year: true), style: Txt.small),
                       const Spacer(),
-                      Text('${fmt1(e.value)} кг', style: Txt.num(14)),
+                      Text(trf('{0} кг', [fmt1(e.value)]), style: Txt.num(14)),
                       IconButton(
                         visualDensity: VisualDensity.compact,
                         icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.muted),
                         onPressed: () async {
-                          final ok = await confirm(context, 'Удалить запись веса?',
-                              '${fmtDate(parseKey(e.key))}: ${fmt1(e.value)} кг', ok: 'Удалить');
+                          final ok = await confirm(context, tr('Удалить запись веса?'),
+                              trf('{0}: {1} кг', [fmtDate(parseKey(e.key)), fmt1(e.value)]), ok: tr('Удалить'));
                           if (ok) store.deleteWeight(e.key);
                         },
                       ),
@@ -202,9 +203,9 @@ class _ProgressScreenState extends State<ProgressScreen> {
       children: [
         Row(
           children: [
-            Text('Цель ${fmt1(target)} кг', style: Txt.small),
+            Text(trf('Цель {0} кг', [fmt1(target)]), style: Txt.small),
             const Spacer(),
-            Text(left < 0.05 ? 'Цель достигнута!' : 'осталось ${fmt1(left)} кг',
+            Text(left < 0.05 ? tr('Цель достигнута!') : trf('осталось {0} кг', [fmt1(left)]),
                 style: Txt.small.copyWith(color: left < 0.05 ? AppColors.good : AppColors.text)),
           ],
         ),
@@ -223,14 +224,14 @@ class _ProgressScreenState extends State<ProgressScreen> {
         builder: (ctx, setD) => AlertDialog(
           backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: const Text('Записать вес', style: Txt.h2),
+          title: Text(tr('Записать вес'), style: Txt.h2),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              NumField(ctrl, 'Вес', suffix: 'кг'),
+              NumField(ctrl, tr('Вес'), suffix: tr('кг')),
               const SizedBox(height: 10),
               GhostButton(
-                sameDay(date, today()) ? 'Сегодня' : fmtDate(date, year: true),
+                sameDay(date, today()) ? tr('Сегодня') : fmtDate(date, year: true),
                 icon: Icons.event,
                 onPressed: () async {
                   final d = await showDatePicker(
@@ -247,11 +248,11 @@ class _ProgressScreenState extends State<ProgressScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Отмена', style: TextStyle(color: AppColors.muted)),
+              child: Text(tr('Отмена'), style: TextStyle(color: AppColors.muted)),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Сохранить',
+              child: Text(tr('Сохранить'),
                   style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w800)),
             ),
           ],
@@ -262,11 +263,11 @@ class _ProgressScreenState extends State<ProgressScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => ctrl.dispose());
     if (saved != true) return;
     if (v == null || v < 25 || v > 350) {
-      if (mounted) showToast(context, 'Введи вес от 25 до 350 кг');
+      if (mounted) showToast(context, tr('Введи вес от 25 до 350 кг'));
       return;
     }
     store.setWeight(dkey(date), v);
-    if (mounted) showToast(context, 'Вес записан, нормы обновлены');
+    if (mounted) showToast(context, tr('Вес записан, нормы обновлены'));
   }
 
   // ---------- Соблюдение норм ----------
@@ -323,18 +324,18 @@ class _ProgressScreenState extends State<ProgressScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(Icons.insights, color: AppColors.accent, size: 20),
               SizedBox(width: 8),
-              Text('Соблюдение норм', style: Txt.h2),
+              Text(tr('Соблюдение норм'), style: Txt.h2),
             ],
           ),
           const SizedBox(height: 4),
           Text(
             chartDays < totalDays
-                ? 'Калории по дням (последние $chartDays дн.). Белая черта — норма'
-                : 'Калории по дням. Белая черта — норма',
+                ? trf('Калории по дням (последние {0} дн.). Белая черта — норма', [chartDays])
+                : tr('Калории по дням. Белая черта — норма'),
             style: Txt.small,
           ),
           const SizedBox(height: 14),
@@ -342,22 +343,22 @@ class _ProgressScreenState extends State<ProgressScreen> {
           const SizedBox(height: 14),
           Row(
             children: [
-              Expanded(child: StatTile(label: 'Дней с записями', value: '$logged', sub: 'из $totalDays')),
+              Expanded(child: StatTile(label: tr('Дней с записями'), value: '$logged', sub: trf('из {0}', [totalDays]))),
               const SizedBox(width: 8),
               Expanded(
                 child: StatTile(
-                  label: 'В норме ±10%',
+                  label: tr('В норме ±10%'),
                   value: logged > 0 ? '${(good * 100 / logged).round()}%' : '—',
-                  sub: '$good дн.',
+                  sub: trf('{0} дн.', [good]),
                   color: AppColors.good,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: StatTile(
-                  label: 'Серия',
+                  label: tr('Серия'),
                   value: '$streak',
-                  sub: 'дн. подряд',
+                  sub: tr('дн. подряд'),
                   color: AppColors.accent,
                 ),
               ),
@@ -365,15 +366,15 @@ class _ProgressScreenState extends State<ProgressScreen> {
           ),
           if (logged > 0) ...[
             const SizedBox(height: 16),
-            const Text('СРЕДНЕЕ ЗА ДЕНЬ', style: Txt.label),
+            Text(tr('СРЕДНЕЕ ЗА ДЕНЬ'), style: Txt.label),
             const SizedBox(height: 12),
-            MacroBar(label: 'Калории', value: sk / logged, target: (tk / logged).round(), color: AppColors.accent, unit: 'ккал'),
+            MacroBar(label: tr('Калории'), value: sk / logged, target: (tk / logged).round(), color: AppColors.accent, unit: tr('ккал')),
             const SizedBox(height: 12),
-            MacroBar(label: 'Белки', value: sp / logged, target: (tp / logged).round(), color: AppColors.protein),
+            MacroBar(label: tr('Белки'), value: sp / logged, target: (tp / logged).round(), color: AppColors.protein),
             const SizedBox(height: 12),
-            MacroBar(label: 'Жиры', value: sf / logged, target: (tf / logged).round(), color: AppColors.fat),
+            MacroBar(label: tr('Жиры'), value: sf / logged, target: (tf / logged).round(), color: AppColors.fat),
             const SizedBox(height: 12),
-            MacroBar(label: 'Углеводы', value: sc / logged, target: (tc / logged).round(), color: AppColors.carbs),
+            MacroBar(label: tr('Углеводы'), value: sc / logged, target: (tc / logged).round(), color: AppColors.carbs),
           ],
         ],
       ),
@@ -394,15 +395,15 @@ class _ProgressScreenState extends State<ProgressScreen> {
             children: [
               Icon(goal.icon, color: AppColors.accent, size: 20),
               const SizedBox(width: 8),
-              const Expanded(child: Text('Программа', style: Txt.h2)),
-              GhostButton('Изменить', icon: Icons.swap_horiz, onPressed: () => showGoalSheet(context)),
+              Expanded(child: Text(tr('Программа'), style: Txt.h2)),
+              GhostButton(tr('Изменить'), icon: Icons.swap_horiz, onPressed: () => showGoalSheet(context)),
             ],
           ),
           const SizedBox(height: 12),
           Text(goal.title, style: Txt.num(22, color: AppColors.accent)),
           const SizedBox(height: 4),
           Text(
-            since != null ? 'с ${fmtDate(parseKey(since), year: true)} · ${goal.desc}' : goal.desc,
+            since != null ? trf('с {0} · {1}', [fmtDate(parseKey(since), year: true), goal.desc]) : goal.desc,
             style: Txt.small,
           ),
           const SizedBox(height: 12),
@@ -410,15 +411,15 @@ class _ProgressScreenState extends State<ProgressScreen> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              Pill('${fmtInt(t.kcal)} ккал'),
-              Pill('Б ${t.protein} г', color: AppColors.protein),
-              Pill('Ж ${t.fat} г', color: AppColors.fat),
-              Pill('У ${t.carbs} г', color: AppColors.carbs),
+              Pill(trf('{0} ккал', [fmtInt(t.kcal)])),
+              Pill(trf('Б {0} г', [t.protein]), color: AppColors.protein),
+              Pill(trf('Ж {0} г', [t.fat]), color: AppColors.fat),
+              Pill(trf('У {0} г', [t.carbs]), color: AppColors.carbs),
             ],
           ),
           if (store.goalHistory.length > 1) ...[
             const SizedBox(height: 16),
-            const Text('ИСТОРИЯ ИЗМЕНЕНИЙ', style: Txt.label),
+            Text(tr('ИСТОРИЯ ИЗМЕНЕНИЙ'), style: Txt.label),
             const SizedBox(height: 8),
             for (final g in store.goalHistory.reversed.take(10))
               Padding(
@@ -429,7 +430,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        g.from == null ? 'Старт: ${g.to.title}' : '${g.from!.title} → ${g.to.title}',
+                        g.from == null ? trf('Старт: {0}', [g.to.title]) : '${g.from!.title} → ${g.to.title}',
                         style: Txt.body.copyWith(fontSize: 13),
                       ),
                     ),

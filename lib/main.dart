@@ -8,11 +8,13 @@ import 'screens/home_shell.dart';
 import 'screens/onboarding_screen.dart';
 import 'store.dart';
 import 'theme.dart';
+import 'i18n/i18n.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final store = AppStore();
   await store.load();
+  store.applyLang();
   StepsService.instance.init(store);
   NotificationService.instance.sync(store);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
@@ -29,12 +31,15 @@ class KbjuApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Перестраиваем всё приложение при смене языка.
+    final lang = StoreScope.of(context).lang;
     return MaterialApp(
-      title: 'КБЖУ Трекер',
+      key: ValueKey('app_$lang'),
+      title: tr('КБЖУ Трекер'),
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
-      locale: const Locale('ru'),
-      supportedLocales: const [Locale('ru'), Locale('en')],
+      locale: Locale(appLang.code),
+      supportedLocales: const [Locale('ru'), Locale('uk'), Locale('en'), Locale('pl')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

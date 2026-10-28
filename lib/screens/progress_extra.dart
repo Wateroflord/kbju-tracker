@@ -18,6 +18,7 @@ import 'habits_screen.dart';
 import 'sleep_screen.dart';
 import 'steps_screen.dart';
 import 'training_screen.dart';
+import '../i18n/i18n.dart';
 
 /// Шаги, сон, тренировки и привычки за выбранный период.
 class ActivityCard extends StatelessWidget {
@@ -76,15 +77,15 @@ class ActivityCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(Icons.bolt, color: AppColors.accent, size: 20),
               SizedBox(width: 8),
-              Text('Активность', style: Txt.h2),
+              Text(tr('Активность'), style: Txt.h2),
             ],
           ),
           const SizedBox(height: 4),
-          const Text('Шаги по дням. Белая черта — цель', style: Txt.small),
+          Text(tr('Шаги по дням. Белая черта — цель'), style: Txt.small),
           const SizedBox(height: 12),
           BarChart(data: bars, height: 140),
           const SizedBox(height: 12),
@@ -94,9 +95,9 @@ class ActivityCard extends StatelessWidget {
                 child: GestureDetector(
                   onTap: () => open(const StepsScreen()),
                   child: StatTile(
-                    label: 'Шаги в среднем',
+                    label: tr('Шаги в среднем'),
                     value: stepCnt > 0 ? fmtInt(stepSum / stepCnt) : '—',
-                    sub: 'цель: $stepHit дн.',
+                    sub: trf('цель: {0} дн.', [stepHit]),
                   ),
                 ),
               ),
@@ -105,9 +106,9 @@ class ActivityCard extends StatelessWidget {
                 child: GestureDetector(
                   onTap: () => open(const SleepScreen()),
                   child: StatTile(
-                    label: 'Сон в среднем',
-                    value: sleepCnt > 0 ? '${fmt1(sleepSum / sleepCnt)} ч' : '—',
-                    sub: '$sleepCnt ноч. записано',
+                    label: tr('Сон в среднем'),
+                    value: sleepCnt > 0 ? trf('{0} ч', [fmt1(sleepSum / sleepCnt)]) : '—',
+                    sub: trf('{0} ноч. записано', [sleepCnt]),
                   ),
                 ),
               ),
@@ -120,9 +121,9 @@ class ActivityCard extends StatelessWidget {
                 child: GestureDetector(
                   onTap: () => open(const RecordsScreen()),
                   child: StatTile(
-                    label: 'Тренировки',
+                    label: tr('Тренировки'),
                     value: '${sessions.length}',
-                    sub: volume > 0 ? '${fmtInt(volume)} кг объём' : 'за период',
+                    sub: volume > 0 ? trf('{0} кг объём', [fmtInt(volume)]) : tr('за период'),
                     color: AppColors.accent,
                   ),
                 ),
@@ -132,9 +133,9 @@ class ActivityCard extends StatelessWidget {
                 child: GestureDetector(
                   onTap: () => open(const HabitsScreen()),
                   child: StatTile(
-                    label: 'Привычки',
+                    label: tr('Привычки'),
                     value: habitCnt > 0 ? '${(habitSum / habitCnt * 100).round()}%' : '—',
-                    sub: 'выполнено в среднем',
+                    sub: tr('выполнено в среднем'),
                     color: AppColors.good,
                   ),
                 ),
@@ -143,7 +144,7 @@ class ActivityCard extends StatelessWidget {
           ),
           if (life.trainedExerciseIds().isNotEmpty) ...[
             const SizedBox(height: 14),
-            const Text('Рекорды', style: Txt.section),
+            Text(tr('Рекорды'), style: Txt.section),
             const SizedBox(height: 6),
             for (final id in life.trainedExerciseIds().take(4))
               Padding(
@@ -164,9 +165,9 @@ class ActivityCard extends StatelessWidget {
       children: [
         const Icon(Icons.emoji_events_outlined, size: 16, color: AppColors.accent),
         const SizedBox(width: 8),
-        Expanded(child: Text(ex.name, style: Txt.body.copyWith(fontSize: 13))),
+        Expanded(child: Text(tr(ex.name), style: Txt.body.copyWith(fontSize: 13))),
         Text(
-          r == null ? '—' : (useW ? '${fmt1(r.value)} кг × ${r.reps}' : '${r.value.round()} ${ex.timed ? 'с' : 'повт.'}'),
+          r == null ? '—' : (useW ? trf('{0} кг × {1}', [fmt1(r.value), r.reps]) : '${r.value.round()} ${ex.timed ? tr('с') : tr('повт.')}'),
           style: Txt.num(13),
         ),
       ],
@@ -196,8 +197,8 @@ class PhotosCard extends StatelessWidget {
             children: [
               const Icon(Icons.photo_camera_outlined, color: AppColors.accent, size: 20),
               const SizedBox(width: 8),
-              const Expanded(child: Text('Фото прогресса', style: Txt.h2)),
-              Text('${photos.length} фото', style: Txt.small),
+              Expanded(child: Text(tr('Фото прогресса'), style: Txt.h2)),
+              Text(trf('{0} фото', [photos.length]), style: Txt.small),
               const Icon(Icons.chevron_right, color: AppColors.muted),
             ],
           ),
@@ -205,26 +206,25 @@ class PhotosCard extends StatelessWidget {
           if (first != null)
             Row(
               children: [
-                Expanded(child: _thumb(first, 'До · ${fmtShort(parseKey(photos.first.date))}')),
+                Expanded(child: _thumb(first, trf('До · {0}', [fmtShort(parseKey(photos.first.date))]))),
                 const SizedBox(width: 8),
                 Expanded(
                   child: last != null
-                      ? _thumb(last, 'Сейчас · ${fmtShort(parseKey(photos.last.date))}')
+                      ? _thumb(last, trf('Сейчас · {0}', [fmtShort(parseKey(photos.last.date))]))
                       : Container(
                           height: 150,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(color: AppColors.surface2, borderRadius: BorderRadius.circular(8)),
-                          child: const Text('Сделай следующее\nфото через неделю', textAlign: TextAlign.center, style: Txt.small),
+                          child: Text(tr('Сделай следующее\nфото через неделю'), textAlign: TextAlign.center, style: Txt.small),
                         ),
                 ),
               ],
             )
           else
-            const Text('Сделай первое фото: в одном месте, при одном свете, в одной позе. '
-                'Потом сравнивай раз в неделю или месяц.', style: Txt.small),
+            Text(tr('Сделай первое фото: в одном месте, при одном свете, в одной позе. Потом сравнивай раз в неделю или месяц.'), style: Txt.small),
           if (due) ...[
             const SizedBox(height: 10),
-            Text(photos.isEmpty ? 'Пора сделать первое фото' : 'Прошла неделя — пора новое фото',
+            Text(photos.isEmpty ? tr('Пора сделать первое фото') : tr('Прошла неделя — пора новое фото'),
                 style: Txt.small.copyWith(color: AppColors.accent)),
           ],
         ],
@@ -273,7 +273,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
       final path = await store.savePhoto(bytes);
       if (path != null) store.life.addPhoto(ProgressPhoto(todayKey(), path));
     } catch (e) {
-      if (mounted) showToast(context, 'Не удалось добавить фото: $e');
+      if (mounted) showToast(context, trf('Не удалось добавить фото: {0}', [e]));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -285,13 +285,13 @@ class _PhotosScreenState extends State<PhotosScreen> {
     final photos = store.life.photos.reversed.toList();
     return Scaffold(
       backgroundColor: AppColors.bg,
-      appBar: subAppBar('Фото прогресса', actions: [
+      appBar: subAppBar(tr('Фото прогресса'), actions: [
         if (selected.length == 2)
           TextButton(
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(
               builder: (_) => _CompareScreen(a: selected[0], b: selected[1]),
             )),
-            child: const Text('Сравнить', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700)),
+            child: Text(tr('Сравнить'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700)),
           ),
       ]),
       body: ListView(
@@ -299,14 +299,14 @@ class _PhotosScreenState extends State<PhotosScreen> {
         children: [
           Row(
             children: [
-              Expanded(child: GhostButton('Камера', icon: Icons.photo_camera_outlined, onPressed: busy ? null : () => _add(ImageSource.camera))),
+              Expanded(child: GhostButton(tr('Камера'), icon: Icons.photo_camera_outlined, onPressed: busy ? null : () => _add(ImageSource.camera))),
               const SizedBox(width: 8),
-              Expanded(child: GhostButton('Галерея', icon: Icons.photo_library_outlined, onPressed: busy ? null : () => _add(ImageSource.gallery))),
+              Expanded(child: GhostButton(tr('Галерея'), icon: Icons.photo_library_outlined, onPressed: busy ? null : () => _add(ImageSource.gallery))),
             ],
           ),
           const SizedBox(height: 10),
           Text(
-            photos.length >= 2 ? 'Выбери два фото, чтобы сравнить их рядом. Долгое нажатие — удалить.' : 'Фото хранятся только на телефоне.',
+            photos.length >= 2 ? tr('Выбери два фото, чтобы сравнить их рядом. Долгое нажатие — удалить.') : tr('Фото хранятся только на телефоне.'),
             style: Txt.small,
           ),
           const SizedBox(height: 10),
@@ -332,7 +332,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
                   }
                 }),
                 onLongPress: () async {
-                  final ok = await confirm(context, 'Удалить фото?', fmtDate(parseKey(p.date), year: true), ok: 'Удалить');
+                  final ok = await confirm(context, tr('Удалить фото?'), fmtDate(parseKey(p.date), year: true), ok: tr('Удалить'));
                   if (ok) {
                     selected.remove(p.path);
                     store.life.deletePhoto(p.path);
@@ -409,7 +409,7 @@ class _CompareScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(p == null ? '' : fmtDate(parseKey(p.date), year: true), style: Txt.section),
-            if (w != null) Text('${fmt1(w)} кг', style: Txt.num(16, color: AppColors.accent2)),
+            if (w != null) Text(trf('{0} кг', [fmt1(w)]), style: Txt.num(16, color: AppColors.accent2)),
           ],
         ),
       );
@@ -417,7 +417,7 @@ class _CompareScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.bg,
-      appBar: subAppBar('До / После'),
+      appBar: subAppBar(tr('До / После')),
       body: Padding(
         padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
         child: Row(

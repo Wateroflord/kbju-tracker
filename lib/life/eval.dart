@@ -4,6 +4,8 @@ import '../models.dart';
 import '../store.dart';
 import '../util.dart';
 import 'models.dart';
+import '../learn/learn_logic.dart';
+import '../i18n/i18n.dart';
 
 /// Расчёты по привычкам, которым нужны данные еды, воды и веса из AppStore.
 extension LifeEval on AppStore {
@@ -31,6 +33,8 @@ extension LifeEval on AppStore {
           if (weights.containsKey(dkey(addDays(ws, i)))) return true;
         }
         return false;
+      case HabitAuto.learn:
+        return life.secondsOn(k) >= life.learnGoalMin * 60;
     }
   }
 
@@ -45,20 +49,22 @@ extension LifeEval on AppStore {
       case HabitAuto.none:
         return null;
       case HabitAuto.steps:
-        return '${fmtInt(life.stepsFor(k))} / ${fmtInt(life.stepGoal)} шагов';
+        return trf('{0} / {1} шагов', [fmtInt(life.stepsFor(k)), fmtInt(life.stepGoal)]);
       case HabitAuto.food:
         final t = totalsFor(k);
-        return '${fmtInt(t.kcal)} / ${fmtInt(targetsFor(k).kcal)} ккал';
+        return trf('{0} / {1} ккал', [fmtInt(t.kcal), fmtInt(targetsFor(k).kcal)]);
       case HabitAuto.water:
-        return '${fmtInt(waterFor(k))} / ${fmtInt(targetsFor(k).waterMl)} мл';
+        return trf('{0} / {1} мл', [fmtInt(waterFor(k)), fmtInt(targetsFor(k).waterMl)]);
       case HabitAuto.sleep:
         final s = life.sleepFor(k);
-        return s == null ? 'сон не записан' : '${fmt1(s.hours)} ч';
+        return s == null ? tr('сон не записан') : trf('{0} ч', [fmt1(s.hours)]);
       case HabitAuto.workouts:
         final ws = weekStart(d);
-        return '${life.finishedSessionsBetween(ws, addDays(ws, 7))} / $workoutsPerWeek за неделю';
+        return trf('{0} / {1} за неделю', [life.finishedSessionsBetween(ws, addDays(ws, 7)), workoutsPerWeek]);
       case HabitAuto.weigh:
-        return habitAutoDone(h, d) ? 'вес записан' : 'вес не записан';
+        return habitAutoDone(h, d) ? tr('вес записан') : tr('вес не записан');
+      case HabitAuto.learn:
+        return trf('{0} / {1} мин', [life.secondsOn(k) ~/ 60, life.learnGoalMin]);
     }
   }
 

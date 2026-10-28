@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 import '../util.dart';
+import '../i18n/i18n.dart';
 
 class ChartPoint {
   final DateTime x;
@@ -102,7 +103,7 @@ class _LinePainter extends CustomPainter {
         ..strokeWidth = 1.5;
       final y = py(targetY!);
       _dashedLine(canvas, Offset(left, y), Offset(left + w, y), tp, dash: 6, gap: 4);
-      _text(canvas, 'цель', Offset(left + w - 2, y - 9), color: AppColors.accent2, alignRight: true);
+      _text(canvas, tr('цель'), Offset(left + w - 2, y - 9), color: AppColors.accent2, alignRight: true);
     }
 
     final offsets = [for (final p in pts) Offset(px(p.x), py(p.y))];

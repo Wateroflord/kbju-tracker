@@ -10,6 +10,7 @@ import '../theme.dart';
 import '../util.dart';
 import '../widgets/common.dart';
 import '../widgets/item_fields.dart';
+import '../i18n/i18n.dart';
 
 class AddFoodScreen extends StatefulWidget {
   final DateTime date;
@@ -67,14 +68,14 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
       if (StoreScope.read(context).apiKey.isNotEmpty) _analyze();
     } catch (e) {
       if (!mounted) return;
-      setState(() => error = 'Не удалось открыть ${src == ImageSource.camera ? 'камеру' : 'галерею'}: $e');
+      setState(() => error = trf('Не удалось открыть {0}: {1}', [src == ImageSource.camera ? tr('камеру') : tr('галерею'), e]));
     }
   }
 
   Future<void> _analyze() async {
     final store = StoreScope.read(context);
     if (image == null && hint.text.trim().isEmpty) {
-      setState(() => error = 'Сделай фото или опиши еду текстом');
+      setState(() => error = tr('Сделай фото или опиши еду текстом'));
       return;
     }
     FocusScope.of(context).unfocus();
@@ -104,13 +105,13 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                 ))
             .toList();
         note = r.note.isEmpty ? null : r.note;
-        if (items.isEmpty) error = r.note.isEmpty ? 'ИИ не нашёл еду на фото' : r.note;
+        if (items.isEmpty) error = r.note.isEmpty ? tr('ИИ не нашёл еду на фото') : r.note;
       });
       _disposeLater(old);
     } on GeminiException catch (e) {
       if (mounted) setState(() => error = e.message);
     } catch (e) {
-      if (mounted) setState(() => error = 'Ошибка: $e');
+      if (mounted) setState(() => error = trf('Ошибка: {0}', [e]));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -128,7 +129,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
   Future<void> _save() async {
     final valid = items.where((i) => i.isValid).toList();
     if (valid.isEmpty) {
-      showToast(context, 'Добавь хотя бы одну позицию с названием');
+      showToast(context, tr('Добавь хотя бы одну позицию с названием'));
       return;
     }
     final store = StoreScope.read(context);
@@ -155,7 +156,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
         ),
     ]);
     if (!mounted) return;
-    showToast(context, 'Добавлено позиций: ${valid.length}');
+    showToast(context, trf('Добавлено позиций: {0}', [valid.length]));
     Navigator.pop(context);
   }
 
@@ -176,7 +177,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.bg,
         surfaceTintColor: Colors.transparent,
-        title: const Text('Добавить еду', style: Txt.h2),
+        title: Text(tr('Добавить еду'), style: Txt.h2),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
@@ -197,14 +198,13 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
           if (!hasKey) ...[
             AppCard(
               borderColor: AppColors.under.withValues(alpha: 0.5),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(Icons.key_outlined, color: AppColors.under),
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Чтобы считать КБЖУ по фото, вставь бесплатный ключ Gemini во вкладке «Профиль». '
-                      'Пока можно добавить еду вручную.',
+                      tr('Чтобы считать КБЖУ по фото, вставь бесплатный ключ Gemini во вкладке «Профиль». Пока можно добавить еду вручную.'),
                       style: Txt.small,
                     ),
                   ),
@@ -222,20 +222,20 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
             textCapitalization: TextCapitalization.sentences,
             style: Txt.body,
             decoration: fieldDeco(
-              image == null ? 'Или опиши еду текстом' : 'Уточнение (необязательно)',
-              hint: 'например: 200 г гречки, куриная грудка 150 г',
+              image == null ? tr('Или опиши еду текстом') : tr('Уточнение (необязательно)'),
+              hint: tr('например: 200 г гречки, куриная грудка 150 г'),
             ),
           ),
           const SizedBox(height: 12),
           PrimaryButton(
-            items.isEmpty ? 'Рассчитать КБЖУ' : 'Пересчитать',
+            items.isEmpty ? tr('Рассчитать КБЖУ') : tr('Пересчитать'),
             icon: Icons.auto_awesome,
             loading: loading,
             onPressed: hasKey ? _analyze : null,
           ),
           if (loading) ...[
             const SizedBox(height: 10),
-            const Center(child: Text('ИИ анализирует еду…', style: Txt.small)),
+            Center(child: Text(tr('ИИ анализирует еду…'), style: Txt.small)),
           ],
           if (error != null) ...[
             const SizedBox(height: 12),
@@ -263,15 +263,15 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
             ),
           ],
           SectionLabel(
-            'Позиции',
+            tr('Позиции'),
             trailing: GestureDetector(
               onTap: _addManual,
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.add, size: 16, color: AppColors.accent),
                   SizedBox(width: 4),
-                  Text('Вручную', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700, fontSize: 13)),
+                  Text(tr('Вручную'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700, fontSize: 13)),
                 ],
               ),
             ),
@@ -279,13 +279,13 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
           if (items.isEmpty)
             AppCard(
               onTap: _addManual,
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(Icons.edit_note, color: AppColors.muted),
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Здесь появятся блюда с КБЖУ. Их можно поправить. Или нажми, чтобы ввести вручную.',
+                      tr('Здесь появятся блюда с КБЖУ. Их можно поправить. Или нажми, чтобы ввести вручную.'),
                       style: Txt.small,
                     ),
                   ),
@@ -318,20 +318,20 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('ИТОГО', style: Txt.label),
+                        Text(tr('ИТОГО'), style: Txt.label),
                         const SizedBox(height: 4),
-                        Text('${fmtInt(k)} ккал', style: Txt.num(22, color: AppColors.accent)),
+                        Text(trf('{0} ккал', [fmtInt(k)]), style: Txt.num(22, color: AppColors.accent)),
                       ],
                     ),
                   ),
-                  _macro('Б', p, AppColors.protein),
-                  _macro('Ж', f, AppColors.fat),
-                  _macro('У', c, AppColors.carbs),
+                  _macro(tr('Б'), p, AppColors.protein),
+                  _macro(tr('Ж'), f, AppColors.fat),
+                  _macro(tr('У'), c, AppColors.carbs),
                 ],
               ),
             ),
             const SizedBox(height: 14),
-            PrimaryButton('Сохранить в дневник', icon: Icons.check, loading: saving, onPressed: _save),
+            PrimaryButton(tr('Сохранить в дневник'), icon: Icons.check, loading: saving, onPressed: _save),
           ],
         ],
       ),
@@ -353,9 +353,9 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     if (image == null) {
       return Row(
         children: [
-          Expanded(child: _bigBtn(Icons.photo_camera_outlined, 'Камера', () => _pick(ImageSource.camera))),
+          Expanded(child: _bigBtn(Icons.photo_camera_outlined, tr('Камера'), () => _pick(ImageSource.camera))),
           const SizedBox(width: 10),
-          Expanded(child: _bigBtn(Icons.photo_library_outlined, 'Галерея', () => _pick(ImageSource.gallery))),
+          Expanded(child: _bigBtn(Icons.photo_library_outlined, tr('Галерея'), () => _pick(ImageSource.gallery))),
         ],
       );
     }

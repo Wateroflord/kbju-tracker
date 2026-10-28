@@ -5,6 +5,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../store.dart';
 import 'models.dart';
+import '../i18n/i18n.dart';
 
 /// Локальные напоминания (работают без интернета).
 class NotificationService {
@@ -66,14 +67,14 @@ class NotificationService {
     final at = tz.TZDateTime.from(localTime.toUtc(), tz.UTC);
     await _plugin.zonedSchedule(
       id,
-      r.title,
-      r.body,
+      tr(r.title),
+      tr(r.body),
       at,
-      const NotificationDetails(
+      NotificationDetails(
         android: AndroidNotificationDetails(
           'reminders',
-          'Напоминания',
-          channelDescription: 'Вода, уход, тренировки, сон',
+          tr('Напоминания'),
+          channelDescription: tr('Вода, уход, тренировки, сон'),
           importance: Importance.high,
           priority: Priority.high,
         ),

@@ -7,6 +7,7 @@ import '../theme.dart';
 import '../util.dart';
 import '../widgets/common.dart';
 import '../widgets/nav.dart';
+import '../i18n/i18n.dart';
 
 class RemindersScreen extends StatelessWidget {
   const RemindersScreen({super.key});
@@ -18,6 +19,7 @@ class RemindersScreen extends StatelessWidget {
         'workout' => Icons.fitness_center,
         'bedtime' => Icons.bedtime_outlined,
         'weigh' => Icons.monitor_weight_outlined,
+        'learn' => Icons.translate,
         _ => Icons.notifications_none,
       };
 
@@ -26,7 +28,7 @@ class RemindersScreen extends StatelessWidget {
     if (v) {
       final ok = await NotificationService.instance.requestPermission();
       if (!ok) {
-        if (context.mounted) showToast(context, 'Разреши уведомления в настройках Android');
+        if (context.mounted) showToast(context, tr('Разреши уведомления в настройках Android'));
         return;
       }
     }
@@ -56,7 +58,7 @@ class RemindersScreen extends StatelessWidget {
     final trainDays = store.life.weekdaysOf(store.life.activeProgram);
     return Scaffold(
       backgroundColor: AppColors.bg,
-      appBar: subAppBar('Напоминания'),
+      appBar: subAppBar(tr('Напоминания')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
         children: [
@@ -72,10 +74,8 @@ class RemindersScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Нажми на время, чтобы изменить его. Напоминание о тренировке приходит в дни '
-            'выбранной программы. Если уведомления не приходят, проверь, что для приложения '
-            'не включена экономия батареи.',
+          Text(
+            tr('Нажми на время, чтобы изменить его. Напоминание о тренировке приходит в дни выбранной программы. Если уведомления не приходят, проверь, что для приложения не включена экономия батареи.'),
             style: Txt.small,
           ),
         ],
@@ -85,7 +85,7 @@ class RemindersScreen extends StatelessWidget {
 
   Widget _row(BuildContext context, Reminder r, List<int> trainDays) {
     final days = r.fromProgram ? trainDays : r.weekdays;
-    final when = days.isEmpty ? 'каждый день' : days.map((d) => weekdaysShort[d - 1]).join(', ');
+    final when = days.isEmpty ? tr('каждый день') : days.map((d) => weekdaysShort[d - 1]).join(', ');
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
       child: Row(
@@ -96,8 +96,8 @@ class RemindersScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(r.title, style: Txt.body.copyWith(fontWeight: FontWeight.w500)),
-                Text('$when · ${r.body}', style: Txt.small.copyWith(fontSize: 11.5), maxLines: 2, overflow: TextOverflow.ellipsis),
+                Text(tr(r.title), style: Txt.body.copyWith(fontWeight: FontWeight.w500)),
+                Text('$when · ${tr(r.body)}', style: Txt.small.copyWith(fontSize: 11.5), maxLines: 2, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),

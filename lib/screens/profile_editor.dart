@@ -5,6 +5,7 @@ import '../models.dart';
 import '../theme.dart';
 import '../util.dart';
 import '../widgets/common.dart';
+import '../i18n/i18n.dart';
 
 /// Форма параметров: пол, возраст, рост, вес, активность, программа, свои нормы.
 class ProfileEditor extends StatefulWidget {
@@ -139,11 +140,11 @@ class _ProfileEditorState extends State<ProfileEditor> {
     FocusScope.of(context).unfocus();
     final p = _draft();
     if (p == null) {
-      showToast(context, 'Проверь возраст (10–100), рост (100–250 см) и вес (25–350 кг)');
+      showToast(context, tr('Проверь возраст (10–100), рост (100–250 см) и вес (25–350 кг)'));
       return;
     }
     if (custom && _customTargets() == null) {
-      showToast(context, 'Заполни свои нормы: калории (от 500), белки, жиры, углеводы');
+      showToast(context, tr('Заполни свои нормы: калории (от 500), белки, жиры, углеводы'));
       return;
     }
     widget.onSubmit(p);
@@ -157,38 +158,38 @@ class _ProfileEditorState extends State<ProfileEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SectionLabel('Пол'),
+        SectionLabel(tr('Пол')),
         Segmented<Sex>(
           values: Sex.values,
-          label: (s) => s == Sex.male ? 'Мужчина' : 'Женщина',
+          label: (s) => s == Sex.male ? tr('Мужчина') : tr('Женщина'),
           selected: sex,
           onChanged: (s) => setState(() => sex = s),
         ),
-        const SectionLabel('Параметры'),
+        SectionLabel(tr('Параметры')),
         Row(
           children: [
-            Expanded(child: NumField(age, 'Возраст', suffix: 'лет', onChanged: changed)),
+            Expanded(child: NumField(age, tr('Возраст'), suffix: tr('лет'), onChanged: changed)),
             const SizedBox(width: 8),
-            Expanded(child: NumField(height, 'Рост', suffix: 'см', onChanged: changed)),
+            Expanded(child: NumField(height, tr('Рост'), suffix: tr('см'), onChanged: changed)),
           ],
         ),
         const SizedBox(height: 8),
         Row(
           children: [
-            Expanded(child: NumField(weight, 'Вес', suffix: 'кг', onChanged: changed)),
+            Expanded(child: NumField(weight, tr('Вес'), suffix: tr('кг'), onChanged: changed)),
             const SizedBox(width: 8),
-            Expanded(child: NumField(target, 'Желаемый вес', suffix: 'кг', onChanged: changed)),
+            Expanded(child: NumField(target, tr('Желаемый вес'), suffix: tr('кг'), onChanged: changed)),
           ],
         ),
-        const SectionLabel('Активность'),
+        SectionLabel(tr('Активность')),
         for (var i = 0; i < activityLevels.length; i++)
           OptionTile(
-            title: activityLevels[i].title,
-            desc: activityLevels[i].desc,
+            title: tr(activityLevels[i].title),
+            desc: tr(activityLevels[i].desc),
             selected: activity == i,
             onTap: () => setState(() => activity = i),
           ),
-        const SectionLabel('Программа'),
+        SectionLabel(tr('Программа')),
         for (final g in [Goal.bulk, Goal.cut, Goal.maintain])
           OptionTile(
             icon: g.icon,
@@ -197,19 +198,19 @@ class _ProfileEditorState extends State<ProfileEditor> {
             selected: goal == g,
             onTap: () => setState(() => goal = g),
           ),
-        const SectionLabel('Твоя норма в день'),
+        SectionLabel(tr('Твоя норма в день')),
         _preview(draft),
         const SizedBox(height: 10),
         AppCard(
           padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
           child: Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Свои нормы', style: TextStyle(fontWeight: FontWeight.w700)),
-                    Text('Задать калории и БЖУ вручную', style: Txt.small),
+                    Text(tr('Свои нормы'), style: TextStyle(fontWeight: FontWeight.w700)),
+                    Text(tr('Задать калории и БЖУ вручную'), style: Txt.small),
                   ],
                 ),
               ),
@@ -225,17 +226,17 @@ class _ProfileEditorState extends State<ProfileEditor> {
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: NumField(cK, 'Калории', suffix: 'ккал', onChanged: changed)),
+              Expanded(child: NumField(cK, tr('Калории'), suffix: tr('ккал'), onChanged: changed)),
               const SizedBox(width: 8),
-              Expanded(child: NumField(cP, 'Белки', suffix: 'г', onChanged: changed)),
+              Expanded(child: NumField(cP, tr('Белки'), suffix: tr('г'), onChanged: changed)),
             ],
           ),
           const SizedBox(height: 8),
           Row(
             children: [
-              Expanded(child: NumField(cF, 'Жиры', suffix: 'г', onChanged: changed)),
+              Expanded(child: NumField(cF, tr('Жиры'), suffix: tr('г'), onChanged: changed)),
               const SizedBox(width: 8),
-              Expanded(child: NumField(cC, 'Углеводы', suffix: 'г', onChanged: changed)),
+              Expanded(child: NumField(cC, tr('Углеводы'), suffix: tr('г'), onChanged: changed)),
             ],
           ),
         ],
@@ -247,8 +248,8 @@ class _ProfileEditorState extends State<ProfileEditor> {
 
   Widget _preview(Profile? p) {
     if (p == null) {
-      return const AppCard(
-        child: Text('Заполни возраст, рост и вес — здесь появится расчёт.', style: Txt.small),
+      return AppCard(
+        child: Text(tr('Заполни возраст, рост и вес — здесь появится расчёт.'), style: Txt.small),
       );
     }
     final t = computeTargets(p);
@@ -261,7 +262,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(fmtInt(t.kcal), style: Txt.num(32, color: AppColors.accent)),
-              const Text('  ккал / день', style: Txt.small),
+              Text(tr('  ккал / день'), style: Txt.small),
             ],
           ),
           const SizedBox(height: 12),
@@ -269,16 +270,15 @@ class _ProfileEditorState extends State<ProfileEditor> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              Pill('Белки ${t.protein} г', color: AppColors.protein),
-              Pill('Жиры ${t.fat} г', color: AppColors.fat),
-              Pill('Углеводы ${t.carbs} г', color: AppColors.carbs),
-              Pill('Вода ${fmtInt(t.waterMl)} мл', color: AppColors.water),
+              Pill(trf('Белки {0} г', [t.protein]), color: AppColors.protein),
+              Pill(trf('Жиры {0} г', [t.fat]), color: AppColors.fat),
+              Pill(trf('Углеводы {0} г', [t.carbs]), color: AppColors.carbs),
+              Pill(trf('Вода {0} мл', [fmtInt(t.waterMl)]), color: AppColors.water),
             ],
           ),
           const SizedBox(height: 12),
           Text(
-            'Базовый обмен ${fmtInt(calcBmr(p))} ккал · расход с активностью ${fmtInt(calcTdee(p))} ккал'
-            '${p.customTargets ? ' · заданы вручную' : ''}',
+            trf('Базовый обмен {0} ккал · расход с активностью {1} ккал{2}', [fmtInt(calcBmr(p)), fmtInt(calcTdee(p)), p.customTargets ? tr(' · заданы вручную') : '']),
             style: Txt.small,
           ),
         ],

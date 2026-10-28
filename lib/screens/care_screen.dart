@@ -9,6 +9,7 @@ import '../widgets/common.dart';
 import '../widgets/habit_row.dart';
 import '../widgets/nav.dart';
 import 'shopping_screen.dart';
+import '../i18n/i18n.dart';
 
 /// Вкладка «Уход»: рутины на сегодня, темы с советами, список покупок.
 class CareScreen extends StatelessWidget {
@@ -31,9 +32,9 @@ class CareScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 32),
           children: [
-            const TabHeader('Уход', subtitle: 'Кожа, волосы, тело, стиль'),
+            TabHeader(tr('Уход'), subtitle: tr('Кожа, волосы, тело, стиль')),
             if (routineHabits.isNotEmpty) ...[
-              const SectionLabel('Рутина на сегодня'),
+              SectionLabel(tr('Рутина на сегодня')),
               AppCard(
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Column(
@@ -46,7 +47,7 @@ class CareScreen extends StatelessWidget {
                 ),
               ),
             ],
-            const SectionLabel('Разделы'),
+            SectionLabel(tr('Разделы')),
             for (final t in careTopics)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
@@ -61,7 +62,7 @@ class CareScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(t.title, style: Txt.body.copyWith(fontWeight: FontWeight.w600)),
+                            Text(tr(t.title), style: Txt.body.copyWith(fontWeight: FontWeight.w600)),
                             const SizedBox(height: 2),
                             Text(_topicSub(t, life.skinType, life.hairConcern), style: Txt.small),
                           ],
@@ -83,9 +84,9 @@ class CareScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Список покупок', style: Txt.body.copyWith(fontWeight: FontWeight.w600)),
+                        Text(tr('Список покупок'), style: Txt.body.copyWith(fontWeight: FontWeight.w600)),
                         const SizedBox(height: 2),
-                        Text(toBuy == 0 ? 'Всё куплено' : 'Осталось купить: $toBuy', style: Txt.small),
+                        Text(toBuy == 0 ? tr('Всё куплено') : trf('Осталось купить: {0}', [toBuy]), style: Txt.small),
                       ],
                     ),
                   ),
@@ -101,12 +102,12 @@ class CareScreen extends StatelessWidget {
 
   String _topicSub(CareTopic t, String skin, String hair) {
     if (t.id == 'skin' && skin.isNotEmpty) {
-      return 'Твой тип: ${skinQuiz.firstWhere((q) => q.id == skin, orElse: () => skinQuiz.last).title.toLowerCase()}';
+      return trf('Твой тип: {0}', [tr(skinQuiz.firstWhere((q) => q.id == skin, orElse: () => skinQuiz.last).title).toLowerCase()]);
     }
     if (t.id == 'hair' && hair.isNotEmpty) {
-      return 'Тебе: ${hairQuiz.firstWhere((q) => q.id == hair, orElse: () => hairQuiz[4]).title.toLowerCase()}';
+      return trf('Тебе: {0}', [tr(hairQuiz.firstWhere((q) => q.id == hair, orElse: () => hairQuiz[4]).title).toLowerCase()]);
     }
-    return t.subtitle;
+    return tr(t.subtitle);
   }
 
   static Widget _iconBox(IconData icon) => Container(
@@ -130,27 +131,27 @@ class CareTopicScreen extends StatelessWidget {
     final life = store.life;
     return Scaffold(
       backgroundColor: AppColors.bg,
-      appBar: subAppBar(topic.title),
+      appBar: subAppBar(tr(topic.title)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
         children: [
-          AppCard(child: Text(topic.lead, style: Txt.body)),
+          AppCard(child: Text(tr(topic.lead), style: Txt.body)),
           if (topic.id == 'skin')
             _Quiz(
-              title: 'Какая у тебя кожа?',
+              title: tr('Какая у тебя кожа?'),
               options: skinQuiz,
               selected: life.skinType,
               onSelect: life.setSkinType,
             ),
           if (topic.id == 'hair')
             _Quiz(
-              title: 'Что замечаешь?',
+              title: tr('Что замечаешь?'),
               options: hairQuiz,
               selected: life.hairConcern,
               onSelect: life.setHairConcern,
             ),
           for (final s in topic.sections) ...[
-            SectionLabel(s.title),
+            SectionLabel(tr(s.title)),
             AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,7 +167,7 @@ class CareTopicScreen extends StatelessWidget {
                             child: Dot(AppColors.accent, size: 5),
                           ),
                           const SizedBox(width: 10),
-                          Expanded(child: Text(b, style: Txt.body)),
+                          Expanded(child: Text(tr(b), style: Txt.body)),
                         ],
                       ),
                     ),
@@ -175,7 +176,7 @@ class CareTopicScreen extends StatelessWidget {
             ),
           ],
           if (topic.routines.isNotEmpty) ...[
-            const SectionLabel('Добавить в привычки'),
+            SectionLabel(tr('Добавить в привычки')),
             AppCard(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Column(
@@ -198,7 +199,7 @@ class _RoutineRow extends StatelessWidget {
     final life = StoreScope.of(context).life;
     Habit? existing;
     for (final h in life.habits) {
-      if (h.title.toLowerCase() == routine.title.toLowerCase()) existing = h;
+      if (tr(h.title).toLowerCase() == tr(routine.title).toLowerCase()) existing = h;
     }
     final on = existing != null && existing.enabled;
     return Padding(
@@ -211,13 +212,13 @@ class _RoutineRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(routine.title, style: Txt.body.copyWith(fontSize: 13.5)),
+                Text(tr(routine.title), style: Txt.body.copyWith(fontSize: 13.5)),
                 Text(periodTitle(routine.period), style: Txt.small.copyWith(fontSize: 11)),
               ],
             ),
           ),
           if (on)
-            const Pill('в привычках', color: AppColors.good, icon: Icons.check)
+            Pill(tr('в привычках'), color: AppColors.good, icon: Icons.check)
           else
             TextButton(
               onPressed: () {
@@ -225,11 +226,11 @@ class _RoutineRow extends StatelessWidget {
                 if (ex != null) {
                   life.setHabitEnabled(ex.id, true);
                 } else {
-                  life.addHabit(routine.title, routine.period, routine.icon);
+                  life.addHabit(tr(routine.title), routine.period, routine.icon);
                 }
-                showToast(context, 'Добавлено в привычки');
+                showToast(context, tr('Добавлено в привычки'));
               },
-              child: const Text('Добавить', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
+              child: Text(tr('Добавить'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
             ),
         ],
       ),
@@ -270,7 +271,7 @@ class _Quiz extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: o.id == selected ? AppColors.accent : AppColors.border),
                   ),
-                  child: Text(o.label,
+                  child: Text(tr(o.label),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -291,14 +292,14 @@ class _Quiz extends StatelessWidget {
                   children: [
                     const Icon(Icons.auto_awesome, size: 18, color: AppColors.accent),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(chosen.title, style: Txt.section)),
+                    Expanded(child: Text(tr(chosen.title), style: Txt.section)),
                   ],
                 ),
                 const SizedBox(height: 8),
                 for (final a in chosen.advice)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 3),
-                    child: Text('• $a', style: Txt.body),
+                    child: Text('• ${tr(a)}', style: Txt.body),
                   ),
               ],
             ),

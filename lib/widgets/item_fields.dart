@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../util.dart';
 import 'common.dart';
+import '../i18n/i18n.dart';
 
 /// Поля одной позиции еды. При изменении веса КБЖУ пересчитываются пропорционально.
 class ItemFields {
@@ -93,7 +94,7 @@ class ItemFieldsEditor extends StatelessWidget {
                 onChanged: (_) => onChanged(),
                 textCapitalization: TextCapitalization.sentences,
                 style: Txt.body.copyWith(fontWeight: FontWeight.w600),
-                decoration: fieldDeco('Название'),
+                decoration: fieldDeco(tr('Название')),
               ),
             ),
             if (onRemove != null) ...[
@@ -101,7 +102,7 @@ class ItemFieldsEditor extends StatelessWidget {
               IconButton(
                 onPressed: onRemove,
                 icon: const Icon(Icons.close, color: AppColors.muted),
-                tooltip: 'Убрать',
+                tooltip: tr('Убрать'),
               ),
             ],
           ],
@@ -110,14 +111,14 @@ class ItemFieldsEditor extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: NumField(f.grams, 'Вес', suffix: 'г', onChanged: (_) {
+              child: NumField(f.grams, tr('Вес'), suffix: tr('г'), onChanged: (_) {
                 f.onGramsChanged();
                 onChanged();
               }),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: NumField(f.kcal, 'Калории', suffix: 'ккал', onChanged: (_) {
+              child: NumField(f.kcal, tr('Калории'), suffix: tr('ккал'), onChanged: (_) {
                 f.onMacroChanged();
                 onChanged();
               }),
@@ -128,21 +129,21 @@ class ItemFieldsEditor extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: NumField(f.protein, 'Белки', suffix: 'г', onChanged: (_) {
+              child: NumField(f.protein, tr('Белки'), suffix: tr('г'), onChanged: (_) {
                 f.onMacroChanged();
                 onChanged();
               }),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: NumField(f.fat, 'Жиры', suffix: 'г', onChanged: (_) {
+              child: NumField(f.fat, tr('Жиры'), suffix: tr('г'), onChanged: (_) {
                 f.onMacroChanged();
                 onChanged();
               }),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: NumField(f.carbs, 'Углев.', suffix: 'г', onChanged: (_) {
+              child: NumField(f.carbs, tr('Углев.'), suffix: tr('г'), onChanged: (_) {
                 f.onMacroChanged();
                 onChanged();
               }),

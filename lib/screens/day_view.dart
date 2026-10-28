@@ -9,6 +9,7 @@ import '../widgets/nav.dart';
 import '../widgets/sheets.dart';
 import 'add_food_screen.dart';
 import 'calendar_screen.dart';
+import '../i18n/i18n.dart';
 
 /// Экран одного дня: калории, БЖУ, вода, приёмы пищи.
 /// Используется и как вкладка «Сегодня», и для просмотра прошлых дней из календаря.
@@ -51,7 +52,7 @@ class _DayViewState extends State<DayView> {
           : AppBar(
               backgroundColor: AppColors.bg,
               surfaceTintColor: Colors.transparent,
-              title: const Text('Дневник', style: Txt.h2),
+              title: Text(tr('Дневник'), style: Txt.h2),
             ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'add_$key${widget.isRoot}',
@@ -61,7 +62,7 @@ class _DayViewState extends State<DayView> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         onPressed: () => _openAdd(null),
         icon: const Icon(Icons.add_a_photo_outlined),
-        label: const Text('Еда', style: TextStyle(fontWeight: FontWeight.w800)),
+        label: Text(tr('Еда'), style: TextStyle(fontWeight: FontWeight.w800)),
       ),
       body: SafeArea(
         bottom: false,
@@ -84,10 +85,10 @@ class _DayViewState extends State<DayView> {
     if (!widget.isRoot) return _dateRow(goal);
     return Column(
       children: [
-        TabHeader('Питание', actions: [
+        TabHeader(tr('Питание'), actions: [
           SquareIconButton(
             Icons.calendar_month_outlined,
-            tooltip: 'Календарь',
+            tooltip: tr('Календарь'),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const CalendarScreen()),
             ),
@@ -109,7 +110,7 @@ class _DayViewState extends State<DayView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_isToday ? 'Сегодня' : wd, style: widget.isRoot ? Txt.h2 : Txt.h1),
+                Text(_isToday ? tr('Сегодня') : wd, style: widget.isRoot ? Txt.h2 : Txt.h1),
                 const SizedBox(height: 4),
                 Wrap(
                   spacing: 8,
@@ -169,8 +170,8 @@ class _DayViewState extends State<DayView> {
                       children: [
                         Text(fmtInt(tot.kcal), style: Txt.num(28)),
                         const SizedBox(height: 4),
-                        Text('из ${fmtInt(t.kcal)}', style: Txt.small),
-                        const Text('ККАЛ', style: Txt.label),
+                        Text(trf('из {0}', [fmtInt(t.kcal)]), style: Txt.small),
+                        Text(tr('ККАЛ'), style: Txt.label),
                       ],
                     ),
                   ),
@@ -181,14 +182,14 @@ class _DayViewState extends State<DayView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(over ? 'ПЕРЕБОР' : 'ОСТАЛОСЬ', style: Txt.label),
+                    Text(over ? tr('ПЕРЕБОР') : tr('ОСТАЛОСЬ'), style: Txt.label),
                     const SizedBox(height: 4),
                     Text(
-                      '${fmtInt(left.abs())} ккал',
+                      trf('{0} ккал', [fmtInt(left.abs())]),
                       style: Txt.num(22, color: over ? AppColors.over : AppColors.accent),
                     ),
                     const SizedBox(height: 14),
-                    const Text('ВЫПОЛНЕНО', style: Txt.label),
+                    Text(tr('ВЫПОЛНЕНО'), style: Txt.label),
                     const SizedBox(height: 4),
                     Text('${(ratio * 100).round()}%', style: Txt.num(18)),
                   ],
@@ -197,11 +198,11 @@ class _DayViewState extends State<DayView> {
             ],
           ),
           const SizedBox(height: 18),
-          MacroBar(label: 'Белки', value: tot.protein, target: t.protein, color: AppColors.protein),
+          MacroBar(label: tr('Белки'), value: tot.protein, target: t.protein, color: AppColors.protein),
           const SizedBox(height: 12),
-          MacroBar(label: 'Жиры', value: tot.fat, target: t.fat, color: AppColors.fat),
+          MacroBar(label: tr('Жиры'), value: tot.fat, target: t.fat, color: AppColors.fat),
           const SizedBox(height: 12),
-          MacroBar(label: 'Углеводы', value: tot.carbs, target: t.carbs, color: AppColors.carbs),
+          MacroBar(label: tr('Углеводы'), value: tot.carbs, target: t.carbs, color: AppColors.carbs),
         ],
       ),
     );
@@ -216,10 +217,10 @@ class _DayViewState extends State<DayView> {
             children: [
               const Icon(Icons.water_drop_outlined, color: AppColors.water, size: 20),
               const SizedBox(width: 8),
-              const Text('Вода', style: Txt.h2),
+              Text(tr('Вода'), style: Txt.h2),
               const Spacer(),
               Text(fmtInt(ml), style: Txt.num(16, color: AppColors.water)),
-              Text(' / ${fmtInt(t.waterMl)} мл', style: Txt.small),
+              Text(trf(' / {0} мл', [fmtInt(t.waterMl)]), style: Txt.small),
             ],
           ),
           const SizedBox(height: 10),
@@ -265,7 +266,7 @@ class _DayViewState extends State<DayView> {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (list.isNotEmpty) Text('${fmtInt(kcal)} ккал', style: Txt.num(12, color: AppColors.muted)),
+            if (list.isNotEmpty) Text(trf('{0} ккал', [fmtInt(kcal)]), style: Txt.num(12, color: AppColors.muted)),
             const SizedBox(width: 6),
             GestureDetector(
               onTap: () => _openAdd(m),
@@ -282,7 +283,7 @@ class _DayViewState extends State<DayView> {
             children: [
               Icon(m.icon, color: AppColors.muted, size: 20),
               const SizedBox(width: 10),
-              const Text('Пусто — нажми, чтобы добавить', style: Txt.small),
+              Text(tr('Пусто — нажми, чтобы добавить'), style: Txt.small),
             ],
           ),
         )
@@ -336,12 +337,12 @@ class _EntryTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text.rich(
                   TextSpan(children: [
-                    TextSpan(text: '${fmt1(entry.grams)} г   '),
-                    TextSpan(text: 'Б ', style: const TextStyle(color: AppColors.protein)),
+                    TextSpan(text: trf('{0} г   ', [fmt1(entry.grams)])),
+                    TextSpan(text: tr('Б '), style: const TextStyle(color: AppColors.protein)),
                     TextSpan(text: '${fmt1(entry.protein)}  '),
-                    TextSpan(text: 'Ж ', style: const TextStyle(color: AppColors.fat)),
+                    TextSpan(text: tr('Ж '), style: const TextStyle(color: AppColors.fat)),
                     TextSpan(text: '${fmt1(entry.fat)}  '),
-                    TextSpan(text: 'У ', style: const TextStyle(color: AppColors.carbs)),
+                    TextSpan(text: tr('У '), style: const TextStyle(color: AppColors.carbs)),
                     TextSpan(text: fmt1(entry.carbs)),
                   ]),
                   style: Txt.small.copyWith(fontFeatures: Txt.tab),
@@ -356,7 +357,7 @@ class _EntryTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(fmtInt(entry.kcal), style: Txt.num(17)),
-              const Text('ккал', style: Txt.small),
+              Text(tr('ккал'), style: Txt.small),
             ],
           ),
         ],

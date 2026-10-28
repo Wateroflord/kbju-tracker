@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../screens/profile_screen.dart';
 import '../theme.dart';
+import '../i18n/i18n.dart';
 
 /// Квадратная кнопка-иконка в стиле приложения.
 class SquareIconButton extends StatelessWidget {
@@ -42,7 +43,7 @@ class ProfileButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SquareIconButton(
         Icons.person_outline,
-        tooltip: 'Профиль',
+        tooltip: tr('Профиль'),
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const ProfileScreen()),
         ),

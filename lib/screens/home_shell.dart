@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../life/notifications.dart';
 import '../life/steps_service.dart';
 import '../store.dart';
+import '../i18n/i18n.dart';
 import '../theme.dart';
 import 'care_screen.dart';
 import 'day_view.dart';
+import 'learn_screen.dart';
 import 'progress_screen.dart';
 import 'today_screen.dart';
 import 'training_screen.dart';
@@ -46,8 +48,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   static const _tabs = [
     (Icons.dashboard_outlined, Icons.dashboard, 'Сегодня'),
     (Icons.restaurant_outlined, Icons.restaurant, 'Питание'),
-    (Icons.fitness_center_outlined, Icons.fitness_center, 'Тренировки'),
+    (Icons.fitness_center_outlined, Icons.fitness_center, 'Спорт'),
     (Icons.spa_outlined, Icons.spa, 'Уход'),
+    (Icons.translate, Icons.translate, 'Учёба'),
     (Icons.show_chart, Icons.show_chart, 'Прогресс'),
   ];
 
@@ -67,6 +70,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           const DayView(),
           const TrainingScreen(),
           const CareScreen(),
+          const LearnScreen(),
           const ProgressScreen(),
         ],
       ),
@@ -87,7 +91,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                       onTap: () => _open(i),
                       child: _NavItem(
                         icon: index == i ? _tabs[i].$2 : _tabs[i].$1,
-                        label: _tabs[i].$3,
+                        label: tr(_tabs[i].$3),
                         selected: index == i,
                       ),
                     ),
@@ -115,7 +119,7 @@ class _NavItem extends StatelessWidget {
       children: [
         AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          width: 52,
+          width: 46,
           height: 28,
           decoration: BoxDecoration(
             color: selected ? AppColors.accent.withValues(alpha: 0.16) : Colors.transparent,
@@ -124,12 +128,19 @@ class _NavItem extends StatelessWidget {
           child: Icon(icon, color: c, size: 21),
         ),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: selected ? AppColors.text : AppColors.muted,
-            fontSize: 11,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              maxLines: 1,
+              style: TextStyle(
+                color: selected ? AppColors.text : AppColors.muted,
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
           ),
         ),
       ],

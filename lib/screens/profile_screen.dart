@@ -5,9 +5,11 @@ import '../gemini.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/lang_picker.dart';
 import '../widgets/nav.dart';
 import 'reminders_screen.dart';
 import 'profile_editor.dart';
+import '../i18n/i18n.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -17,41 +19,42 @@ class ProfileScreen extends StatelessWidget {
     final store = StoreScope.of(context);
     return Scaffold(
       backgroundColor: AppColors.bg,
-      appBar: subAppBar('Профиль и настройки'),
+      appBar: subAppBar(tr('Профиль и настройки')),
       body: SafeArea(
         bottom: false,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 40),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           children: [
+            SectionLabel(tr('Язык приложения')),
+            const LangPicker(),
             ProfileEditor(
               initial: store.profile,
-              submitText: 'Сохранить и пересчитать',
+              submitText: tr('Сохранить и пересчитать'),
               onSubmit: (p) {
                 store.saveProfile(p);
-                showToast(context, 'Сохранено. Нормы пересчитаны');
+                showToast(context, tr('Сохранено. Нормы пересчитаны'));
               },
             ),
-            const SectionLabel('Напоминания'),
+            SectionLabel(tr('Напоминания')),
             AppCard(
               onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RemindersScreen())),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(Icons.notifications_none, color: AppColors.accent),
                   SizedBox(width: 12),
-                  Expanded(child: Text('Вода, уход, тренировки, отбой, взвешивание', style: Txt.body)),
+                  Expanded(child: Text(tr('Вода, уход, тренировки, отбой, взвешивание'), style: Txt.body)),
                   Icon(Icons.chevron_right, color: AppColors.muted),
                 ],
               ),
             ),
-            const SectionLabel('Распознавание по фото'),
+            SectionLabel(tr('Распознавание по фото')),
             const _AiCard(),
-            const SectionLabel('Данные'),
+            SectionLabel(tr('Данные')),
             const _DataCard(),
             const SizedBox(height: 16),
-            const Text(
-              'Расчёт по формуле Миффлина — Сан Жеора. Это ориентир, а не медицинская рекомендация. '
-              'При заболеваниях, беременности или резких изменениях веса посоветуйся с врачом.',
+            Text(
+              tr('Расчёт по формуле Миффлина — Сан Жеора. Это ориентир, а не медицинская рекомендация. При заболеваниях, беременности или резких изменениях веса посоветуйся с врачом.'),
               style: Txt.small,
               textAlign: TextAlign.center,
             ),
@@ -98,12 +101,12 @@ class _AiCardState extends State<_AiCard> {
     FocusScope.of(context).unfocus();
     StoreScope.read(context).setAi(key.text, model.text);
     model.text = StoreScope.read(context).model;
-    showToast(context, key.text.trim().isEmpty ? 'Ключ удалён' : 'Ключ сохранён');
+    showToast(context, key.text.trim().isEmpty ? tr('Ключ удалён') : tr('Ключ сохранён'));
   }
 
   Future<void> _test() async {
     if (key.text.trim().isEmpty) {
-      showToast(context, 'Сначала вставь ключ');
+      showToast(context, tr('Сначала вставь ключ'));
       return;
     }
     setState(() => testing = true);
@@ -112,7 +115,7 @@ class _AiCardState extends State<_AiCard> {
     setState(() => testing = false);
     if (err == null) {
       StoreScope.read(context).setAi(key.text, model.text);
-      showToast(context, 'Ключ работает и сохранён ✓');
+      showToast(context, tr('Ключ работает и сохранён ✓'));
     } else {
       showToast(context, err);
     }
@@ -130,16 +133,12 @@ class _AiCardState extends State<_AiCard> {
               const Icon(Icons.auto_awesome, color: AppColors.accent2, size: 20),
               const SizedBox(width: 8),
               const Expanded(child: Text('Google Gemini', style: Txt.h2)),
-              Pill(hasKey ? 'подключён' : 'нет ключа', color: hasKey ? AppColors.good : AppColors.under),
+              Pill(hasKey ? tr('подключён') : tr('нет ключа'), color: hasKey ? AppColors.good : AppColors.under),
             ],
           ),
           const SizedBox(height: 10),
-          const Text(
-            'Как получить бесплатный ключ:\n'
-            '1. Открой aistudio.google.com и войди в Google-аккаунт\n'
-            '2. Нажми «Get API key» → «Create API key»\n'
-            '3. Скопируй ключ и вставь сюда\n'
-            'Ключ хранится только на этом телефоне.',
+          Text(
+            tr('Как получить бесплатный ключ:\n1. Открой aistudio.google.com и войди в Google-аккаунт\n2. Нажми «Get API key» → «Create API key»\n3. Скопируй ключ и вставь сюда\nКлюч хранится только на этом телефоне.'),
             style: Txt.small,
           ),
           const SizedBox(height: 8),
@@ -148,10 +147,10 @@ class _AiCardState extends State<_AiCard> {
             child: GestureDetector(
               onTap: () {
                 Clipboard.setData(const ClipboardData(text: 'https://aistudio.google.com/apikey'));
-                showToast(context, 'Ссылка скопирована — вставь её в браузер');
+                showToast(context, tr('Ссылка скопирована — вставь её в браузер'));
               },
-              child: const Text(
-                'Скопировать ссылку',
+              child: Text(
+                tr('Скопировать ссылку'),
                 style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700, fontSize: 13),
               ),
             ),
@@ -163,7 +162,7 @@ class _AiCardState extends State<_AiCard> {
             autocorrect: false,
             enableSuggestions: false,
             style: Txt.body,
-            decoration: fieldDeco('API-ключ').copyWith(
+            decoration: fieldDeco(tr('API-ключ')).copyWith(
               suffixIcon: IconButton(
                 icon: Icon(hidden ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                     color: AppColors.muted, size: 20),
@@ -176,20 +175,20 @@ class _AiCardState extends State<_AiCard> {
             controller: model,
             autocorrect: false,
             style: Txt.body,
-            decoration: fieldDeco('Модель', hint: AppStore.defaultModel),
+            decoration: fieldDeco(tr('Модель'), hint: AppStore.defaultModel),
           ),
           const SizedBox(height: 4),
-          const Text('Модель можно не трогать. Если она перестанет работать, приложение само попробует другие.',
+          Text(tr('Модель можно не трогать. Если она перестанет работать, приложение само попробует другие.'),
               style: Txt.small),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: GhostButton(testing ? 'Проверяю…' : 'Проверить',
+                child: GhostButton(testing ? tr('Проверяю…') : tr('Проверить'),
                     icon: Icons.wifi_tethering, onPressed: testing ? null : _test),
               ),
               const SizedBox(width: 8),
-              Expanded(child: PrimaryButton('Сохранить', onPressed: _save)),
+              Expanded(child: PrimaryButton(tr('Сохранить'), onPressed: _save)),
             ],
           ),
         ],
@@ -208,22 +207,22 @@ class _DataCard extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text('Восстановить из копии', style: Txt.h2),
+        title: Text(tr('Восстановить из копии'), style: Txt.h2),
         content: TextField(
           controller: ctrl,
           minLines: 4,
           maxLines: 8,
           style: Txt.small.copyWith(color: AppColors.text),
-          decoration: fieldDeco('Вставь сюда текст копии'),
+          decoration: fieldDeco(tr('Вставь сюда текст копии')),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Отмена', style: TextStyle(color: AppColors.muted)),
+            child: Text(tr('Отмена'), style: TextStyle(color: AppColors.muted)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Восстановить',
+            child: Text(tr('Восстановить'),
                 style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w800)),
           ),
         ],
@@ -233,7 +232,7 @@ class _DataCard extends StatelessWidget {
     WidgetsBinding.instance.addPostFrameCallback((_) => ctrl.dispose());
     if (ok != true || !context.mounted) return;
     final err = StoreScope.read(context).importJson(txt);
-    showToast(context, err ?? 'Данные восстановлены');
+    showToast(context, err ?? tr('Данные восстановлены'));
   }
 
   @override
@@ -244,32 +243,30 @@ class _DataCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Записей о еде: ${store.entries.length} · взвешиваний: ${store.weights.length}\n'
-            'Всё сохраняется в памяти телефона автоматически. Резервная копия — текстом через буфер обмена '
-            '(фото в копию не входят).',
+            trf('Записей о еде: {0} · взвешиваний: {1}\nВсё сохраняется в памяти телефона автоматически. Резервная копия — текстом через буфер обмена (фото в копию не входят).', [store.entries.length, store.weights.length]),
             style: Txt.small,
           ),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: GhostButton('Копия', icon: Icons.upload_outlined, onPressed: () {
+                child: GhostButton(tr('Копия'), icon: Icons.upload_outlined, onPressed: () {
                   Clipboard.setData(ClipboardData(text: store.exportJson()));
-                  showToast(context, 'Копия данных скопирована в буфер обмена');
+                  showToast(context, tr('Копия данных скопирована в буфер обмена'));
                 }),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: GhostButton('Восстановить', icon: Icons.download_outlined, onPressed: () => _import(context)),
+                child: GhostButton(tr('Восстановить'), icon: Icons.download_outlined, onPressed: () => _import(context)),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          GhostButton('Удалить все данные', icon: Icons.delete_forever_outlined, color: AppColors.over,
+          GhostButton(tr('Удалить все данные'), icon: Icons.delete_forever_outlined, color: AppColors.over,
               onPressed: () async {
-            final ok = await confirm(context, 'Удалить все данные?',
-                'Профиль, дневник питания, вес и история будут удалены без возможности восстановления.',
-                ok: 'Удалить');
+            final ok = await confirm(context, tr('Удалить все данные?'),
+                tr('Профиль, дневник питания, вес и история будут удалены без возможности восстановления.'),
+                ok: tr('Удалить'));
             if (ok && context.mounted) StoreScope.read(context).resetAll();
           }),
         ],

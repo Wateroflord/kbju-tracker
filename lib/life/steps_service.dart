@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../store.dart';
 import '../util.dart';
+import '../i18n/i18n.dart';
 
 /// Подсчёт шагов.
 /// 1) Health Connect — точнее всего: туда пишут Google Fit, Samsung Health, часы.
@@ -44,7 +45,7 @@ class StepsService {
         if (await Permission.activityRecognition.isGranted) {
           await _startNative();
         } else {
-          status.value = 'Нет разрешения на физическую активность — включи датчик заново';
+          status.value = tr('Нет разрешения на физическую активность — включи датчик заново');
         }
       default:
         break;
@@ -62,25 +63,24 @@ class StepsService {
   /// Возвращает null при успехе или текст ошибки.
   Future<String?> connectHealth() async {
     final s = _store;
-    if (s == null) return 'Приложение ещё загружается';
+    if (s == null) return tr('Приложение ещё загружается');
     try {
       await _configure();
       final sdk = await _health.getHealthConnectSdkStatus();
       if (sdk != HealthConnectSdkStatus.sdkAvailable) {
-        return 'Health Connect не установлен или требует обновления. '
-            'Установи «Health Connect» из Google Play и попробуй снова.';
+        return tr('Health Connect не установлен или требует обновления. Установи «Health Connect» из Google Play и попробуй снова.');
       }
       final ok = await _health.requestAuthorization(
         [HealthDataType.STEPS],
         permissions: [HealthDataAccess.READ],
       );
-      if (!ok) return 'Доступ к шагам в Health Connect не выдан';
+      if (!ok) return tr('Доступ к шагам в Health Connect не выдан');
       await _stopNative();
       s.life.stepSource = 'health';
       await syncHealth();
       return null;
     } catch (e) {
-      return 'Не удалось подключить Health Connect: $e';
+      return trf('Не удалось подключить Health Connect: {0}', [e]);
     }
   }
 
@@ -89,7 +89,7 @@ class StepsService {
       await _configure();
       await _health.installHealthConnect();
     } catch (e) {
-      status.value = 'Не удалось открыть Google Play: $e';
+      status.value = trf('Не удалось открыть Google Play: {0}', [e]);
     }
   }
 
@@ -117,16 +117,16 @@ class StepsService {
 
   Future<String?> connectSensor() async {
     final s = _store;
-    if (s == null) return 'Приложение ещё загружается';
+    if (s == null) return tr('Приложение ещё загружается');
     try {
       final has = await _channel.invokeMethod<bool>('hasSensor') ?? false;
-      if (!has) return 'В этом телефоне нет датчика шагов. Используй Health Connect или ручной ввод.';
+      if (!has) return tr('В этом телефоне нет датчика шагов. Используй Health Connect или ручной ввод.');
     } catch (_) {}
     final p = await Permission.activityRecognition.request();
     if (!p.isGranted) {
       return p.isPermanentlyDenied
-          ? 'Разрешение запрещено. Включи «Физическая активность» в настройках приложения.'
-          : 'Без разрешения на физическую активность датчик шагов недоступен';
+          ? tr('Разрешение запрещено. Включи «Физическая активность» в настройках приложения.')
+          : tr('Без разрешения на физическую активность датчик шагов недоступен');
     }
     // Уведомление нужно, чтобы видеть шаги в шторке (Android 13+ спрашивает отдельно).
     await Permission.notification.request();
@@ -141,7 +141,7 @@ class StepsService {
       await _channel.invokeMethod('start');
       status.value = '';
     } catch (e) {
-      status.value = 'Не удалось запустить шагомер: $e';
+      status.value = trf('Не удалось запустить шагомер: {0}', [e]);
       return;
     }
     await syncNative();

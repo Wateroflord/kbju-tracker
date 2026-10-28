@@ -37,6 +37,9 @@ if "com.google.android.apps.healthdata" not in text:
         "        <intent>\n"
         '            <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>\n'
         "        </intent>\n"
+        "        <intent>\n"
+        '            <action android:name="android.intent.action.TTS_SERVICE"/>\n'
+        "        </intent>\n"
         "    </queries>\n"
     )
     inner = queries.split("<queries>\n", 1)[1].rsplit("    </queries>", 1)[0]

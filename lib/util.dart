@@ -1,5 +1,9 @@
 // Даты, форматирование чисел и разбор ввода.
 
+import 'i18n/i18n.dart';
+
+export 'i18n/i18n.dart' show monthsNom, monthsGen, weekdaysShort, weekdaysFull;
+
 String two(int v) => v.toString().padLeft(2, '0');
 
 /// Ключ дня: 2026-10-27
@@ -25,21 +29,8 @@ int daysBetween(DateTime a, DateTime b) =>
         .difference(DateTime.utc(a.year, a.month, a.day))
         .inDays;
 
-const monthsNom = [
-  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-  'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
-];
-const monthsGen = [
-  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
-];
-const weekdaysShort = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-const weekdaysFull = [
-  'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье',
-];
-
 String fmtDate(DateTime d, {bool year = false}) =>
-    '${d.day} ${monthsGen[d.month - 1]}${year ? ' ${d.year}' : ''}';
+    formatDayMonth(d.day, d.month, year: year ? d.year : null);
 
 String fmtShort(DateTime d) => '${two(d.day)}.${two(d.month)}';
 
@@ -59,7 +50,7 @@ String fmtInt(num v) {
 String fmt1(double v) {
   final r = (v * 10).round() / 10;
   final s = r == r.roundToDouble() ? r.toInt().toString() : r.toStringAsFixed(1);
-  return s.replaceAll('.', ',');
+  return s.replaceAll('.', appLang.decimal);
 }
 
 double? parseNum(String s) {

@@ -10,6 +10,7 @@ import '../theme.dart';
 import '../util.dart';
 import '../widgets/common.dart';
 import '../widgets/sheets.dart';
+import '../i18n/i18n.dart';
 
 /// Экран идущей тренировки: подходы, вес, повторы, таймер отдыха.
 class WorkoutScreen extends StatefulWidget {
@@ -98,8 +99,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
   Future<void> _finish(AppStore store, Session s) async {
     if (s.doneSets == 0) {
-      final ok = await confirm(context, 'Нет выполненных подходов',
-          'Отметь подходы галочкой. Удалить эту тренировку?', ok: 'Удалить');
+      final ok = await confirm(context, tr('Нет выполненных подходов'),
+          tr('Отметь подходы галочкой. Удалить эту тренировку?'), ok: tr('Удалить'));
       if (!ok || !mounted) return;
       store.life.deleteSession(s.id);
       Navigator.pop(context);
@@ -114,7 +115,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       if (r != null && r.value > (before[e.exId] ?? 0) && (before[e.exId] ?? 0) > 0) {
         final ex = store.life.exerciseById(e.exId);
         final useW = !ex.bodyweight && !ex.timed;
-        records.add('${ex.name}: ${useW ? '${fmt1(r.value)} кг' : '${r.value.round()}${ex.timed ? ' с' : ' повт.'}'}');
+        records.add('${tr(ex.name)}: ${useW ? trf('{0} кг', [fmt1(r.value)]) : '${r.value.round()}${ex.timed ? tr(' с') : tr(' повт.')}'}');
       }
     }
     final mins = ((DateTime.now().millisecondsSinceEpoch - s.startedAt) / 60000).round();
@@ -124,16 +125,15 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text('Тренировка завершена', style: Txt.h2),
+        title: Text(tr('Тренировка завершена'), style: Txt.h2),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${s.doneSets} подходов · $mins мин'
-                '${s.volume > 0 ? ' · ${fmtInt(s.volume)} кг объём' : ''}', style: Txt.body),
+            Text(trf('{0} подходов · {1} мин{2}', [s.doneSets, mins, s.volume > 0 ? trf(' · {0} кг объём', [fmtInt(s.volume)]) : '']), style: Txt.body),
             if (records.isNotEmpty) ...[
               const SizedBox(height: 12),
-              const Text('Новые рекорды', style: Txt.section),
+              Text(tr('Новые рекорды'), style: Txt.section),
               const SizedBox(height: 6),
               for (final r in records)
                 Padding(
@@ -150,7 +150,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Готово', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700)),
+            child: Text(tr('Готово'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -159,7 +159,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   }
 
   Future<void> _cancel(AppStore store, Session s) async {
-    final ok = await confirm(context, 'Отменить тренировку?', 'Записанные подходы будут удалены.', ok: 'Отменить');
+    final ok = await confirm(context, tr('Отменить тренировку?'), tr('Записанные подходы будут удалены.'), ok: tr('Отменить'));
     if (!ok || !mounted) return;
     store.life.deleteSession(s.id);
     Navigator.pop(context);
@@ -174,29 +174,29 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SheetHandle(),
-            Text(ex.name, style: Txt.h2),
+            Text(tr(ex.name), style: Txt.h2),
             const SizedBox(height: 12),
-            if (ex.technique.isNotEmpty) ...[
-              const Text('Техника', style: Txt.section),
+            if (tr(ex.technique).isNotEmpty) ...[
+              Text(tr('Техника'), style: Txt.section),
               const SizedBox(height: 4),
-              Text(ex.technique, style: Txt.body),
+              Text(tr(ex.technique), style: Txt.body),
               const SizedBox(height: 12),
             ],
-            if (ex.easier.isNotEmpty) ...[
-              const Text('Если тяжело', style: Txt.section),
+            if (tr(ex.easier).isNotEmpty) ...[
+              Text(tr('Если тяжело'), style: Txt.section),
               const SizedBox(height: 4),
-              Text(ex.easier, style: Txt.body),
+              Text(tr(ex.easier), style: Txt.body),
               const SizedBox(height: 12),
             ],
             AppCard(
               borderColor: AppColors.over.withValues(alpha: 0.5),
               padding: const EdgeInsets.all(12),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(Icons.warning_amber_outlined, color: AppColors.over, size: 20),
                   SizedBox(width: 10),
                   Expanded(
-                    child: Text('Острая боль в суставе — остановись и замени упражнение.', style: Txt.small),
+                    child: Text(tr('Острая боль в суставе — остановись и замени упражнение.'), style: Txt.small),
                   ),
                 ],
               ),
@@ -215,7 +215,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
       return Scaffold(
         backgroundColor: AppColors.bg,
         appBar: AppBar(backgroundColor: AppColors.bg),
-        body: const Center(child: Text('Тренировка не найдена', style: Txt.small)),
+        body: Center(child: Text(tr('Тренировка не найдена'), style: Txt.small)),
       );
     }
     final elapsed = Duration(milliseconds: DateTime.now().millisecondsSinceEpoch - s.startedAt);
@@ -229,13 +229,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(s.title, style: Txt.h2),
-            Text('${_fmtDur(elapsed)} · ${s.doneSets}/$total подходов', style: Txt.small),
+            Text(tr(s.title), style: Txt.h2),
+            Text(trf('{0} · {1}/{2} подходов', [_fmtDur(elapsed), s.doneSets, total]), style: Txt.small),
           ],
         ),
         actions: [
           IconButton(
-            tooltip: 'Отменить',
+            tooltip: tr('Отменить'),
             onPressed: () => _cancel(store, s),
             icon: const Icon(Icons.delete_outline, color: AppColors.muted),
           ),
@@ -249,7 +249,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (restLeft > 0) _restBar(),
-              PrimaryButton('Завершить тренировку', icon: Icons.flag_outlined, onPressed: () => _finish(store, s)),
+              PrimaryButton(tr('Завершить тренировку'), icon: Icons.flag_outlined, onPressed: () => _finish(store, s)),
             ],
           ),
         ),
@@ -282,7 +282,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               children: [
                 const Icon(Icons.timer_outlined, color: AppColors.accent, size: 20),
                 const SizedBox(width: 8),
-                const Text('Отдых', style: Txt.section),
+                Text(tr('Отдых'), style: Txt.section),
                 const SizedBox(width: 10),
                 Text(_fmtDur(Duration(seconds: restLeft)), style: Txt.num(20, color: AppColors.accent)),
                 const Spacer(),
@@ -291,11 +291,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                     restLeft += 30;
                     restTotal += 30;
                   }),
-                  child: const Text('+30 с', style: TextStyle(color: AppColors.text)),
+                  child: Text(tr('+30 с'), style: TextStyle(color: AppColors.text)),
                 ),
                 TextButton(
                   onPressed: () => setState(() => restLeft = 0),
-                  child: const Text('Пропустить', style: TextStyle(color: AppColors.muted)),
+                  child: Text(tr('Пропустить'), style: TextStyle(color: AppColors.muted)),
                 ),
               ],
             ),
@@ -328,14 +328,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(ex.name, style: Txt.body.copyWith(fontWeight: FontWeight.w600)),
+                      Text(tr(ex.name), style: Txt.body.copyWith(fontWeight: FontWeight.w600)),
                       const SizedBox(height: 2),
-                      Text('План: ${pe.scheme}${ex.timed ? ' с' : ''}', style: Txt.small),
+                      Text(trf('План: {0}{1}', [pe.scheme, ex.timed ? tr(' с') : '']), style: Txt.small),
                     ],
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Техника',
+                  tooltip: tr('Техника'),
                   onPressed: () => _showTechnique(ex),
                   icon: const Icon(Icons.info_outline, color: AppColors.muted, size: 20),
                 ),
@@ -371,13 +371,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 TextButton.icon(
                   onPressed: () => _addSet(store, s, exIdx),
                   icon: const Icon(Icons.add, size: 16, color: AppColors.accent),
-                  label: const Text('Подход', style: TextStyle(color: AppColors.accent, fontSize: 13)),
+                  label: Text(tr('Подход'), style: TextStyle(color: AppColors.accent, fontSize: 13)),
                 ),
                 if (se.sets.length > 1)
                   TextButton.icon(
                     onPressed: () => _removeSet(store, s, exIdx),
                     icon: const Icon(Icons.remove, size: 16, color: AppColors.muted),
-                    label: const Text('Убрать', style: TextStyle(color: AppColors.muted, fontSize: 13)),
+                    label: Text(tr('Убрать'), style: TextStyle(color: AppColors.muted, fontSize: 13)),
                   ),
               ],
             ),
@@ -459,7 +459,7 @@ class _SetRowState extends State<_SetRow> {
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
                 style: Txt.num(14, weight: FontWeight.w600),
-                decoration: deco('кг'),
+                decoration: deco(tr('кг')),
                 onChanged: (_) => widget.onChanged(_current()),
               ),
             ),
@@ -471,7 +471,7 @@ class _SetRowState extends State<_SetRow> {
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               style: Txt.num(14, weight: FontWeight.w600),
-              decoration: deco(widget.timed ? 'сек' : 'повт.'),
+              decoration: deco(widget.timed ? tr('сек') : tr('повт.')),
               onChanged: (_) => widget.onChanged(_current()),
             ),
           ),

@@ -6,6 +6,7 @@ import '../life/models.dart';
 import '../store.dart';
 import '../theme.dart';
 import 'common.dart';
+import '../i18n/i18n.dart';
 
 /// Строка привычки: иконка, название, прогресс/серия, отметка справа.
 class HabitRow extends StatelessWidget {
@@ -22,19 +23,19 @@ class HabitRow extends StatelessWidget {
     final progress = store.habitProgress(habit, date);
     final streak = store.habitStreak(habit);
     final unit = switch (habit.period) {
-      HabitPeriod.daily => 'дн.',
-      HabitPeriod.weekly => 'нед.',
-      HabitPeriod.monthly => 'мес.',
+      HabitPeriod.daily => tr('дн.'),
+      HabitPeriod.weekly => tr('нед.'),
+      HabitPeriod.monthly => tr('мес.'),
     };
     final sub = [
       if (progress != null) progress,
-      if (streak > 1) 'серия $streak $unit',
+      if (streak > 1) trf('серия {0} {1}', [streak, unit]),
     ].join(' · ');
 
     return InkWell(
       onTap: () {
         if (auto && !manual) {
-          showToast(context, 'Отмечено автоматически');
+          showToast(context, tr('Отмечено автоматически'));
           return;
         }
         store.life.toggleHabit(habit, date);
@@ -58,7 +59,7 @@ class HabitRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    habit.title,
+                    tr(habit.title),
                     style: Txt.body.copyWith(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w500,

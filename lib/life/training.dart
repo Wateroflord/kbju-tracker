@@ -1,6 +1,7 @@
 import '../util.dart';
 import 'life_store.dart';
 import 'models.dart';
+import '../i18n/i18n.dart';
 
 class ExerciseRecord {
   final double value; // кг, повторы или секунды
@@ -16,22 +17,22 @@ extension TrainingCalc on LifeStore {
     final last = lastSetsOf(pe.exId, exceptSessionId: exceptSessionId);
     if (last == null || last.isEmpty) return null;
     final ex = exerciseById(pe.exId);
-    final unit = ex.timed ? 'с' : '';
+    final unit = ex.timed ? tr('с') : '';
     final prev = last.map((s) => '${s.reps}$unit').join(', ');
     final w = last.first.weight;
     final head = (w > 0 && !ex.bodyweight)
-        ? 'Прошлый раз: ${fmt1(w)} кг × $prev'
-        : 'Прошлый раз: $prev';
+        ? trf('Прошлый раз: {0} кг × {1}', [fmt1(w), prev])
+        : trf('Прошлый раз: {0}', [prev]);
 
     final allSets = last.length >= pe.sets;
     if (pe.toFailure) {
-      return '$head. Попробуй +1 повтор в каждом подходе.';
+      return trf('{0}. Попробуй +1 повтор в каждом подходе.', [head]);
     }
     final top = allSets && last.take(pe.sets).every((s) => s.reps >= pe.repMax);
-    if (!top) return '$head. Цель — дойти до ${pe.repMax}$unit во всех подходах.';
-    if (ex.timed) return '$head. Все подходы по верхней границе — добавь 10 секунд.';
-    if (ex.bodyweight || w <= 0) return '$head. Все подходы по верхней границе — добавь +1 повтор или усложни вариант.';
-    return '$head. Все подходы по верхней границе — сегодня ставь ${fmt1(w + 2.5)} кг.';
+    if (!top) return trf('{0}. Цель — дойти до {1}{2} во всех подходах.', [head, pe.repMax, unit]);
+    if (ex.timed) return trf('{0}. Все подходы по верхней границе — добавь 10 секунд.', [head]);
+    if (ex.bodyweight || w <= 0) return trf('{0}. Все подходы по верхней границе — добавь +1 повтор или усложни вариант.', [head]);
+    return trf('{0}. Все подходы по верхней границе — сегодня ставь {1} кг.', [head, fmt1(w + 2.5)]);
   }
 
   /// Лучший результат: для упражнений с весом — максимальный вес, иначе — повторы/секунды.

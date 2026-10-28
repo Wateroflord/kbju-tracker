@@ -6,6 +6,7 @@ import '../theme.dart';
 import '../util.dart';
 import 'common.dart';
 import 'sheets.dart';
+import '../i18n/i18n.dart';
 
 /// Кольцо со значением в центре и подписью снизу.
 class MiniRing extends StatelessWidget {
@@ -70,16 +71,16 @@ Future<void> showStepsInput(BuildContext context, DateTime date) async {
     builder: (ctx) => AlertDialog(
       backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      title: Text('Шаги за ${sameDay(date, DateTime.now()) ? 'сегодня' : fmtDate(date)}', style: Txt.h2),
-      content: NumField(ctrl, 'Шаги', suffix: 'шагов'),
+      title: Text(trf('Шаги за {0}', [sameDay(date, DateTime.now()) ? tr('сегодня') : fmtDate(date)]), style: Txt.h2),
+      content: NumField(ctrl, tr('Шаги'), suffix: tr('шагов')),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Отмена', style: TextStyle(color: AppColors.muted)),
+          child: Text(tr('Отмена'), style: TextStyle(color: AppColors.muted)),
         ),
         TextButton(
           onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('Сохранить', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700)),
+          child: Text(tr('Сохранить'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700)),
         ),
       ],
     ),
@@ -110,10 +111,10 @@ Future<void> showWaterSheet(BuildContext context, DateTime date) {
             children: [
               const Icon(Icons.water_drop_outlined, color: AppColors.water, size: 20),
               const SizedBox(width: 8),
-              const Text('Вода', style: Txt.h2),
+              Text(tr('Вода'), style: Txt.h2),
               const Spacer(),
               Text(fmtInt(ml), style: Txt.num(18, color: AppColors.water)),
-              Text(' / ${fmtInt(target)} мл', style: Txt.small),
+              Text(trf(' / {0} мл', [fmtInt(target)]), style: Txt.small),
             ],
           ),
           const SizedBox(height: 12),
@@ -176,7 +177,7 @@ Future<void> showSleepInput(BuildContext context, DateTime wakeDay) async {
           backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: Text(
-            sameDay(wakeDay, DateTime.now()) ? 'Сон прошлой ночью' : 'Сон перед ${fmtDate(wakeDay)}',
+            sameDay(wakeDay, DateTime.now()) ? tr('Сон прошлой ночью') : trf('Сон перед {0}', [fmtDate(wakeDay)]),
             style: Txt.h2,
           ),
           content: Column(
@@ -184,15 +185,15 @@ Future<void> showSleepInput(BuildContext context, DateTime wakeDay) async {
             children: [
               SizedBox(
                 width: double.infinity,
-                child: GhostButton('Лёг в ${fmtT(bed)}', icon: Icons.bedtime_outlined, onPressed: () => pick(true)),
+                child: GhostButton(trf('Лёг в {0}', [fmtT(bed)]), icon: Icons.bedtime_outlined, onPressed: () => pick(true)),
               ),
               const SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,
-                child: GhostButton('Встал в ${fmtT(wake)}', icon: Icons.wb_sunny_outlined, onPressed: () => pick(false)),
+                child: GhostButton(trf('Встал в {0}', [fmtT(wake)]), icon: Icons.wb_sunny_outlined, onPressed: () => pick(false)),
               ),
               const SizedBox(height: 14),
-              Text('${fmt1(hours)} ч', style: Txt.num(28, color: hours >= 7 ? AppColors.good : AppColors.under)),
+              Text(trf('{0} ч', [fmt1(hours)]), style: Txt.num(28, color: hours >= 7 ? AppColors.good : AppColors.under)),
             ],
           ),
           actions: [
@@ -202,15 +203,15 @@ Future<void> showSleepInput(BuildContext context, DateTime wakeDay) async {
                   store.life.deleteSleep(key);
                   Navigator.pop(ctx, false);
                 },
-                child: const Text('Удалить', style: TextStyle(color: AppColors.over)),
+                child: Text(tr('Удалить'), style: TextStyle(color: AppColors.over)),
               ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Отмена', style: TextStyle(color: AppColors.muted)),
+              child: Text(tr('Отмена'), style: TextStyle(color: AppColors.muted)),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Сохранить', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700)),
+              child: Text(tr('Сохранить'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700)),
             ),
           ],
         );

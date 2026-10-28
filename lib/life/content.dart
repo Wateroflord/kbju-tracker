@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 
+import '../i18n/i18n.dart';
+
 import 'models.dart';
 
 // ---------------- Привычки ----------------
@@ -13,6 +15,7 @@ const defaultHabits = <Habit>[
   Habit(id: 'water', title: 'Вода по норме', period: HabitPeriod.daily, auto: HabitAuto.water, icon: 'water', builtin: true),
   Habit(id: 'care_am', title: 'Уход утром: умывание, крем, SPF', period: HabitPeriod.daily, icon: 'sun', builtin: true),
   Habit(id: 'care_pm', title: 'Уход вечером: умывание, крем', period: HabitPeriod.daily, icon: 'moon', builtin: true),
+  Habit(id: 'learn', title: 'Язык: дневная цель', period: HabitPeriod.daily, auto: HabitAuto.learn, icon: 'book', builtin: true),
   Habit(id: 'teeth', title: 'Зубы 2 раза + нить', period: HabitPeriod.daily, icon: 'teeth', builtin: true),
   Habit(id: 'no_screen', title: 'Час без экрана перед сном', period: HabitPeriod.daily, icon: 'phone_off', builtin: true),
   Habit(id: 'workouts', title: '3 тренировки', period: HabitPeriod.weekly, auto: HabitAuto.workouts, icon: 'gym', builtin: true),
@@ -53,9 +56,9 @@ IconData habitIcon(String key) => switch (key) {
 const customHabitIcons = ['check', 'book', 'spa', 'face', 'posture', 'walk', 'water', 'sun', 'moon', 'gym'];
 
 String periodTitle(HabitPeriod p) => switch (p) {
-      HabitPeriod.daily => 'Каждый день',
-      HabitPeriod.weekly => 'Каждую неделю',
-      HabitPeriod.monthly => 'Раз в месяц',
+      HabitPeriod.daily => tr('Каждый день'),
+      HabitPeriod.weekly => tr('Каждую неделю'),
+      HabitPeriod.monthly => tr('Раз в месяц'),
     };
 
 // ---------------- Упражнения ----------------
@@ -264,7 +267,7 @@ const dailyTips = <String>[
 String tipOfDay(DateTime d) {
   final start = DateTime(d.year, 1, 1);
   final day = DateTime.utc(d.year, d.month, d.day).difference(DateTime.utc(start.year, 1, 1)).inDays;
-  return dailyTips[(day + d.year) % dailyTips.length];
+  return tr(dailyTips[(day + d.year) % dailyTips.length]);
 }
 
 // ---------------- Список покупок ----------------
@@ -294,6 +297,7 @@ const defaultReminders = <Reminder>[
   Reminder(id: 'care_am', title: 'Уход утром', body: 'Умывание, крем, SPF', hour: 8, minute: 0),
   Reminder(id: 'care_pm', title: 'Уход вечером', body: 'Умывание и крем перед сном', hour: 22, minute: 0),
   Reminder(id: 'workout', title: 'Тренировка', body: 'Сегодня по плану тренировка', hour: 18, minute: 0, fromProgram: true),
+  Reminder(id: 'learn', title: 'Язык', body: 'Пора позаниматься: карточки и тест ждут', hour: 19, minute: 0),
   Reminder(id: 'bedtime', title: 'Пора спать', body: 'Отложи телефон — через час отбой', hour: 22, minute: 30),
   Reminder(id: 'weigh', title: 'Взвешивание', body: 'Взвесься утром натощак и запиши вес', hour: 8, minute: 0, weekdays: [1]),
 ];

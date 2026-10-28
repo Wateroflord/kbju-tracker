@@ -10,6 +10,7 @@ import 'calc.dart';
 import 'life/life_store.dart';
 import 'models.dart';
 import 'util.dart';
+import 'i18n/i18n.dart';
 
 /// Всё состояние приложения. Сохраняется в JSON-файл в памяти телефона
 /// после каждого изменения, поэтому данные не пропадают после закрытия.
@@ -24,6 +25,9 @@ class AppStore extends ChangeNotifier {
   final List<GoalChange> goalHistory = [];
   String apiKey = '';
   String model = defaultModel;
+
+  /// Язык интерфейса: ru, uk, en, pl.
+  String lang = '';
 
   /// Привычки, шаги, сон, тренировки, уход, напоминания.
   late final LifeStore life = LifeStore(_changed);
@@ -59,7 +63,8 @@ class AppStore extends ChangeNotifier {
   }
 
   Map<String, dynamic> _toJson() => {
-        'version': 2,
+        'version': 3,
+        'lang': lang,
         'profile': profile?.toJson(),
         'entries': entries.map((e) => e.toJson()).toList(),
         'weights': weights,
@@ -99,6 +104,9 @@ class AppStore extends ChangeNotifier {
           .whereType<Map>()
           .map((m) => GoalChange.fromJson(Map<String, dynamic>.from(m))));
     life.load(j['life']);
+    final l = j['lang']?.toString() ?? '';
+    // Старые данные без языка — пользователь пользовался русской версией.
+    lang = l.isNotEmpty ? l : (profile != null ? 'ru' : '');
     if (!keepApi) {
       apiKey = j['apiKey']?.toString() ?? '';
       final m = j['model']?.toString() ?? '';
@@ -307,6 +315,19 @@ class AppStore extends ChangeNotifier {
     _changed();
   }
 
+  // ---------- язык ----------
+
+  /// Применить сохранённый язык или язык телефона (при первом запуске).
+  void applyLang() {
+    appLang = lang.isEmpty ? detectDeviceLang() : langFromCode(lang);
+  }
+
+  void setLang(AppLang l) {
+    appLang = l;
+    lang = l.code;
+    _changed();
+  }
+
   // ---------- настройки ИИ ----------
 
   void setAi(String key, String m) {
@@ -324,13 +345,13 @@ class AppStore extends ChangeNotifier {
     try {
       final j = Map<String, dynamic>.from(jsonDecode(txt.trim()) as Map);
       if (!j.containsKey('entries') && !j.containsKey('profile')) {
-        return 'Это не похоже на резервную копию приложения';
+        return tr('Это не похоже на резервную копию приложения');
       }
       _fromJson(j, keepApi: true);
       _changed();
       return null;
     } catch (e) {
-      return 'Не удалось прочитать данные: $e';
+      return trf('Не удалось прочитать данные: {0}', [e]);
     }
   }
 
