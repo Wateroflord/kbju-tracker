@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'life/notifications.dart';
 import 'life/steps_service.dart';
 import 'screens/home_shell.dart';
 import 'screens/onboarding_screen.dart';
@@ -13,6 +14,7 @@ Future<void> main() async {
   final store = AppStore();
   await store.load();
   StepsService.instance.init(store);
+  NotificationService.instance.sync(store);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,

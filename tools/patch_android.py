@@ -68,6 +68,22 @@ if "ViewPermissionUsageActivity" not in text:
     )
     text = text.replace("    </application>", alias + "    </application>", 1)
 
+if "ScheduledNotificationReceiver" not in text:
+    receivers = (
+        '        <receiver android:exported="false" '
+        'android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"/>\n'
+        '        <receiver android:exported="false" '
+        'android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">\n'
+        "            <intent-filter>\n"
+        '                <action android:name="android.intent.action.BOOT_COMPLETED"/>\n'
+        '                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>\n'
+        '                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>\n'
+        '                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>\n'
+        "            </intent-filter>\n"
+        "        </receiver>\n"
+    )
+    text = text.replace("    </application>", receivers + "    </application>", 1)
+
 text = re.sub(r'android:label="[^"]*"', 'android:label="КБЖУ Трекер"', text, count=1)
 manifest.write_text(text, encoding="utf-8")
 print(text)

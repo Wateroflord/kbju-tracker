@@ -11,6 +11,7 @@ import '../widgets/habit_row.dart';
 import '../widgets/nav.dart';
 import '../widgets/quick_inputs.dart';
 import 'habits_screen.dart';
+import 'sleep_screen.dart';
 import 'steps_screen.dart';
 
 /// Главный экран: кольца дня, тренировка, привычки, совет дня.
@@ -82,7 +83,8 @@ class TodayScreen extends StatelessWidget {
                       value: sleep == null ? '—' : fmt1(sleep.hours),
                       label: 'ч сна',
                       color: AppColors.carbs,
-                      onTap: onOpenSleep ?? () => showSleepInput(context, now),
+                      onTap: onOpenSleep ??
+                          () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SleepScreen())),
                     ),
                   ),
                 ],

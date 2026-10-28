@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../life/notifications.dart';
 import '../life/steps_service.dart';
 import '../store.dart';
 import '../theme.dart';
-import 'coming_soon.dart';
+import 'care_screen.dart';
 import 'day_view.dart';
 import 'progress_screen.dart';
 import 'today_screen.dart';
@@ -35,6 +36,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       StepsService.instance.onResume();
+      NotificationService.instance.sync(StoreScope.read(context));
     } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
       StoreScope.read(context).flush();
     }
@@ -63,11 +65,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           TodayScreen(onOpenTab: _open),
           const DayView(),
           const TrainingScreen(),
-          const ComingSoonScreen(
-            title: 'Уход',
-            icon: Icons.spa_outlined,
-            text: 'Раздел ухода появится в следующем обновлении: кожа, волосы, тело, стиль и список покупок.',
-          ),
+          const CareScreen(),
           const ProgressScreen(),
         ],
       ),

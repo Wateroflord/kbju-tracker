@@ -10,6 +10,7 @@ import '../widgets/charts.dart';
 import '../widgets/common.dart';
 import '../widgets/nav.dart';
 import '../widgets/sheets.dart';
+import 'progress_extra.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
@@ -58,6 +59,10 @@ class _ProgressScreenState extends State<ProgressScreen> {
             ),
             const SizedBox(height: 12),
             _weightCard(store, from),
+            const SizedBox(height: 12),
+            const PhotosCard(),
+            const SizedBox(height: 12),
+            ActivityCard(from: from),
             const SizedBox(height: 12),
             _complianceCard(store, from),
             const SizedBox(height: 12),

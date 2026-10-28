@@ -6,6 +6,7 @@ import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/nav.dart';
+import 'reminders_screen.dart';
 import 'profile_editor.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -30,6 +31,18 @@ class ProfileScreen extends StatelessWidget {
                 store.saveProfile(p);
                 showToast(context, 'Сохранено. Нормы пересчитаны');
               },
+            ),
+            const SectionLabel('Напоминания'),
+            AppCard(
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RemindersScreen())),
+              child: const Row(
+                children: [
+                  Icon(Icons.notifications_none, color: AppColors.accent),
+                  SizedBox(width: 12),
+                  Expanded(child: Text('Вода, уход, тренировки, отбой, взвешивание', style: Txt.body)),
+                  Icon(Icons.chevron_right, color: AppColors.muted),
+                ],
+              ),
             ),
             const SectionLabel('Распознавание по фото'),
             const _AiCard(),
