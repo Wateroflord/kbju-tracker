@@ -48,7 +48,8 @@ class _StepsScreenState extends State<StepsScreen> {
     final ok = await confirm(
       context,
       'Разрешение на активность',
-      'Чтобы считать шаги датчиком телефона, Android попросит доступ к «Физической активности». '
+      'Шагомер будет считать шаги в фоне, даже когда приложение закрыто. Android попросит доступ '
+          'к «Физической активности» и к уведомлениям — в шторке будет тихое уведомление с шагами за сегодня. '
           'Данные остаются только на телефоне.',
       ok: 'Продолжить',
     );
@@ -259,14 +260,15 @@ class _StepsScreenState extends State<StepsScreen> {
 
     return Column(
       children: [
-        option('health', Icons.favorite_border, 'Health Connect',
-            'Самый точный: шаги из Google Fit, Samsung Health, часов. Считает даже когда приложение закрыто.',
-            () => _connect(StepsService.instance.connectHealth)),
-        option('sensor', Icons.directions_walk, 'Датчик телефона',
-            'Считает, пока приложение открыто или недавно запускалось. Открывай его хотя бы пару раз в день.',
+        option('sensor', Icons.directions_walk, 'Шагомер телефона — рекомендуем',
+            'Считает сам, когда ходишь с телефоном, даже если приложение закрыто и после перезагрузки.',
             _askSensor),
+        option('health', Icons.favorite_border, 'Health Connect',
+            'Если носишь часы или браслет: берёт шаги из Google Fit, Samsung Health, Mi Fitness.',
+            () => _connect(StepsService.instance.connectHealth)),
         option('manual', Icons.edit_outlined, 'Вручную', 'Вводишь шаги сам, например с часов.',
             () => StepsService.instance.useManual()),
+        if (src == 'sensor') const _BatteryHint(),
         if (src != 'health')
           Align(
             alignment: Alignment.centerLeft,
@@ -277,6 +279,73 @@ class _StepsScreenState extends State<StepsScreen> {
             ),
           ),
       ],
+    );
+  }
+}
+
+
+/// Подсказка снять ограничения батареи — иначе некоторые телефоны усыпляют шагомер.
+class _BatteryHint extends StatefulWidget {
+  const _BatteryHint();
+
+  @override
+  State<_BatteryHint> createState() => _BatteryHintState();
+}
+
+class _BatteryHintState extends State<_BatteryHint> {
+  bool? ok;
+
+  @override
+  void initState() {
+    super.initState();
+    StepsService.instance.batteryUnrestricted.then((v) {
+      if (mounted) setState(() => ok = v);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (ok == null) return const SizedBox.shrink();
+    if (ok!) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 2, bottom: 6),
+        child: Row(
+          children: [
+            Icon(Icons.check_circle_outline, size: 16, color: AppColors.good),
+            SizedBox(width: 8),
+            Expanded(child: Text('Шагомер работает в фоне без ограничений батареи', style: Txt.small)),
+          ],
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 2, bottom: 6),
+      child: AppCard(
+        borderColor: AppColors.under.withValues(alpha: 0.5),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.battery_alert_outlined, color: AppColors.under, size: 20),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Чтобы телефон не усыплял шагомер, сними для приложения ограничения батареи. '
+                    'Особенно важно на Xiaomi, Huawei, Honor и Samsung.',
+                    style: Txt.small,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            GhostButton('Снять ограничения', icon: Icons.battery_charging_full, onPressed: () async {
+              final v = await StepsService.instance.requestNoBatteryLimit();
+              if (mounted) setState(() => ok = v);
+            }),
+          ],
+        ),
+      ),
     );
   }
 }

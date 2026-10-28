@@ -16,6 +16,9 @@ permissions = [
     "android.permission.RECEIVE_BOOT_COMPLETED",
     "android.permission.VIBRATE",
     "android.permission.SCHEDULE_EXACT_ALARM",
+    "android.permission.FOREGROUND_SERVICE",
+    "android.permission.FOREGROUND_SERVICE_HEALTH",
+    "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
 ]
 for p in permissions:
     if p not in text:
@@ -84,18 +87,37 @@ if "ScheduledNotificationReceiver" not in text:
     )
     text = text.replace("    </application>", receivers + "    </application>", 1)
 
+# Фоновый шагомер (служба + автозапуск после перезагрузки)
+if ".StepService" not in text:
+    step = (
+        '        <service android:name=".StepService" android:exported="false" '
+        'android:foregroundServiceType="health"/>\n'
+        '        <receiver android:name=".StepBootReceiver" android:exported="true">\n'
+        "            <intent-filter>\n"
+        '                <action android:name="android.intent.action.BOOT_COMPLETED"/>\n'
+        '                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>\n'
+        "            </intent-filter>\n"
+        "        </receiver>\n"
+    )
+    text = text.replace("    </application>", step + "    </application>", 1)
+
 text = re.sub(r'android:label="[^"]*"', 'android:label="КБЖУ Трекер"', text, count=1)
 manifest.write_text(text, encoding="utf-8")
 print(text)
 
-# ---------- MainActivity: Health Connect требует FlutterFragmentActivity ----------
-for act in ROOT.glob("src/main/**/MainActivity.*"):
-    src = act.read_text(encoding="utf-8")
-    src = src.replace("io.flutter.embedding.android.FlutterActivity", "io.flutter.embedding.android.FlutterFragmentActivity")
-    src = re.sub(r"\bFlutterActivity\(\)", "FlutterFragmentActivity()", src)
-    src = re.sub(r"extends FlutterActivity\b", "extends FlutterFragmentActivity", src)
-    act.write_text(src, encoding="utf-8")
-    print(act, "\n", src)
+# ---------- Нативный код: MainActivity (канал шагомера) и служба шагов ----------
+TOOLS = pathlib.Path(__file__).resolve().parent / "android"
+acts = list(ROOT.glob("src/main/**/MainActivity.*"))
+for act in acts:
+    act.unlink()
+kotlin_dir = ROOT / "src/main/kotlin/com/kbju/kbju_tracker"
+kotlin_dir.mkdir(parents=True, exist_ok=True)
+for name in ("MainActivity.kt", "StepService.kt"):
+    (kotlin_dir / name).write_text((TOOLS / name).read_text(encoding="utf-8"), encoding="utf-8")
+    print("copied", kotlin_dir / name)
+drawable = ROOT / "src/main/res/drawable"
+drawable.mkdir(parents=True, exist_ok=True)
+(drawable / "ic_stat_steps.xml").write_text((TOOLS / "ic_stat_steps.xml").read_text(encoding="utf-8"), encoding="utf-8")
 
 # ---------- build.gradle(.kts): minSdk 26 (Health Connect) + desugaring (уведомления) ----------
 for name in ("build.gradle.kts", "build.gradle"):

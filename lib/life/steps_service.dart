@@ -1,8 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:health/health.dart';
-import 'package:pedometer/pedometer.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../store.dart';
@@ -10,14 +11,16 @@ import '../util.dart';
 
 /// Подсчёт шагов.
 /// 1) Health Connect — точнее всего: туда пишут Google Fit, Samsung Health, часы.
-/// 2) Датчик шагов телефона — считает, пока приложение запущено или недавно открывалось.
+/// 2) Датчик шагов телефона — фоновая служба Android считает шаги постоянно,
+///    даже когда приложение закрыто (в шторке висит уведомление «Шаги сегодня»).
 /// 3) Ручной ввод.
 class StepsService {
   StepsService._();
   static final StepsService instance = StepsService._();
 
   AppStore? _store;
-  StreamSubscription<StepCount>? _sub;
+  static const _channel = MethodChannel('kbju/steps');
+  Timer? _poll;
   final Health _health = Health();
   bool _healthConfigured = false;
 
@@ -39,9 +42,9 @@ class StepsService {
         await syncHealth();
       case 'sensor':
         if (await Permission.activityRecognition.isGranted) {
-          _listenSensor();
+          await _startNative();
         } else {
-          status.value = 'Нет разрешения на физическую активность';
+          status.value = 'Нет разрешения на физическую активность — включи датчик заново';
         }
       default:
         break;
@@ -72,8 +75,7 @@ class StepsService {
         permissions: [HealthDataAccess.READ],
       );
       if (!ok) return 'Доступ к шагам в Health Connect не выдан';
-      await _sub?.cancel();
-      _sub = null;
+      await _stopNative();
       s.life.stepSource = 'health';
       await syncHealth();
       return null;
@@ -111,40 +113,88 @@ class StepsService {
     }
   }
 
-  // ---------- Датчик шагов ----------
+  // ---------- Датчик шагов (фоновая служба) ----------
 
   Future<String?> connectSensor() async {
     final s = _store;
     if (s == null) return 'Приложение ещё загружается';
+    try {
+      final has = await _channel.invokeMethod<bool>('hasSensor') ?? false;
+      if (!has) return 'В этом телефоне нет датчика шагов. Используй Health Connect или ручной ввод.';
+    } catch (_) {}
     final p = await Permission.activityRecognition.request();
     if (!p.isGranted) {
       return p.isPermanentlyDenied
           ? 'Разрешение запрещено. Включи «Физическая активность» в настройках приложения.'
           : 'Без разрешения на физическую активность датчик шагов недоступен';
     }
+    // Уведомление нужно, чтобы видеть шаги в шторке (Android 13+ спрашивает отдельно).
+    await Permission.notification.request();
     s.life.stepSource = 'sensor';
-    s.life.stepSensorLast = -1; // первая отметка станет точкой отсчёта
-    _listenSensor();
+    await _startNative();
     s.life.touch();
     return null;
   }
 
-  void _listenSensor() {
-    _sub ??= Pedometer.stepCountStream.listen(
-      (e) {
-        status.value = '';
-        _store?.life.applySensorReading(e.steps, DateTime.now());
-      },
-      onError: (Object e) {
-        status.value = 'Датчик шагов недоступен на этом телефоне';
-      },
-      cancelOnError: false,
-    );
+  Future<void> _startNative() async {
+    try {
+      await _channel.invokeMethod('start');
+      status.value = '';
+    } catch (e) {
+      status.value = 'Не удалось запустить шагомер: $e';
+      return;
+    }
+    await syncNative();
+    _poll ??= Timer.periodic(const Duration(seconds: 15), (_) => syncNative());
+  }
+
+  Future<void> _stopNative() async {
+    _poll?.cancel();
+    _poll = null;
+    try {
+      await _channel.invokeMethod('stop');
+    } catch (_) {}
+  }
+
+  /// Забирает шаги по дням из фоновой службы.
+  Future<void> syncNative() async {
+    final s = _store;
+    if (s == null || s.life.stepSource != 'sensor') return;
+    try {
+      final raw = await _channel.invokeMethod<String>('days') ?? '{}';
+      final m = jsonDecode(raw);
+      if (m is! Map) return;
+      var changed = false;
+      m.forEach((k, v) {
+        final key = k.toString();
+        final n = asInt(v);
+        if (n > s.life.stepsFor(key)) {
+          s.life.steps[key] = n;
+          changed = true;
+        }
+      });
+      if (changed) s.life.touch();
+    } catch (e) {
+      debugPrint('steps sync: $e');
+    }
+  }
+
+  /// Попросить Android не усыплять шагомер (важно на Xiaomi, Huawei, Samsung).
+  Future<bool> requestNoBatteryLimit() async {
+    final st = await Permission.ignoreBatteryOptimizations.request();
+    return st.isGranted;
+  }
+
+  Future<bool> get batteryUnrestricted => Permission.ignoreBatteryOptimizations.isGranted;
+
+  /// Приложение свернули — опрос не нужен, служба продолжает считать сама.
+  void onPause() {
+    _poll?.cancel();
+    _poll = null;
   }
 
   Future<void> useManual() async {
-    await _sub?.cancel();
-    _sub = null;
+    await _stopNative();
     final s = _store;
     if (s == null) return;
     s.life.stepSource = 'manual';

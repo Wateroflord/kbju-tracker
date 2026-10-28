@@ -38,6 +38,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       StepsService.instance.onResume();
       NotificationService.instance.sync(StoreScope.read(context));
     } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      StepsService.instance.onPause();
       StoreScope.read(context).flush();
     }
   }

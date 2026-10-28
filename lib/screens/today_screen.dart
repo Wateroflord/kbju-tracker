@@ -10,6 +10,7 @@ import '../widgets/common.dart';
 import '../widgets/habit_row.dart';
 import '../widgets/nav.dart';
 import '../widgets/quick_inputs.dart';
+import '../life/steps_service.dart';
 import 'habits_screen.dart';
 import 'sleep_screen.dart';
 import 'steps_screen.dart';
@@ -90,6 +91,10 @@ class TodayScreen extends StatelessWidget {
                 ],
               ),
             ),
+            if (life.stepSource == 'manual' && !life.stepsPromptHidden) ...[
+              const SizedBox(height: 12),
+              const _StepsPrompt(),
+            ],
             const SizedBox(height: 12),
             _WorkoutCard(onOpen: () => onOpenTab(2)),
             SectionLabel(
@@ -283,6 +288,74 @@ class _PeriodSummaryState extends State<_PeriodSummary> {
               HabitRow(habit: list[i], date: widget.date),
             ],
           ],
+        ],
+      ),
+    );
+  }
+}
+
+
+/// Предложение включить автоматический подсчёт шагов.
+class _StepsPrompt extends StatefulWidget {
+  const _StepsPrompt();
+
+  @override
+  State<_StepsPrompt> createState() => _StepsPromptState();
+}
+
+class _StepsPromptState extends State<_StepsPrompt> {
+  bool busy = false;
+
+  Future<void> _enable() async {
+    final ok = await confirm(
+      context,
+      'Автоподсчёт шагов',
+      'Шагомер будет считать шаги сам, когда ты ходишь с телефоном, даже если приложение закрыто. '
+          'Android попросит доступ к «Физической активности» и к уведомлениям — в шторке будет '
+          'тихое уведомление с шагами за сегодня.',
+      ok: 'Включить',
+    );
+    if (!ok || !mounted) return;
+    setState(() => busy = true);
+    final err = await StepsService.instance.connectSensor();
+    if (!mounted) return;
+    setState(() => busy = false);
+    showToast(context, err ?? 'Шагомер включён — просто ходи с телефоном');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final life = StoreScope.of(context).life;
+    return AppCard(
+      borderColor: AppColors.good.withValues(alpha: 0.45),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.directions_walk, color: AppColors.good, size: 20),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text('Включить автоподсчёт шагов?', style: Txt.section),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text('Шаги будут считаться сами, пока телефон с тобой — вводить вручную не нужно.', style: Txt.small),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(child: PrimaryButton('Включить', icon: Icons.check, loading: busy, onPressed: _enable)),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: () {
+                  life.stepsPromptHidden = true;
+                  life.touch();
+                },
+                child: const Text('Не сейчас', style: TextStyle(color: AppColors.muted)),
+              ),
+            ],
+          ),
         ],
       ),
     );

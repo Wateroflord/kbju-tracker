@@ -22,6 +22,7 @@ class LifeStore {
   int stepSensorLast = -1; // последнее значение датчика (шаги с перезагрузки телефона)
   String stepSensorDay = '';
   String stepSource = 'manual'; // manual | sensor | health
+  bool stepsPromptHidden = false;
 
   // Сон
   final Map<String, SleepEntry> sleep = {}; // ключ — день пробуждения
@@ -62,6 +63,7 @@ class LifeStore {
     stepSensorLast = -1;
     stepSensorDay = '';
     stepSource = 'manual';
+    stepsPromptHidden = false;
     sleep.clear();
     sleepGoal = 8;
     sleepStartedAt = 0;
@@ -91,6 +93,7 @@ class LifeStore {
         'stepSensorLast': stepSensorLast,
         'stepSensorDay': stepSensorDay,
         'stepSource': stepSource,
+        'stepsPromptHidden': stepsPromptHidden,
         'sleep': sleep.map((k, v) => MapEntry(k, v.toJson())),
         'sleepGoal': sleepGoal,
         'sleepStartedAt': sleepStartedAt,
@@ -138,6 +141,7 @@ class LifeStore {
     stepSensorLast = asInt(j['stepSensorLast'], -1);
     stepSensorDay = j['stepSensorDay']?.toString() ?? '';
     stepSource = j['stepSource']?.toString() ?? 'manual';
+    stepsPromptHidden = j['stepsPromptHidden'] == true;
 
     final sl = j['sleep'];
     if (sl is Map) {
