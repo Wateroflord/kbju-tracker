@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../food/week_report.dart';
 import '../gemini.dart';
+import '../life/eval.dart';
 import '../life/models.dart' show weekStart;
 import '../store.dart';
 import '../theme.dart';
