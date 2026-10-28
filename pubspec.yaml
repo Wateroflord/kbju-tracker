@@ -12,7 +12,6 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   flutter_local_notifications: ^17.2.4
-  flutter_timezone: ^3.0.1
   google_fonts: ^6.2.1
   health: '>=11.0.0 <14.0.0'
   http: ^1.2.2

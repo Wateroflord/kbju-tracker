@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -18,12 +17,6 @@ class NotificationService {
   Future<void> _init() async {
     if (_ready) return;
     tzdata.initializeTimeZones();
-    try {
-      final name = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(name));
-    } catch (e) {
-      debugPrint('timezone: $e');
-    }
     const settings = InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
     );
@@ -41,22 +34,26 @@ class NotificationService {
     return ok ?? true;
   }
 
+  /// Сколько дней вперёд планировать. График обновляется при каждом открытии приложения.
+  static const _daysAhead = 21;
+
   /// Перепланировать все напоминания по текущим настройкам.
   Future<void> sync(AppStore store) async {
     try {
       await _init();
       await _plugin.cancelAll();
       final list = store.life.reminderList;
+      final now = DateTime.now();
       for (var i = 0; i < list.length; i++) {
         final r = list[i];
         if (!r.enabled) continue;
         final days = r.fromProgram ? store.life.weekdaysOf(store.life.activeProgram) : r.weekdays;
-        if (days.isEmpty) {
-          await _schedule(i * 10, r, null);
-        } else {
-          for (final d in days) {
-            await _schedule(i * 10 + d, r, d);
-          }
+        for (var d = 0; d < _daysAhead; d++) {
+          final day = DateTime(now.year, now.month, now.day + d);
+          if (days.isNotEmpty && !days.contains(day.weekday)) continue;
+          final at = DateTime(day.year, day.month, day.day, r.hour, r.minute);
+          if (!at.isAfter(now)) continue;
+          await _schedule(i * 100 + d, r, at);
         }
       }
     } catch (e) {
@@ -64,16 +61,9 @@ class NotificationService {
     }
   }
 
-  Future<void> _schedule(int id, Reminder r, int? weekday) async {
-    final now = tz.TZDateTime.now(tz.local);
-    var at = tz.TZDateTime(tz.local, now.year, now.month, now.day, r.hour, r.minute);
-    if (weekday != null) {
-      while (at.weekday != weekday || !at.isAfter(now)) {
-        at = at.add(const Duration(days: 1));
-      }
-    } else if (!at.isAfter(now)) {
-      at = at.add(const Duration(days: 1));
-    }
+  Future<void> _schedule(int id, Reminder r, DateTime localTime) async {
+    // Местное время -> UTC: учитывает переход на летнее/зимнее время.
+    final at = tz.TZDateTime.from(localTime.toUtc(), tz.UTC);
     await _plugin.zonedSchedule(
       id,
       r.title,
@@ -90,8 +80,6 @@ class NotificationService {
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents:
-          weekday == null ? DateTimeComponents.time : DateTimeComponents.dayOfWeekAndTime,
     );
   }
 }
