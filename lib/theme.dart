@@ -1,21 +1,22 @@
 import 'dart:ui' show FontFeature;
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'models.dart';
 
 /// Палитра: тёмный плоский интерфейс (как игровое меню настроек) —
 /// почти чёрный фон, графитовые панели и один красный акцент.
 class AppColors {
-  static const bg = Color(0xFF0D0D0F);
-  static const surface = Color(0xFF151517);
-  static const surface2 = Color(0xFF1D1D20);
-  static const border = Color(0xFF29292D);
+  static const bg = Color(0xFF0B0B0D);
+  static const surface = Color(0xFF131416);
+  static const surface2 = Color(0xFF1A1A1E);
+  static const border = Color(0xFF26272B);
   static const text = Color(0xFFEDEDEF);
-  static const muted = Color(0xFF8B8B93);
+  static const muted = Color(0xFF7A7D82);
 
-  static const accent = Color(0xFFEF4136); // красный акцент
-  static const accent2 = Color(0xFFD4D4D8); // светло-серый для второстепенного
+  static const accent = Color(0xFFCE3535); // красный акцент (как у uc.zone)
+  static const accent2 = Color(0xFFAFB3BA); // светло-серый для второстепенного
 
   static const protein = Color(0xFF5B9DFF);
   static const fat = Color(0xFFF2B14C);
@@ -96,7 +97,9 @@ ThemeData buildTheme() {
     splashFactory: InkRipple.splashFactory,
   );
   return base.copyWith(
-    textTheme: base.textTheme.apply(bodyColor: AppColors.text, displayColor: AppColors.text),
+    textTheme: GoogleFonts.interTextTheme(base.textTheme)
+        .apply(bodyColor: AppColors.text, displayColor: AppColors.text),
+    primaryTextTheme: GoogleFonts.interTextTheme(base.primaryTextTheme),
     textSelectionTheme: const TextSelectionThemeData(
       cursorColor: AppColors.accent,
       selectionHandleColor: AppColors.accent,
