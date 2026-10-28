@@ -1,0 +1,282 @@
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+
+import '../life/life_store.dart';
+import '../life/steps_service.dart';
+import '../store.dart';
+import '../theme.dart';
+import '../util.dart';
+import '../widgets/charts.dart';
+import '../widgets/common.dart';
+import '../widgets/nav.dart';
+import '../widgets/quick_inputs.dart';
+
+class StepsScreen extends StatefulWidget {
+  const StepsScreen({super.key});
+
+  @override
+  State<StepsScreen> createState() => _StepsScreenState();
+}
+
+class _StepsScreenState extends State<StepsScreen> {
+  int range = 7;
+  bool busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final s = StoreScope.read(context);
+    if (s.life.stepSource == 'health') _refresh();
+  }
+
+  Future<void> _refresh() async {
+    setState(() => busy = true);
+    await StepsService.instance.syncHealth();
+    if (mounted) setState(() => busy = false);
+  }
+
+  Future<void> _connect(Future<String?> Function() f) async {
+    setState(() => busy = true);
+    final err = await f();
+    if (!mounted) return;
+    setState(() => busy = false);
+    showToast(context, err ?? 'Подключено');
+  }
+
+  Future<void> _askSensor() async {
+    final ok = await confirm(
+      context,
+      'Разрешение на активность',
+      'Чтобы считать шаги датчиком телефона, Android попросит доступ к «Физической активности». '
+          'Данные остаются только на телефоне.',
+      ok: 'Продолжить',
+    );
+    if (ok) await _connect(StepsService.instance.connectSensor);
+  }
+
+  Future<void> _editGoal(AppStore store) async {
+    final ctrl = TextEditingController(text: '${store.life.stepGoal}');
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text('Цель по шагам', style: Txt.h2),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            NumField(ctrl, 'Шагов в день', suffix: 'шагов'),
+            const SizedBox(height: 8),
+            const Text('8 км ≈ 10 500 шагов', style: Txt.small),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Отмена', style: TextStyle(color: AppColors.muted)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Сохранить', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    final v = parseNum(ctrl.text);
+    WidgetsBinding.instance.addPostFrameCallback((_) => ctrl.dispose());
+    if (ok == true && v != null) store.life.setStepGoal(v.round());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final store = StoreScope.of(context);
+    final life = store.life;
+    final now = today();
+    final steps = life.stepsFor(dkey(now));
+    final goal = life.stepGoal;
+    final km = LifeStore.stepsToKm(steps);
+    final mins = LifeStore.stepsToMinutes(steps);
+
+    final bars = <BarDatum>[];
+    var sum = 0, cnt = 0, hit = 0;
+    for (var i = range - 1; i >= 0; i--) {
+      final d = addDays(now, -i);
+      final v = life.stepsFor(dkey(d));
+      if (v > 0) {
+        sum += v;
+        cnt++;
+        if (v >= goal) hit++;
+      }
+      bars.add(BarDatum(d, v.toDouble(), goal.toDouble(), v >= goal ? AppColors.good : AppColors.under));
+    }
+
+    return Scaffold(
+      backgroundColor: AppColors.bg,
+      appBar: subAppBar('Шаги', actions: [
+        if (life.stepSource == 'health')
+          IconButton(
+            onPressed: busy ? null : _refresh,
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Обновить из Health Connect',
+          ),
+      ]),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+        children: [
+          AppCard(
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 120,
+                  height: 120,
+                  child: CustomPaint(
+                    painter: RingPainter(progress: steps / goal, color: AppColors.good, stroke: 10),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(fmtInt(steps), style: Txt.num(24)),
+                          Text('из ${fmtInt(goal)}', style: Txt.small),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 18),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('ДИСТАНЦИЯ', style: Txt.label),
+                      const SizedBox(height: 3),
+                      Text('${fmt1(km)} км', style: Txt.num(20)),
+                      const SizedBox(height: 10),
+                      const Text('ВРЕМЯ ХОДЬБЫ', style: Txt.label),
+                      const SizedBox(height: 3),
+                      Text('$mins мин', style: Txt.num(20)),
+                      const SizedBox(height: 10),
+                      Text(
+                        steps >= goal ? 'Цель выполнена' : 'Осталось ${fmtInt(math.max(0, goal - steps))}',
+                        style: Txt.small.copyWith(color: steps >= goal ? AppColors.good : AppColors.accent2),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: GhostButton('Ввести вручную', icon: Icons.edit_outlined, onPressed: () => showStepsInput(context, now)),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: GhostButton('Цель', icon: Icons.flag_outlined, onPressed: () => _editGoal(store)),
+              ),
+            ],
+          ),
+          const SectionLabel('Источник шагов'),
+          _sourceCard(life),
+          ValueListenableBuilder<String>(
+            valueListenable: StepsService.instance.status,
+            builder: (_, msg, __) => msg.isEmpty
+                ? const SizedBox.shrink()
+                : Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(msg, style: Txt.small.copyWith(color: AppColors.under)),
+                  ),
+          ),
+          SectionLabel('История', trailing: SizedBox(
+            width: 150,
+            child: Segmented<int>(
+              values: const [7, 30],
+              label: (v) => '$v дн.',
+              selected: range,
+              onChanged: (v) => setState(() => range = v),
+            ),
+          )),
+          AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                BarChart(data: bars, height: 160),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: StatTile(label: 'В среднем', value: cnt > 0 ? fmtInt(sum / cnt) : '—', sub: 'шагов в день')),
+                    const SizedBox(width: 8),
+                    Expanded(child: StatTile(label: 'Цель выполнена', value: '$hit', sub: 'из $range дн.', color: AppColors.good)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Нажми на день в истории ниже, чтобы поправить шаги вручную.',
+            style: Txt.small,
+          ),
+          const SizedBox(height: 6),
+          for (var i = 0; i < math.min(range, 14); i++) _dayRow(life, addDays(now, -i), goal),
+        ],
+      ),
+    );
+  }
+
+  Widget _dayRow(LifeStore life, DateTime d, int goal) {
+    final v = life.stepsFor(dkey(d));
+    return InkWell(
+      onTap: () => showStepsInput(context, d),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+        child: Row(
+          children: [
+            Dot(v >= goal ? AppColors.good : (v > 0 ? AppColors.under : AppColors.border), size: 7),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                sameDay(d, DateTime.now()) ? 'Сегодня' : '${weekdaysShort[d.weekday - 1]}, ${fmtDate(d)}',
+                style: Txt.body.copyWith(fontSize: 13),
+              ),
+            ),
+            Text(fmtInt(v), style: Txt.num(14)),
+            Text('  ${fmt1(LifeStore.stepsToKm(v))} км', style: Txt.small),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sourceCard(LifeStore life) {
+    final src = life.stepSource;
+    Widget option(String id, IconData icon, String title, String desc, VoidCallback onTap) {
+      final sel = src == id;
+      return OptionTile(icon: icon, title: title, desc: desc, selected: sel, onTap: busy ? () {} : onTap);
+    }
+
+    return Column(
+      children: [
+        option('health', Icons.favorite_border, 'Health Connect',
+            'Самый точный: шаги из Google Fit, Samsung Health, часов. Считает даже когда приложение закрыто.',
+            () => _connect(StepsService.instance.connectHealth)),
+        option('sensor', Icons.directions_walk, 'Датчик телефона',
+            'Считает, пока приложение открыто или недавно запускалось. Открывай его хотя бы пару раз в день.',
+            _askSensor),
+        option('manual', Icons.edit_outlined, 'Вручную', 'Вводишь шаги сам, например с часов.',
+            () => StepsService.instance.useManual()),
+        if (src != 'health')
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: () => StepsService.instance.installHealthConnect(),
+              child: const Text('Нет Health Connect? Установить из Google Play',
+                  style: TextStyle(color: AppColors.accent, fontSize: 13)),
+            ),
+          ),
+      ],
+    );
+  }
+}

@@ -34,6 +34,7 @@ class LifeStore {
   String activeProgramId = 'gym_ab';
   final List<Session> sessions = [];
   int restSeconds = 120;
+  final Map<String, List<int>> weekdayOverrides = {}; // дни недели для встроенных программ
 
   // Уход
   String skinType = '';
@@ -69,6 +70,7 @@ class LifeStore {
     activeProgramId = 'gym_ab';
     sessions.clear();
     restSeconds = 120;
+    weekdayOverrides.clear();
     skinType = '';
     hairConcern = '';
     shopping
@@ -97,6 +99,7 @@ class LifeStore {
         'activeProgramId': activeProgramId,
         'sessions': sessions.map((s) => s.toJson()).toList(),
         'restSeconds': restSeconds,
+        'weekdayOverrides': weekdayOverrides,
         'skinType': skinType,
         'hairConcern': hairConcern,
         'shopping': shopping.map((s) => s.toJson()).toList(),
@@ -151,6 +154,12 @@ class LifeStore {
     if (programById(activeProgramId) == null) activeProgramId = 'gym_ab';
     sessions.addAll(_maps(j['sessions']).map(Session.fromJson));
     restSeconds = asInt(j['restSeconds'], 120).clamp(15, 600).toInt();
+    final wo = j['weekdayOverrides'];
+    if (wo is Map) {
+      wo.forEach((k, v) {
+        if (v is List) weekdayOverrides[k.toString()] = v.map((e) => asInt(e)).where((e) => e >= 1 && e <= 7).toList();
+      });
+    }
 
     skinType = j['skinType']?.toString() ?? '';
     hairConcern = j['hairConcern']?.toString() ?? '';
@@ -233,6 +242,26 @@ class LifeStore {
     _notify();
   }
 
+  /// Новое показание датчика (шаги с момента включения телефона).
+  void applySensorReading(int value, DateTime now) {
+    final k = dkey(now);
+    if (stepSensorLast < 0) {
+      stepSensorLast = value;
+      stepSensorDay = k;
+      _notify();
+      return;
+    }
+    var delta = value - stepSensorLast;
+    if (delta < 0) delta = value; // телефон перезагружали
+    if (delta > 0 && delta < 100000) steps[k] = stepsFor(k) + delta;
+    stepSensorLast = value;
+    stepSensorDay = k;
+    _notify();
+  }
+
+  /// Сообщить об изменении полей, изменённых снаружи.
+  void touch() => _notify();
+
   /// Длина шага ~0,76 м → км.
   static double stepsToKm(int s) => s * 0.00076;
 
@@ -308,7 +337,19 @@ class LifeStore {
     _notify();
   }
 
-  bool isTrainingDay(DateTime d) => activeProgram.weekdays.contains(d.weekday);
+  List<int> weekdaysOf(Program p) => weekdayOverrides[p.id] ?? p.weekdays;
+
+  void setWeekdays(Program p, List<int> days) {
+    final sorted = [...days]..sort();
+    if (p.custom) {
+      saveProgram(Program(id: p.id, title: p.title, desc: p.desc, days: p.days, weekdays: sorted, custom: true));
+    } else {
+      weekdayOverrides[p.id] = sorted;
+      _notify();
+    }
+  }
+
+  bool isTrainingDay(DateTime d) => weekdaysOf(activeProgram).contains(d.weekday);
 
   /// Какой день программы следующий (по последней завершённой тренировке этой программы).
   WorkoutDay nextDay([Program? program]) {

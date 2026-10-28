@@ -34,7 +34,7 @@ extension LifeEval on AppStore {
     }
   }
 
-  int get workoutsPerWeek => math.max(1, life.activeProgram.weekdays.length);
+  int get workoutsPerWeek => math.max(1, life.weekdaysOf(life.activeProgram).length);
 
   bool habitDoneOn(Habit h, DateTime d) => life.manualDone(h, d) || habitAutoDone(h, d);
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -121,9 +122,22 @@ class AppStore extends ChangeNotifier {
     });
   }
 
+  Timer? _saveTimer;
+
   void _changed() {
     notifyListeners();
-    _persist();
+    // Сохраняем не чаще раза в 0,7 с (шаги приходят часто).
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(milliseconds: 700), _persist);
+  }
+
+  /// Немедленно сохранить (при сворачивании приложения).
+  Future<void> flush() async {
+    if (_saveTimer?.isActive ?? false) {
+      _saveTimer!.cancel();
+      _persist();
+    }
+    await _saving;
   }
 
   String newId() => '${DateTime.now().microsecondsSinceEpoch}_${_idCounter++}';

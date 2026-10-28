@@ -11,6 +11,7 @@ import '../widgets/habit_row.dart';
 import '../widgets/nav.dart';
 import '../widgets/quick_inputs.dart';
 import 'habits_screen.dart';
+import 'steps_screen.dart';
 
 /// Главный экран: кольца дня, тренировка, привычки, совет дня.
 class TodayScreen extends StatelessWidget {
@@ -62,7 +63,8 @@ class TodayScreen extends StatelessWidget {
                       value: fmtInt(steps),
                       label: 'шагов',
                       color: AppColors.good,
-                      onTap: onOpenSteps ?? () => showStepsInput(context, now),
+                      onTap: onOpenSteps ??
+                          () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const StepsScreen())),
                     ),
                   ),
                   Expanded(

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../life/steps_service.dart';
+import '../store.dart';
 import '../theme.dart';
 import 'coming_soon.dart';
 import 'day_view.dart';
 import 'progress_screen.dart';
 import 'today_screen.dart';
+import 'training_screen.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -13,8 +16,29 @@ class HomeShell extends StatefulWidget {
   State<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   int index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      StepsService.instance.onResume();
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      StoreScope.read(context).flush();
+    }
+  }
 
   static const _tabs = [
     (Icons.dashboard_outlined, Icons.dashboard, 'Сегодня'),
@@ -38,12 +62,7 @@ class _HomeShellState extends State<HomeShell> {
         children: [
           TodayScreen(onOpenTab: _open),
           const DayView(),
-          const ComingSoonScreen(
-            title: 'Тренировки',
-            icon: Icons.fitness_center,
-            text: 'Трекер тренировок появится в следующем обновлении: программы для зала и со своим весом, '
-                'подходы, таймер отдыха и история.',
-          ),
+          const TrainingScreen(),
           const ComingSoonScreen(
             title: 'Уход',
             icon: Icons.spa_outlined,
