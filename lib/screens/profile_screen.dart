@@ -10,6 +10,8 @@ import '../widgets/nav.dart';
 import 'reminders_screen.dart';
 import 'profile_editor.dart';
 import '../i18n/i18n.dart';
+import '../platform.dart';
+import 'sync_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -48,7 +50,20 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
-            SectionLabel(tr('Виджет на главный экран')),
+            SectionLabel(tr('Синхронизация')),
+            AppCard(
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SyncScreen())),
+              child: Row(
+                children: [
+                  Icon(isWindows ? Icons.phone_android : Icons.computer, color: AppColors.accent),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(isWindows ? tr('Синхронизировать с телефоном') : tr('Синхронизировать с ПК'), style: Txt.body)),
+                  Icon(Icons.chevron_right, color: AppColors.muted),
+                ],
+              ),
+            ),
+            if (!isWindows) SectionLabel(tr('Виджет на главный экран')),
+            if (!isWindows)
             AppCard(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,

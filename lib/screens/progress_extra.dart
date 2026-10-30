@@ -19,6 +19,7 @@ import 'sleep_screen.dart';
 import 'steps_screen.dart';
 import 'training_screen.dart';
 import '../i18n/i18n.dart';
+import '../platform.dart';
 
 /// Шаги, сон, тренировки и привычки за выбранный период.
 class ActivityCard extends StatelessWidget {
@@ -264,6 +265,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
   bool busy = false;
 
   Future<void> _add(ImageSource src) async {
+    if (isWindows) src = ImageSource.gallery;
     final store = StoreScope.read(context);
     setState(() => busy = true);
     try {

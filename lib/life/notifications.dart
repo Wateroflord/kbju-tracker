@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../platform.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
@@ -17,6 +18,7 @@ class NotificationService {
 
   Future<void> _init() async {
     if (_ready) return;
+    if (!isAndroid) throw UnsupportedError('notifications: Android only');
     tzdata.initializeTimeZones();
     const settings = InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
@@ -30,6 +32,7 @@ class NotificationService {
 
   /// Запросить разрешение на уведомления (Android 13+). true — разрешено.
   Future<bool> requestPermission() async {
+    if (!isAndroid) return false;
     await _init();
     final ok = await _android?.requestNotificationsPermission();
     return ok ?? true;

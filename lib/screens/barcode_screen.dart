@@ -11,12 +11,38 @@ import '../util.dart';
 import '../widgets/common.dart';
 import '../widgets/sheets.dart';
 import '../i18n/i18n.dart';
+import '../platform.dart';
+
+Future<String?> _typeCode(BuildContext context) {
+  final ctrl = TextEditingController();
+  return showDialog<String>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: AppColors.surface,
+      title: Text(tr('Штрихкод')),
+      content: TextField(
+        controller: ctrl,
+        autofocus: true,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(hintText: tr('Цифры под штрихкодом')),
+        onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('Отмена'))),
+        TextButton(onPressed: () => Navigator.pop(ctx, ctrl.text.trim()), child: Text(tr('Найти'))),
+      ],
+    ),
+  );
+}
 
 /// Сканер штрихкода → поиск товара → выбор порции. Возвращает позицию для дневника.
 Future<AiFoodItem?> scanBarcodeFlow(BuildContext context) async {
-  final code = await Navigator.of(context).push<String>(
-    MaterialPageRoute(builder: (_) => const BarcodeScanScreen()),
-  );
+  // На ПК камеры нет — цифры штрихкода вводятся вручную.
+  final code = isWindows
+      ? await _typeCode(context)
+      : await Navigator.of(context).push<String>(
+          MaterialPageRoute(builder: (_) => const BarcodeScanScreen()),
+        );
   if (code == null || code.isEmpty || !context.mounted) return null;
   final store = StoreScope.read(context);
 

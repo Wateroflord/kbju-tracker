@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'game/widget_service.dart';
 import 'life/notifications.dart';
 import 'life/steps_service.dart';
+import 'platform.dart';
 import 'screens/home_shell.dart';
 import 'screens/onboarding_screen.dart';
 import 'store.dart';
@@ -16,9 +17,12 @@ Future<void> main() async {
   final store = AppStore();
   await store.load();
   store.applyLang();
-  StepsService.instance.init(store);
-  NotificationService.instance.sync(store);
-  WidgetService.instance.attach(store);
+  // Шаги, напоминания и виджет есть только на телефоне.
+  if (isAndroid) {
+    StepsService.instance.init(store);
+    NotificationService.instance.sync(store);
+    WidgetService.instance.attach(store);
+  }
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,

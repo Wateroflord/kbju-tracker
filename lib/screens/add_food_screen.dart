@@ -15,6 +15,7 @@ import '../widgets/item_fields.dart';
 import '../i18n/i18n.dart';
 import 'barcode_screen.dart';
 import 'food_picker.dart';
+import '../platform.dart';
 
 class AddFoodScreen extends StatefulWidget {
   final DateTime date;
@@ -55,6 +56,8 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
   }
 
   Future<void> _pick(ImageSource src) async {
+    // На ПК камеры нет — выбираем файл.
+    if (isWindows) src = ImageSource.gallery;
     try {
       final x = await ImagePicker().pickImage(
         source: src,

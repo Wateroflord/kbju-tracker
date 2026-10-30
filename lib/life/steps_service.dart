@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import '../platform.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:health/health.dart';
@@ -36,6 +37,7 @@ class StepsService {
   Future<void> onResume() => _resumeSource();
 
   Future<void> _resumeSource() async {
+    if (!isAndroid) return;
     final s = _store;
     if (s == null) return;
     switch (s.life.stepSource) {
@@ -62,6 +64,7 @@ class StepsService {
 
   /// Возвращает null при успехе или текст ошибки.
   Future<String?> connectHealth() async {
+    if (!isAndroid) return tr('Шаги считаются на телефоне — синхронизируй его с ПК, и они появятся здесь');
     final s = _store;
     if (s == null) return tr('Приложение ещё загружается');
     try {
@@ -95,6 +98,7 @@ class StepsService {
 
   /// Подтягивает шаги за последние [days] дней.
   Future<void> syncHealth({int days = 14}) async {
+    if (!isAndroid) return;
     final s = _store;
     if (s == null) return;
     try {
@@ -116,6 +120,7 @@ class StepsService {
   // ---------- Датчик шагов (фоновая служба) ----------
 
   Future<String?> connectSensor() async {
+    if (!isAndroid) return tr('Шаги считаются на телефоне — синхронизируй его с ПК, и они появятся здесь');
     final s = _store;
     if (s == null) return tr('Приложение ещё загружается');
     try {

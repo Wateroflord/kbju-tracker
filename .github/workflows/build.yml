@@ -52,7 +52,7 @@ jobs:
       - name: Build APK
         run: |
           set -o pipefail
-          flutter build apk --release 2>&1 | tee build.txt || { python3 tools/annotate.py build.txt "build"; exit 1; }
+          flutter build apk --release --build-number=${{ github.run_number }} --build-name=1.0.${{ github.run_number }} 2>&1 | tee build.txt || { python3 tools/annotate.py build.txt "build"; exit 1; }
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -65,7 +65,46 @@ jobs:
           cp build/app/outputs/flutter-apk/app-release.apk KBJU-Tracker.apk
           gh release create "build-${{ github.run_number }}" KBJU-Tracker.apk \
             --title "КБЖУ Трекер, сборка ${{ github.run_number }}" \
-            --notes "Скачай KBJU-Tracker.apk и установи на телефон." \
+            --notes "Телефон: KBJU-Tracker.apk. ПК: KBJU-Tracker-Setup.exe (появится через несколько минут после APK)." \
             --latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  windows:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Create Windows project files
+        shell: bash
+        run: |
+          flutter create --project-name kbju_tracker --org com.kbju --platforms windows .
+          rm -rf test
+          flutter pub get
+          dart run flutter_launcher_icons || true
+          sed -i 's/L"kbju_tracker"/L"KBJU Tracker"/' windows/runner/main.cpp || true
+      - name: Build Windows app
+        shell: bash
+        run: |
+          set -o pipefail
+          flutter build windows --release --build-number=${{ github.run_number }} --build-name=1.0.${{ github.run_number }} 2>&1 | tee build.txt || { python3 tools/annotate.py build.txt "windows"; exit 1; }
+      - name: Build installer
+        shell: pwsh
+        env:
+          BUILD_NO: ${{ github.run_number }}
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null }
+          & $iscc tools\installer.iss
+          if ($LASTEXITCODE -ne 0) { echo "::error title=installer::Inno Setup failed"; exit 1 }
+      - name: Attach to the release
+        shell: pwsh
+        run: |
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath KBJU-Tracker-Windows.zip
+          gh release upload "build-${{ github.run_number }}" KBJU-Tracker-Windows.zip dist/KBJU-Tracker-Setup.exe --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

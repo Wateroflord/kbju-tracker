@@ -11,6 +11,7 @@ import 'food/food_models.dart';
 import 'food/food_store.dart';
 import 'life/life_store.dart';
 import 'models.dart';
+import 'platform.dart';
 import 'util.dart';
 import 'i18n/i18n.dart';
 
@@ -39,6 +40,23 @@ class AppStore extends ChangeNotifier {
 
   String _docs = '';
   int _idCounter = 0;
+
+  /// Когда данные менялись в последний раз (мс) — для синхронизации телефон ↔ ПК.
+  int modifiedAt = 0;
+
+  /// Папка с данными приложения.
+  String get docsPath => _docs;
+
+  /// Все данные как JSON (для синхронизации).
+  Map<String, dynamic> exportData() => _toJson();
+
+  /// Заменить данные пришедшими после синхронизации и сохранить.
+  void importData(Map<String, dynamic> j, {int? modified}) {
+    _fromJson(j);
+    modifiedAt = modified ?? DateTime.now().millisecondsSinceEpoch;
+    notifyListeners();
+    _persist();
+  }
   Future<void> _saving = Future.value();
 
   String get _mainPath => '$_docs/kbju_data.json';
@@ -49,7 +67,8 @@ class AppStore extends ChangeNotifier {
 
   Future<void> load() async {
     try {
-      _docs = (await getApplicationDocumentsDirectory()).path;
+      // На ПК — в AppData (а не в «Документы»), на телефоне — в память приложения.
+      _docs = (isWindows ? await getApplicationSupportDirectory() : await getApplicationDocumentsDirectory()).path;
     } catch (e) {
       debugPrint('docs dir error: $e');
       return;
@@ -80,6 +99,7 @@ class AppStore extends ChangeNotifier {
         'model': model,
         'life': life.toJson(),
         'food': food.toJson(),
+        'modifiedAt': modifiedAt,
       };
 
   void _fromJson(Map<String, dynamic> j, {bool keepApi = false}) {
@@ -111,6 +131,7 @@ class AppStore extends ChangeNotifier {
           .map((m) => GoalChange.fromJson(Map<String, dynamic>.from(m))));
     life.load(j['life']);
     food.load(j['food']);
+    modifiedAt = asInt(j['modifiedAt']);
     final l = j['lang']?.toString() ?? '';
     // Старые данные без языка — пользователь пользовался русской версией.
     lang = l.isNotEmpty ? l : (profile != null ? 'ru' : '');
@@ -140,6 +161,7 @@ class AppStore extends ChangeNotifier {
   Timer? _saveTimer;
 
   void _changed() {
+    modifiedAt = DateTime.now().millisecondsSinceEpoch;
     notifyListeners();
     // Сохраняем не чаще раза в 0,7 с (шаги приходят часто).
     _saveTimer?.cancel();
