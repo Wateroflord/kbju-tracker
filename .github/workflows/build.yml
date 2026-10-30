@@ -84,6 +84,7 @@ jobs:
         run: |
           flutter create --project-name kbju_tracker --org com.kbju --platforms windows .
           rm -rf test
+          python tools/patch_windows.py
           flutter pub get
           dart run flutter_launcher_icons || true
           sed -i 's/L"kbju_tracker"/L"KBJU Tracker"/' windows/runner/main.cpp || true
