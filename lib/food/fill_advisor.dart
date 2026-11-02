@@ -3,6 +3,7 @@ import '../models.dart';
 import '../store.dart';
 import '../util.dart';
 import 'food_models.dart';
+import '../i18n/i18n.dart';
 
 /// Вариант «что съесть, чтобы добрать норму».
 class FillIdea {
