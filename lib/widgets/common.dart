@@ -513,6 +513,23 @@ void showToast(BuildContext context, String msg) {
     ));
 }
 
+/// Сообщение с кнопкой «Вернуть» (после удаления).
+void showUndoToast(ScaffoldMessengerState m, String msg, VoidCallback onUndo) {
+  m
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(
+      content: Text(msg, style: const TextStyle(color: AppColors.text)),
+      backgroundColor: AppColors.surface2,
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(seconds: 6),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: AppColors.border),
+      ),
+      action: SnackBarAction(label: tr('Вернуть'), textColor: AppColors.accent, onPressed: onUndo),
+    ));
+}
+
 Future<bool> confirm(BuildContext context, String title, String text, {String ok = 'Да'}) async {
   final r = await showDialog<bool>(
     context: context,

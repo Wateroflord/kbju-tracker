@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../life/health_sync.dart';
 import '../life/notifications.dart';
 import '../life/steps_service.dart';
 import '../store.dart';
 import '../i18n/i18n.dart';
 import '../theme.dart';
+import '../widgets/nav.dart';
 import 'care_screen.dart';
 import 'day_view.dart';
 import 'learn_screen.dart';
@@ -39,40 +41,54 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       StepsService.instance.onResume();
       NotificationService.instance.sync(StoreScope.read(context));
+      HealthSync.instance.sync(StoreScope.read(context));
     } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
       StepsService.instance.onPause();
       StoreScope.read(context).flush();
     }
   }
 
+  // id вкладки (для скрытия в настройках), иконки, подпись
   static const _tabs = [
-    (Icons.dashboard_outlined, Icons.dashboard, 'Сегодня'),
-    (Icons.restaurant_outlined, Icons.restaurant, 'Питание'),
-    (Icons.fitness_center_outlined, Icons.fitness_center, 'Спорт'),
-    (Icons.spa_outlined, Icons.spa, 'Уход'),
-    (Icons.translate, Icons.translate, 'Учёба'),
-    (Icons.show_chart, Icons.show_chart, 'Прогресс'),
+    ('today', Icons.dashboard_outlined, Icons.dashboard, 'Сегодня'),
+    ('food', Icons.restaurant_outlined, Icons.restaurant, 'Питание'),
+    ('training', Icons.fitness_center_outlined, Icons.fitness_center, 'Спорт'),
+    ('care', Icons.spa_outlined, Icons.spa, 'Уход'),
+    ('learn', Icons.translate, Icons.translate, 'Учёба'),
+    ('progress', Icons.show_chart, Icons.show_chart, 'Прогресс'),
   ];
 
+  Widget _page(int i) => switch (i) {
+        0 => TodayScreen(onOpenTab: _open),
+        1 => const DayView(),
+        2 => const TrainingScreen(),
+        3 => const CareScreen(),
+        4 => const LearnScreen(),
+        _ => const ProgressScreen(),
+      };
+
+  /// [i] — номер вкладки в полном списке. Скрытая вкладка открывается отдельным экраном.
   void _open(int i) {
     FocusScope.of(context).unfocus();
+    if (!StoreScope.read(context).extra.tabVisible(_tabs[i].$1)) {
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => Scaffold(backgroundColor: AppColors.bg, appBar: subAppBar(tr(_tabs[i].$4)), body: _page(i)),
+      ));
+      return;
+    }
     setState(() => index = i);
   }
 
   @override
   Widget build(BuildContext context) {
+    final extra = StoreScope.of(context).extra;
+    final visible = [for (var i = 0; i < _tabs.length; i++) if (extra.tabVisible(_tabs[i].$1)) i];
+    if (!visible.contains(index)) index = 0;
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: IndexedStack(
-        index: index,
-        children: [
-          TodayScreen(onOpenTab: _open),
-          const DayView(),
-          const TrainingScreen(),
-          const CareScreen(),
-          const LearnScreen(),
-          const ProgressScreen(),
-        ],
+        index: visible.indexOf(index),
+        children: [for (final i in visible) KeyedSubtree(key: ValueKey(_tabs[i].$1), child: _page(i))],
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
@@ -85,13 +101,13 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             height: 64,
             child: Row(
               children: [
-                for (var i = 0; i < _tabs.length; i++)
+                for (final i in visible)
                   Expanded(
                     child: InkWell(
                       onTap: () => _open(i),
                       child: _NavItem(
-                        icon: index == i ? _tabs[i].$2 : _tabs[i].$1,
-                        label: tr(_tabs[i].$3),
+                        icon: index == i ? _tabs[i].$3 : _tabs[i].$2,
+                        label: tr(_tabs[i].$4),
                         selected: index == i,
                       ),
                     ),

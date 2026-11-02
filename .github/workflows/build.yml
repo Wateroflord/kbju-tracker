@@ -2,6 +2,7 @@ name: Build APK
 
 on:
   push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -26,7 +27,7 @@ jobs:
       - name: Create Android project files
         run: |
           flutter create --project-name kbju_tracker --org com.kbju --platforms android .
-          rm -rf test
+          rm -f test/widget_test.dart
 
       - name: Configure Android manifest
         run: python3 tools/patch_android.py
@@ -38,6 +39,11 @@ jobs:
 
       - name: Get packages
         run: flutter pub get
+
+      - name: Unit tests
+        run: |
+          set -o pipefail
+          flutter test 2>&1 | tee test.txt || { python3 tools/annotate.py test.txt "tests"; exit 1; }
 
       - name: App icon
         continue-on-error: true
@@ -83,7 +89,7 @@ jobs:
         shell: bash
         run: |
           flutter create --project-name kbju_tracker --org com.kbju --platforms windows .
-          rm -rf test
+          rm -f test/widget_test.dart
           python tools/patch_windows.py
           flutter pub get
           dart run flutter_launcher_icons -f icons_windows.yaml || true

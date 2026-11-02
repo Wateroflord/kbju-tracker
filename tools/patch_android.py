@@ -12,6 +12,11 @@ permissions = [
     "android.permission.INTERNET",
     "android.permission.ACTIVITY_RECOGNITION",
     "android.permission.health.READ_STEPS",
+    "android.permission.health.READ_WEIGHT",
+    "android.permission.health.READ_SLEEP",
+    "android.permission.health.READ_EXERCISE",
+    "android.permission.health.READ_TOTAL_CALORIES_BURNED",
+    "android.permission.health.READ_DISTANCE",
     "android.permission.POST_NOTIFICATIONS",
     "android.permission.RECEIVE_BOOT_COMPLETED",
     "android.permission.VIBRATE",
@@ -121,6 +126,20 @@ if ".KbjuWidget" not in text:
     text = text.replace("    </application>", widget + "    </application>", 1)
 
 text = re.sub(r'android:label="[^"]*"', 'android:label="КБЖУ Трекер"', text, count=1)
+
+# Резервная копия Android на Google Диск: только файл данных, без фото (лимит копии — 25 МБ).
+_app = re.search(r"<application[^>]*>", text)
+if _app and "fullBackupContent" not in _app.group(0):
+    tag = _app.group(0)
+    tag = re.sub(r'\s*android:allowBackup="[^"]*"', "", tag)
+    tag = tag.replace(
+        "<application",
+        '<application\n        android:allowBackup="true"\n'
+        '        android:fullBackupContent="@xml/backup_rules"\n'
+        '        android:dataExtractionRules="@xml/data_extraction_rules"',
+        1,
+    )
+    text = text.replace(_app.group(0), tag, 1)
 manifest.write_text(text, encoding="utf-8")
 print(text)
 
@@ -148,6 +167,26 @@ W = TOOLS / "widget"
 for f in W.glob("widget_*.xml"):
     (drawable / f.name).write_text(f.read_text(encoding="utf-8"), encoding="utf-8")
 print("widget resources copied")
+
+# Правила резервной копии (app_flutter — папка данных Flutter)
+_files = [
+    '<include domain="root" path="app_flutter/kbju_data.json"/>',
+    '<include domain="root" path="app_flutter/kbju_data.bak.json"/>',
+]
+(res / "xml/backup_rules.xml").write_text(
+    '<?xml version="1.0" encoding="utf-8"?>\n<full-backup-content>\n    '
+    + "\n    ".join(_files)
+    + "\n</full-backup-content>\n",
+    encoding="utf-8",
+)
+(res / "xml/data_extraction_rules.xml").write_text(
+    '<?xml version="1.0" encoding="utf-8"?>\n<data-extraction-rules>\n'
+    "    <cloud-backup>\n        " + "\n        ".join(_files) + "\n    </cloud-backup>\n"
+    "    <device-transfer>\n        " + "\n        ".join(_files) + "\n    </device-transfer>\n"
+    "</data-extraction-rules>\n",
+    encoding="utf-8",
+)
+print("backup rules written")
 
 # ---------- build.gradle(.kts): minSdk 26 (Health Connect) + desugaring (уведомления) ----------
 for name in ("build.gradle.kts", "build.gradle"):

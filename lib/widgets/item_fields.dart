@@ -13,12 +13,14 @@ class ItemFields {
   final TextEditingController protein;
   final TextEditingController fat;
   final TextEditingController carbs;
+  final TextEditingController fiber;
+  final TextEditingController salt;
 
   /// Позиция пришла от ИИ (при пересчёте заменяется новыми).
   bool ai = false;
 
   // Значения на 1 грамм — для пропорционального пересчёта.
-  double _dk = 0, _dp = 0, _df = 0, _dc = 0;
+  double _dk = 0, _dp = 0, _df = 0, _dc = 0, _dfi = 0, _ds = 0;
 
   ItemFields({
     String name = '',
@@ -27,12 +29,16 @@ class ItemFields {
     double protein = -1,
     double fat = -1,
     double carbs = -1,
+    double fiber = 0,
+    double salt = 0,
   })  : name = TextEditingController(text: name),
         grams = TextEditingController(text: grams > 0 ? fmt1(grams) : ''),
         kcal = TextEditingController(text: _show(kcal)),
         protein = TextEditingController(text: _show(protein)),
         fat = TextEditingController(text: _show(fat)),
-        carbs = TextEditingController(text: _show(carbs)) {
+        carbs = TextEditingController(text: _show(carbs)),
+        fiber = TextEditingController(text: fiber > 0 ? fmt1(fiber) : ''),
+        salt = TextEditingController(text: salt > 0 ? fmt1(salt) : '') {
     _updateDensity();
   }
 
@@ -44,6 +50,8 @@ class ItemFields {
   double get proteinV => parseNum(protein.text) ?? 0;
   double get fatV => parseNum(fat.text) ?? 0;
   double get carbsV => parseNum(carbs.text) ?? 0;
+  double get fiberV => parseNum(fiber.text) ?? 0;
+  double get saltV => parseNum(salt.text) ?? 0;
 
   bool get isValid => name.text.trim().isNotEmpty;
 
@@ -54,6 +62,8 @@ class ItemFields {
     _dp = proteinV / g;
     _df = fatV / g;
     _dc = carbsV / g;
+    _dfi = fiberV / g;
+    _ds = saltV / g;
   }
 
   void onGramsChanged() {
@@ -64,6 +74,8 @@ class ItemFields {
     protein.text = fmt1(_dp * g);
     fat.text = fmt1(_df * g);
     carbs.text = fmt1(_dc * g);
+    if (_dfi > 0) fiber.text = fmt1(_dfi * g);
+    if (_ds > 0) salt.text = fmt1(_ds * g);
   }
 
   void onMacroChanged() => _updateDensity();
@@ -75,6 +87,8 @@ class ItemFields {
     protein.dispose();
     fat.dispose();
     carbs.dispose();
+    fiber.dispose();
+    salt.dispose();
   }
 }
 
@@ -163,6 +177,24 @@ class ItemFieldsEditor extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: NumField(f.carbs, tr('Углев.'), suffix: tr('г'), onChanged: (_) {
+                f.onMacroChanged();
+                onChanged();
+              }),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: NumField(f.fiber, tr('Клетчатка'), suffix: tr('г'), onChanged: (_) {
+                f.onMacroChanged();
+                onChanged();
+              }),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: NumField(f.salt, tr('Соль'), suffix: tr('г'), onChanged: (_) {
                 f.onMacroChanged();
                 onChanged();
               }),

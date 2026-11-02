@@ -11,6 +11,7 @@ import 'reminders_screen.dart';
 import 'profile_editor.dart';
 import '../i18n/i18n.dart';
 import '../platform.dart';
+import 'settings_extra.dart';
 import 'sync_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -50,6 +51,10 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
+            SectionLabel(tr('Разделы приложения')),
+            const TabsCard(),
+            if (!isWindows) SectionLabel(tr('Health Connect: вес, сон, тренировки')),
+            if (!isWindows) const HealthConnectCard(),
             SectionLabel(tr('Синхронизация')),
             AppCard(
               onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SyncScreen())),
@@ -81,6 +86,8 @@ class ProfileScreen extends StatelessWidget {
             ),
             SectionLabel(tr('Распознавание по фото')),
             const _AiCard(),
+            SectionLabel(tr('Резервная копия')),
+            const BackupCard(),
             SectionLabel(tr('Данные')),
             const _DataCard(),
             const SizedBox(height: 16),

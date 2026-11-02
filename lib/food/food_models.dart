@@ -11,6 +11,8 @@ class FavFood {
   final double protein;
   final double fat;
   final double carbs;
+  final double fiber;
+  final double salt;
 
   const FavFood({
     required this.id,
@@ -20,6 +22,8 @@ class FavFood {
     required this.protein,
     required this.fat,
     required this.carbs,
+    this.fiber = 0,
+    this.salt = 0,
   });
 
   String get norm => name.trim().toLowerCase();
@@ -32,6 +36,8 @@ class FavFood {
         'protein': protein,
         'fat': fat,
         'carbs': carbs,
+        if (fiber > 0) 'fiber': fiber,
+        if (salt > 0) 'salt': salt,
       };
 
   factory FavFood.fromJson(Map<String, dynamic> j) => FavFood(
@@ -42,6 +48,8 @@ class FavFood {
         protein: asDouble(j['protein']),
         fat: asDouble(j['fat']),
         carbs: asDouble(j['carbs']),
+        fiber: asDouble(j['fiber']),
+        salt: asDouble(j['salt']),
       );
 }
 
@@ -157,3 +165,98 @@ class Expense {
 
 /// Части тела для замеров (см).
 const measureParts = ['waist', 'chest', 'hips', 'arm', 'thigh', 'neck'];
+
+/// Ингредиент рецепта: КБЖУ на указанный вес.
+class RecipeIngredient {
+  final String name;
+  final double grams, kcal, protein, fat, carbs, fiber, salt;
+
+  const RecipeIngredient({
+    required this.name,
+    required this.grams,
+    required this.kcal,
+    required this.protein,
+    required this.fat,
+    required this.carbs,
+    this.fiber = 0,
+    this.salt = 0,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'grams': grams,
+        'kcal': kcal,
+        'protein': protein,
+        'fat': fat,
+        'carbs': carbs,
+        if (fiber > 0) 'fiber': fiber,
+        if (salt > 0) 'salt': salt,
+      };
+
+  factory RecipeIngredient.fromJson(Map<String, dynamic> j) => RecipeIngredient(
+        name: j['name']?.toString() ?? '',
+        grams: asDouble(j['grams']),
+        kcal: asDouble(j['kcal']),
+        protein: asDouble(j['protein']),
+        fat: asDouble(j['fat']),
+        carbs: asDouble(j['carbs']),
+        fiber: asDouble(j['fiber']),
+        salt: asDouble(j['salt']),
+      );
+}
+
+/// Своё блюдо из ингредиентов. КБЖУ считается на 100 г готового блюда.
+class Recipe {
+  final String id;
+  final String name;
+  final List<RecipeIngredient> items;
+
+  /// Вес готового блюда (после варки/жарки), г. 0 — сумма весов ингредиентов.
+  final double cookedGrams;
+
+  /// На сколько порций рассчитан рецепт.
+  final int portions;
+
+  const Recipe({
+    required this.id,
+    required this.name,
+    required this.items,
+    this.cookedGrams = 0,
+    this.portions = 1,
+  });
+
+  double get rawGrams => items.fold(0.0, (s, i) => s + i.grams);
+  double get weight => cookedGrams > 0 ? cookedGrams : rawGrams;
+  double get kcal => items.fold(0.0, (s, i) => s + i.kcal);
+  double get protein => items.fold(0.0, (s, i) => s + i.protein);
+  double get fat => items.fold(0.0, (s, i) => s + i.fat);
+  double get carbs => items.fold(0.0, (s, i) => s + i.carbs);
+  double get fiber => items.fold(0.0, (s, i) => s + i.fiber);
+  double get salt => items.fold(0.0, (s, i) => s + i.salt);
+
+  /// Вес одной порции, г.
+  double get portionGrams => portions > 0 ? weight / portions : weight;
+
+  /// Множитель для [g] граммов готового блюда.
+  double factor(double g) => weight > 0 ? g / weight : 0;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'items': items.map((i) => i.toJson()).toList(),
+        'cookedGrams': cookedGrams,
+        'portions': portions,
+      };
+
+  factory Recipe.fromJson(Map<String, dynamic> j) => Recipe(
+        id: j['id']?.toString() ?? '',
+        name: j['name']?.toString() ?? '',
+        items: ((j['items'] as List?) ?? const [])
+            .whereType<Map>()
+            .map((m) => RecipeIngredient.fromJson(Map<String, dynamic>.from(m)))
+            .where((i) => i.name.isNotEmpty)
+            .toList(),
+        cookedGrams: asDouble(j['cookedGrams']),
+        portions: asInt(j['portions'], 1).clamp(1, 50).toInt(),
+      );
+}

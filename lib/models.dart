@@ -185,6 +185,8 @@ class FoodEntry {
   final double protein;
   final double fat;
   final double carbs;
+  final double fiber; // клетчатка, г
+  final double salt; // соль, г
   final String? photo; // относительный путь, например photos/123.jpg
 
   const FoodEntry({
@@ -198,6 +200,8 @@ class FoodEntry {
     required this.protein,
     required this.fat,
     required this.carbs,
+    this.fiber = 0,
+    this.salt = 0,
     this.photo,
   });
 
@@ -209,6 +213,8 @@ class FoodEntry {
     double? protein,
     double? fat,
     double? carbs,
+    double? fiber,
+    double? salt,
   }) =>
       FoodEntry(
         id: id,
@@ -221,6 +227,8 @@ class FoodEntry {
         protein: protein ?? this.protein,
         fat: fat ?? this.fat,
         carbs: carbs ?? this.carbs,
+        fiber: fiber ?? this.fiber,
+        salt: salt ?? this.salt,
         photo: photo,
       );
 
@@ -235,6 +243,9 @@ class FoodEntry {
         'protein': protein,
         'fat': fat,
         'carbs': carbs,
+        // Пишем, только если есть: старые записи не меняются (синхронизация).
+        if (fiber > 0) 'fiber': fiber,
+        if (salt > 0) 'salt': salt,
         'photo': photo,
       };
 
@@ -249,6 +260,8 @@ class FoodEntry {
         protein: asDouble(j['protein']),
         fat: asDouble(j['fat']),
         carbs: asDouble(j['carbs']),
+        fiber: asDouble(j['fiber']),
+        salt: asDouble(j['salt']),
         photo: j['photo']?.toString(),
       );
 }
@@ -269,16 +282,28 @@ class GoalChange {
 }
 
 class Totals {
-  double kcal = 0, protein = 0, fat = 0, carbs = 0;
+  double kcal = 0, protein = 0, fat = 0, carbs = 0, fiber = 0, salt = 0;
   int count = 0;
+
+  /// Сколько записей с данными о клетчатке или соли.
+  int microCount = 0;
 
   void add(FoodEntry e) {
     kcal += e.kcal;
     protein += e.protein;
     fat += e.fat;
     carbs += e.carbs;
+    fiber += e.fiber;
+    salt += e.salt;
+    if (e.fiber > 0 || e.salt > 0) microCount++;
     count++;
   }
 }
 
 enum DayStatus { none, under, good, over }
+
+/// Ориентир клетчатки: 14 г на 1000 ккал (не меньше 20 г).
+int fiberTarget(int kcal) => kcal <= 0 ? 25 : ((kcal / 1000) * 14).round().clamp(20, 45).toInt();
+
+/// Верхняя граница соли в сутки (ВОЗ), г.
+const saltLimit = 5;

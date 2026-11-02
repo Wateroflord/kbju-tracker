@@ -1,0 +1,30 @@
+name: Check (branches)
+
+# Быстрая проверка кода на рабочих ветках: без сборки APK и без выпуска релиза.
+on:
+  push:
+    branches-ignore: [main]
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Prepare
+        run: |
+          flutter create --project-name kbju_tracker --org com.kbju --platforms android .
+          rm -f test/widget_test.dart
+          flutter pub get
+      - name: Analyze
+        run: |
+          flutter analyze --no-fatal-infos --no-fatal-warnings > analyze.txt 2>&1 && ok=1 || ok=0
+          cat analyze.txt
+          python3 tools/annotate.py analyze.txt "analyze"
+          [ "$ok" = 1 ]
+      - name: Unit tests
+        run: flutter test

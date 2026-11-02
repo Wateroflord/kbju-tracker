@@ -15,6 +15,7 @@ import '../widgets/item_fields.dart';
 import '../i18n/i18n.dart';
 import 'barcode_screen.dart';
 import 'food_picker.dart';
+import 'recipes_screen.dart';
 import '../platform.dart';
 
 class AddFoodScreen extends StatefulWidget {
@@ -110,6 +111,8 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                 protein: i.protein,
                 fat: i.fat,
                 carbs: i.carbs,
+                fiber: i.fiber,
+                salt: i.salt,
               )..ai = true),
         ];
         note = r.note.isEmpty ? null : r.note;
@@ -131,7 +134,8 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
       items = [
         ...items,
         for (final i in list)
-          ItemFields(name: i.name, grams: i.grams, kcal: i.kcal, protein: i.protein, fat: i.fat, carbs: i.carbs),
+          ItemFields(
+              name: i.name, grams: i.grams, kcal: i.kcal, protein: i.protein, fat: i.fat, carbs: i.carbs, fiber: i.fiber, salt: i.salt),
       ];
       error = null;
     });
@@ -145,6 +149,11 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
   Future<void> _pickSaved(bool favorites) async {
     final list = await showFoodPicker(context, favorites: favorites);
     if (list != null) _addItems(list);
+  }
+
+  Future<void> _pickRecipe() async {
+    final it = await showRecipePicker(context);
+    if (it != null) _addItems([it]);
   }
 
   Future<void> _voice() async {
@@ -174,6 +183,8 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
       protein: f.proteinV,
       fat: f.fatV,
       carbs: f.carbsV,
+      fiber: f.fiberV,
+      salt: f.saltV,
     ));
     showToast(context, added ? tr('Добавлено в избранное') : tr('Убрано из избранного'));
   }
@@ -213,6 +224,8 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
           protein: valid[n].proteinV,
           fat: valid[n].fatV,
           carbs: valid[n].carbsV,
+          fiber: valid[n].fiberV,
+          salt: valid[n].saltV,
           photo: photo,
         ),
     ]);
@@ -283,6 +296,8 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
               Expanded(child: _quickBtn(Icons.history, tr('Недавние'), () => _pickSaved(false))),
               const SizedBox(width: 8),
               Expanded(child: _quickBtn(Icons.star_border, tr('Избранное'), () => _pickSaved(true))),
+              const SizedBox(width: 8),
+              Expanded(child: _quickBtn(Icons.menu_book_outlined, tr('Рецепты'), _pickRecipe)),
             ],
           ),
           const SizedBox(height: 12),

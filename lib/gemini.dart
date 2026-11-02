@@ -10,6 +10,7 @@ import 'i18n/i18n.dart';
 class AiFoodItem {
   final String name;
   final double grams, kcal, protein, fat, carbs;
+  final double fiber, salt; // г, 0 — неизвестно
   const AiFoodItem({
     required this.name,
     required this.grams,
@@ -17,7 +18,25 @@ class AiFoodItem {
     required this.protein,
     required this.fat,
     required this.carbs,
+    this.fiber = 0,
+    this.salt = 0,
   });
+
+  /// Та же еда, пересчитанная на другой вес.
+  AiFoodItem scaled(double newGrams) {
+    final k = grams > 0 ? newGrams / grams : 1.0;
+    double r(double v) => (v * k * 10).round() / 10;
+    return AiFoodItem(
+      name: name,
+      grams: newGrams,
+      kcal: r(kcal),
+      protein: r(protein),
+      fat: r(fat),
+      carbs: r(carbs),
+      fiber: r(fiber),
+      salt: (salt * k * 100).round() / 100,
+    );
+  }
 }
 
 class AiResult {
@@ -149,8 +168,8 @@ class GeminiService {
       ..writeln(hasImage
           ? 'Look at the food photo. Identify every dish or product in it.'
           : 'The user described the food they ate in text. Identify every dish or product.')
-      ..writeln('Estimate the portion weight in grams and calculate calories, protein, fat and carbs '
-          'for the whole portion (NOT per 100 g).')
+      ..writeln('Estimate the portion weight in grams and calculate calories, protein, fat, carbs, '
+          'dietary fiber and salt (grams of salt, not sodium) for the whole portion (NOT per 100 g).')
       ..writeln('If a package label is visible, use its data.')
       ..writeln('Take oil, sauces and the cooking method into account.');
     if (hint.isNotEmpty) {
@@ -160,7 +179,7 @@ class GeminiService {
       ..writeln('Write dish names and the note in $_outLang.')
       ..writeln('Answer with exactly one JSON object, no markdown, no explanations:')
       ..writeln('{"items":[{"name":"Dish name","grams":150,"kcal":250,'
-          '"protein":20,"fat":10,"carbs":15}],"note":"short comment"}')
+          '"protein":20,"fat":10,"carbs":15,"fiber":3,"salt":1.2}],"note":"short comment"}')
       ..writeln('If there is no food, return an empty items list and explain why in note.');
     return b.toString();
   }
@@ -277,6 +296,8 @@ class GeminiService {
           protein: _r(asDouble(it['protein'])),
           fat: _r(asDouble(it['fat'])),
           carbs: _r(asDouble(it['carbs'])),
+          fiber: _r(asDouble(it['fiber'])),
+          salt: _r2(asDouble(it['salt'])),
         ));
       }
     }
@@ -284,6 +305,7 @@ class GeminiService {
   }
 
   static double _r(double v) => v < 0 ? 0 : (v * 10).round() / 10;
+  static double _r2(double v) => v < 0 ? 0 : (v * 100).round() / 100;
 
   static String _errMsg(List<int> bytes) {
     try {

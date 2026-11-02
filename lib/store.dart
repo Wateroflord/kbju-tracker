@@ -7,9 +7,11 @@ import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'calc.dart';
+import 'extra_store.dart';
 import 'food/food_models.dart';
 import 'food/food_store.dart';
 import 'life/life_store.dart';
+import 'life/models.dart' show SleepEntry;
 import 'models.dart';
 import 'platform.dart';
 import 'util.dart';
@@ -37,6 +39,9 @@ class AppStore extends ChangeNotifier {
 
   /// Избранное, штрихкоды, замеры, голодание, расходы.
   late final FoodStore food = FoodStore(_changed);
+
+  /// Скрытые вкладки, Health Connect (вес, сон, тренировки).
+  late final ExtraStore extra = ExtraStore(_changed);
 
   String _docs = '';
   int _idCounter = 0;
@@ -99,6 +104,7 @@ class AppStore extends ChangeNotifier {
         'model': model,
         'life': life.toJson(),
         'food': food.toJson(),
+        'extra': extra.toJson(),
         'modifiedAt': modifiedAt,
       };
 
@@ -131,6 +137,7 @@ class AppStore extends ChangeNotifier {
           .map((m) => GoalChange.fromJson(Map<String, dynamic>.from(m))));
     life.load(j['life']);
     food.load(j['food']);
+    extra.load(j['extra']);
     modifiedAt = asInt(j['modifiedAt']);
     final l = j['lang']?.toString() ?? '';
     // Старые данные без языка — пользователь пользовался русской версией.
@@ -243,6 +250,27 @@ class AppStore extends ChangeNotifier {
     _changed();
   }
 
+  /// Вес и сон из Health Connect. То, что уже записано вручную, не перезаписывается.
+  /// Возвращает, сколько новых записей добавлено.
+  int applyHealth({Map<String, double> weights = const {}, Map<String, SleepEntry> sleep = const {}}) {
+    var n = 0;
+    weights.forEach((k, v) {
+      if (!this.weights.containsKey(k) && v > 20 && v < 400) {
+        this.weights[k] = (v * 10).round() / 10;
+        n++;
+      }
+    });
+    sleep.forEach((k, v) {
+      if (life.sleepFor(k) == null && v.hours > 0.5 && v.hours < 20) {
+        life.sleep[k] = v;
+        n++;
+      }
+    });
+    if (n > 0) _syncProfileWeight();
+    extra.touchSync();
+    return n;
+  }
+
   void deleteWeight(String key) {
     weights.remove(key);
     _syncProfileWeight();
@@ -295,14 +323,26 @@ class AppStore extends ChangeNotifier {
     _changed();
   }
 
-  void deleteEntry(String id) {
+  /// Удаляет запись и возвращает её (для кнопки «Вернуть»).
+  /// Фото стирается не сразу, а через 15 секунд — чтобы запись можно было вернуть вместе с ним.
+  FoodEntry? deleteEntry(String id) {
     final i = entries.indexWhere((x) => x.id == id);
-    if (i < 0) return;
+    if (i < 0) return null;
     final removed = entries.removeAt(i);
     final photo = removed.photo;
-    if (photo != null && !entries.any((x) => x.photo == photo)) {
-      _deleteFile(photoFile(photo));
+    if (photo != null) {
+      Timer(const Duration(seconds: 15), () {
+        if (!entries.any((x) => x.photo == photo)) _deleteFile(photoFile(photo));
+      });
     }
+    _changed();
+    return removed;
+  }
+
+  /// Вернуть удалённую запись.
+  void restoreEntry(FoodEntry e) {
+    if (entries.any((x) => x.id == e.id)) return;
+    entries.add(e);
     _changed();
   }
 
@@ -329,6 +369,8 @@ class AppStore extends ChangeNotifier {
           protein: src[n].protein,
           fat: src[n].fat,
           carbs: src[n].carbs,
+          fiber: src[n].fiber,
+          salt: src[n].salt,
           photo: src[n].photo,
         ),
     ]);
@@ -351,6 +393,8 @@ class AppStore extends ChangeNotifier {
         protein: e.protein,
         fat: e.fat,
         carbs: e.carbs,
+        fiber: e.fiber,
+        salt: e.salt,
       ));
       if (out.length >= limit) break;
     }
@@ -444,6 +488,7 @@ class AppStore extends ChangeNotifier {
     goalHistory.clear();
     life.reset(silent: true);
     food.reset(silent: true);
+    extra.reset(silent: true);
     _changed();
     _deletePhotos();
   }

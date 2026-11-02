@@ -11,6 +11,8 @@ import 'add_food_screen.dart';
 import 'calendar_screen.dart';
 import 'expenses_screen.dart';
 import 'fasting_screen.dart';
+import 'fill_sheet.dart';
+import 'recipes_screen.dart';
 import '../i18n/i18n.dart';
 
 /// Экран одного дня: калории, БЖУ, вода, приёмы пищи.
@@ -74,6 +76,10 @@ class _DayViewState extends State<DayView> {
             _header(goal),
             const SizedBox(height: 14),
             _calorieCard(tot, t),
+            if (_isToday && tot.count > 0 && t.kcal - tot.kcal > 150) ...[
+              const SizedBox(height: 12),
+              _fillCard(tot, t),
+            ],
             const SizedBox(height: 12),
             _waterCard(store, key, t),
             if (widget.isRoot) ...[
@@ -98,6 +104,13 @@ class _DayViewState extends State<DayView> {
     return Column(
       children: [
         TabHeader(tr('Питание'), actions: [
+          SquareIconButton(
+            Icons.menu_book_outlined,
+            tooltip: tr('Рецепты'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const RecipesScreen()),
+            ),
+          ),
           SquareIconButton(
             Icons.calendar_month_outlined,
             tooltip: tr('Календарь'),
@@ -215,6 +228,62 @@ class _DayViewState extends State<DayView> {
           MacroBar(label: tr('Жиры'), value: tot.fat, target: t.fat, color: AppColors.fat),
           const SizedBox(height: 12),
           MacroBar(label: tr('Углеводы'), value: tot.carbs, target: t.carbs, color: AppColors.carbs),
+          if (tot.microCount > 0) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(child: _micro(tr('Клетчатка'), tot.fiber, '${fiberTarget(t.kcal)}', tot.fiber >= fiberTarget(t.kcal) ? AppColors.good : AppColors.muted)),
+                const SizedBox(width: 10),
+                Expanded(child: _micro(tr('Соль'), tot.salt, trf('до {0}', [saltLimit]), tot.salt > saltLimit ? AppColors.over : AppColors.muted)),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _micro(String label, double v, String target, Color c) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.surface2,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Expanded(child: Text(label, style: Txt.small)),
+            Text(fmt1(v), style: Txt.num(14, color: c == AppColors.muted ? AppColors.text : c)),
+            Text(trf(' / {0} г', [target]), style: Txt.small),
+          ],
+        ),
+      );
+
+  Widget _fillCard(Totals tot, Targets t) {
+    final p = t.protein - tot.protein;
+    return AppCard(
+      onTap: () => showFillSheet(context, date),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        children: [
+          const Icon(Icons.restaurant_menu, color: AppColors.accent, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(tr('Чем добрать норму'), style: Txt.body.copyWith(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                Text(
+                  p > 5
+                      ? trf('Осталось {0} ккал и {1} г белка — подберу, что съесть', [fmtInt(t.kcal - tot.kcal), fmtInt(p)])
+                      : trf('Осталось {0} ккал — подберу, что съесть', [fmtInt(t.kcal - tot.kcal)]),
+                  style: Txt.small,
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right, color: AppColors.muted),
         ],
       ),
     );

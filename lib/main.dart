@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'game/widget_service.dart';
+import 'life/health_sync.dart';
 import 'life/notifications.dart';
 import 'life/steps_service.dart';
 import 'platform.dart';
@@ -20,6 +21,7 @@ Future<void> main() async {
   // Шаги, напоминания и виджет есть только на телефоне.
   if (isAndroid) {
     StepsService.instance.init(store);
+    HealthSync.instance.sync(store);
     NotificationService.instance.sync(store);
     WidgetService.instance.attach(store);
   }

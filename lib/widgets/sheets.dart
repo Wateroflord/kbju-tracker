@@ -92,6 +92,8 @@ class _EntryEditorState extends State<EntryEditor> {
     protein: widget.entry.protein,
     fat: widget.entry.fat,
     carbs: widget.entry.carbs,
+    fiber: widget.entry.fiber,
+    salt: widget.entry.salt,
   );
   late Meal meal = widget.entry.meal;
 
@@ -114,15 +116,19 @@ class _EntryEditorState extends State<EntryEditor> {
       protein: f.proteinV,
       fat: f.fatV,
       carbs: f.carbsV,
+      fiber: f.fiberV,
+      salt: f.saltV,
     ));
     Navigator.pop(context);
   }
 
-  Future<void> _delete() async {
-    final ok = await confirm(context, tr('Удалить запись?'), widget.entry.name, ok: tr('Удалить'));
-    if (!ok || !mounted) return;
-    StoreScope.read(context).deleteEntry(widget.entry.id);
+  void _delete() {
+    final store = StoreScope.read(context);
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final removed = store.deleteEntry(widget.entry.id);
     Navigator.pop(context);
+    if (removed == null || messenger == null) return;
+    showUndoToast(messenger, trf('Удалено: {0}', [removed.name]), () => store.restoreEntry(removed));
   }
 
   @override
@@ -153,6 +159,8 @@ class _EntryEditorState extends State<EntryEditor> {
                     protein: f.proteinV,
                     fat: f.fatV,
                     carbs: f.carbsV,
+                    fiber: f.fiberV,
+                    salt: f.saltV,
                   ));
                   setState(() {});
                   showToast(context, added ? tr('Добавлено в избранное') : tr('Убрано из избранного'));

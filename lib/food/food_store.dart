@@ -7,6 +7,7 @@ class FoodStore {
   FoodStore(this._notify);
 
   final List<FavFood> favorites = [];
+  final List<Recipe> recipes = [];
   final Map<String, BarcodeProduct> products = {}; // штрихкод -> товар
 
   // Замеры тела: день -> часть тела -> см
@@ -30,6 +31,7 @@ class FoodStore {
 
   void reset({bool silent = false}) {
     favorites.clear();
+    recipes.clear();
     products.clear();
     measures.clear();
     fastStart = 0;
@@ -44,6 +46,7 @@ class FoodStore {
 
   Map<String, dynamic> toJson() => {
         'favorites': favorites.map((f) => f.toJson()).toList(),
+        'recipes': recipes.map((r) => r.toJson()).toList(),
         'products': products.map((k, v) => MapEntry(k, v.toJson())),
         'measures': measures,
         'fastStart': fastStart,
@@ -63,6 +66,7 @@ class FoodStore {
     if (raw is! Map) return;
     final j = Map<String, dynamic>.from(raw);
     favorites.addAll(maps(j['favorites']).map(FavFood.fromJson).where((f) => f.name.isNotEmpty));
+    recipes.addAll(maps(j['recipes']).map(Recipe.fromJson).where((r) => r.id.isNotEmpty && r.name.isNotEmpty));
     final pr = j['products'];
     if (pr is Map) {
       pr.forEach((k, v) {
@@ -217,6 +221,32 @@ class FoodStore {
 
   void removeFavorite(String id) {
     favorites.removeWhere((f) => f.id == id);
+    _notify();
+  }
+
+  // ---------- рецепты ----------
+
+  void saveRecipe(Recipe r) {
+    final i = recipes.indexWhere((x) => x.id == r.id);
+    if (i < 0) {
+      recipes.insert(0, r);
+    } else {
+      recipes[i] = r;
+    }
+    _notify();
+  }
+
+  Recipe? deleteRecipe(String id) {
+    final i = recipes.indexWhere((x) => x.id == id);
+    if (i < 0) return null;
+    final r = recipes.removeAt(i);
+    _notify();
+    return r;
+  }
+
+  void restoreRecipe(Recipe r) {
+    if (recipes.any((x) => x.id == r.id)) return;
+    recipes.insert(0, r);
     _notify();
   }
 

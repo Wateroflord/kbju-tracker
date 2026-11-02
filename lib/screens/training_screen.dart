@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../life/health_sync.dart';
 import '../life/models.dart';
 import '../life/training.dart';
 import '../store.dart';
@@ -119,6 +120,43 @@ class TrainingScreen extends StatelessWidget {
               child: Text(tr('Все'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600, fontSize: 13)),
             )),
             _RecordsPreview(),
+            if (store.extra.hcWorkouts) ...[
+              SectionLabel(tr('С часов (Health Connect)')),
+              if (store.extra.recentWorkouts().isEmpty)
+                AppCard(child: Text(tr('За 2 недели тренировок с часов нет.'), style: Txt.small))
+              else
+                for (final w in store.extra.recentWorkouts().take(10))
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: AppCard(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.watch_outlined, color: AppColors.accent, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(hcWorkoutTitle(w.type), style: Txt.body.copyWith(fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 2),
+                                Text(
+                                  [
+                                    fmtDate(DateTime.fromMillisecondsSinceEpoch(w.start)),
+                                    trf('{0} мин', [w.minutes]),
+                                    if (w.meters > 0) trf('{0} км', [fmt1(w.meters / 1000)]),
+                                    if (w.kcal > 0) trf('{0} ккал', [fmtInt(w.kcal)]),
+                                  ].join(' · '),
+                                  style: Txt.small,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+            ],
             SectionLabel(tr('История')),
             if (finished.isEmpty)
               AppCard(child: Text(tr('Здесь появятся завершённые тренировки.'), style: Txt.small))
