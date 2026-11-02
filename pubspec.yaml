@@ -11,7 +11,7 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  file_picker: ^8.1.2
+  file_selector: ^1.0.3
   flutter_local_notifications: ^17.2.4
   google_fonts: ^6.2.1
   health: '>=11.0.0 <14.0.0'
@@ -20,7 +20,7 @@ dependencies:
   mobile_scanner: ^7.0.0
   path_provider: ^2.1.4
   qr_flutter: ^4.1.0
-  share_plus: ^10.0.0
+  share_plus: '>=11.0.0 <14.0.0'
   permission_handler: '>=11.3.0 <13.0.0'
   timezone: ^0.9.4
 

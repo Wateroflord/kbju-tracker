@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart' as fs;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -33,7 +33,7 @@ class DataExport {
     if (isWindows) {
       return trf('Сохранено в «Загрузки»: {0}', [files.map((f) => f.uri.pathSegments.last).join(', ')]);
     }
-    await Share.shareXFiles([for (final f in files) XFile(f.path)], subject: subject);
+    await SharePlus.instance.share(ShareParams(files: [for (final f in files) XFile(f.path)], subject: subject));
     return '';
   }
 
@@ -53,12 +53,14 @@ class DataExport {
   /// Если файл не выбран — пустую строку.
   static Future<String?> restoreFile(AppStore s) async {
     try {
-      final r = await FilePicker.platform.pickFiles(type: FileType.any, withData: true);
-      if (r == null || r.files.isEmpty) return '';
-      final pf = r.files.single;
-      var bytes = pf.bytes;
-      if (bytes == null && pf.path != null) bytes = await File(pf.path!).readAsBytes();
-      if (bytes == null) return tr('Не удалось прочитать файл');
+      const group = fs.XTypeGroup(
+        label: 'backup',
+        extensions: ['json', 'txt'],
+        mimeTypes: ['application/json', 'text/plain', 'application/octet-stream'],
+      );
+      final f = await fs.openFile(acceptedTypeGroups: [group]);
+      if (f == null) return '';
+      final bytes = await f.readAsBytes();
       return s.importJson(utf8.decode(bytes, allowMalformed: true));
     } catch (e) {
       return trf('Не удалось прочитать файл: {0}', [e]);

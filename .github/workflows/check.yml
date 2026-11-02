@@ -11,6 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -19,6 +23,7 @@ jobs:
         run: |
           flutter create --project-name kbju_tracker --org com.kbju --platforms android .
           rm -f test/widget_test.dart
+          python3 tools/patch_android.py > /dev/null
           flutter pub get
       - name: Analyze
         run: |
@@ -28,3 +33,7 @@ jobs:
           [ "$ok" = 1 ]
       - name: Unit tests
         run: flutter test
+      - name: Build APK (not published)
+        run: |
+          set -o pipefail
+          flutter build apk --release 2>&1 | tee build.txt || { python3 tools/annotate.py build.txt "build"; exit 1; }
