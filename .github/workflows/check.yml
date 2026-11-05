@@ -11,6 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Shared CI tools (winter-hub/ci)
+        uses: actions/checkout@v4
+        with:
+          repository: Wateroflord/winter-hub
+          path: .winter
+          sparse-checkout: /ci/
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -29,11 +36,11 @@ jobs:
         run: |
           flutter analyze --no-fatal-infos --no-fatal-warnings > analyze.txt 2>&1 && ok=1 || ok=0
           cat analyze.txt
-          python3 tools/annotate.py analyze.txt "analyze"
+          python3 .winter/ci/annotate.py analyze.txt "analyze"
           [ "$ok" = 1 ]
       - name: Unit tests
         run: flutter test
       - name: Build APK (not published)
         run: |
           set -o pipefail
-          flutter build apk --release 2>&1 | tee build.txt || { python3 tools/annotate.py build.txt "build"; exit 1; }
+          flutter build apk --release 2>&1 | tee build.txt || { python3 .winter/ci/annotate.py build.txt "build"; exit 1; }

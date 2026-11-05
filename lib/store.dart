@@ -52,12 +52,14 @@ class AppStore extends ChangeNotifier {
   /// Папка с данными приложения.
   String get docsPath => _docs;
 
-  /// Все данные как JSON (для синхронизации).
-  Map<String, dynamic> exportData() => _toJson();
+  /// Все данные как JSON (для синхронизации телефон ↔ ПК: ключ Gemini тоже передаётся).
+  Map<String, dynamic> exportData() => {..._toJson(), 'apiKey': apiKey};
 
   /// Заменить данные пришедшими после синхронизации и сохранить.
   void importData(Map<String, dynamic> j, {int? modified}) {
+    final hadKey = apiKey;
     _fromJson(j);
+    if (apiKey != hadKey) _saveSecret();
     modifiedAt = modified ?? DateTime.now().millisecondsSinceEpoch;
     notifyListeners();
     _persist();
@@ -67,6 +69,22 @@ class AppStore extends ChangeNotifier {
   String get _mainPath => '$_docs/kbju_data.json';
   String get _bakPath => '$_docs/kbju_data.bak.json';
   String get _tmpPath => '$_docs/kbju_data.tmp';
+
+  /// Ключ Gemini хранится отдельно от данных: этот файл не попадает ни
+  /// в резервную копию Android на Google Диске, ни в экспорт данных.
+  String get _secretPath => '$_docs/kbju_secret.json';
+
+  void _saveSecret() {
+    if (_docs.isEmpty) return;
+    final data = jsonEncode({'apiKey': apiKey});
+    _saving = _saving.then((_) async {
+      try {
+        await File(_secretPath).writeAsString(data, flush: true);
+      } catch (e) {
+        debugPrint('secret save failed: $e');
+      }
+    });
+  }
 
   // ---------- загрузка / сохранение ----------
 
@@ -78,16 +96,35 @@ class AppStore extends ChangeNotifier {
       debugPrint('docs dir error: $e');
       return;
     }
+    var legacyKey = false;
     for (final path in [_mainPath, _bakPath]) {
       try {
         final f = File(path);
         if (!await f.exists()) continue;
         final txt = await f.readAsString();
-        _fromJson(Map<String, dynamic>.from(jsonDecode(txt) as Map));
-        return;
+        final j = Map<String, dynamic>.from(jsonDecode(txt) as Map);
+        legacyKey = (j['apiKey']?.toString() ?? '').isNotEmpty;
+        _fromJson(j);
+        break;
       } catch (e) {
         debugPrint('load $path failed: $e');
       }
+    }
+    try {
+      final f = File(_secretPath);
+      if (await f.exists()) {
+        final k = (jsonDecode(await f.readAsString()) as Map)['apiKey']?.toString() ?? '';
+        if (k.isNotEmpty) apiKey = k;
+      }
+    } catch (e) {
+      debugPrint('secret load failed: $e');
+    }
+    if (legacyKey) {
+      // Старые версии хранили ключ в файле данных — переносим в отдельный файл
+      // и перезаписываем данные (и копию .bak) уже без ключа.
+      _saveSecret();
+      _persist();
+      _persist();
     }
   }
 
@@ -100,7 +137,6 @@ class AppStore extends ChangeNotifier {
         'water': water,
         'dayTargets': dayTargets.map((k, v) => MapEntry(k, v.toJson())),
         'goalHistory': goalHistory.map((g) => g.toJson()).toList(),
-        'apiKey': apiKey,
         'model': model,
         'life': life.toJson(),
         'food': food.toJson(),
@@ -143,7 +179,9 @@ class AppStore extends ChangeNotifier {
     // Старые данные без языка — пользователь пользовался русской версией.
     lang = l.isNotEmpty ? l : (profile != null ? 'ru' : '');
     if (!keepApi) {
-      apiKey = j['apiKey']?.toString() ?? '';
+      // Ключа в файле данных больше нет (он в kbju_secret.json); старые файлы и синхронизация могут его содержать.
+      final k = j['apiKey']?.toString() ?? '';
+      if (k.isNotEmpty) apiKey = k;
       final m = j['model']?.toString() ?? '';
       model = m.isEmpty ? defaultModel : m;
     }
@@ -457,6 +495,7 @@ class AppStore extends ChangeNotifier {
   void setAi(String key, String m) {
     apiKey = key.trim();
     model = m.trim().isEmpty ? defaultModel : m.trim();
+    _saveSecret();
     _changed();
   }
 
