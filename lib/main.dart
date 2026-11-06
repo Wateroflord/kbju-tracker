@@ -12,8 +12,11 @@ import 'screens/onboarding_screen.dart';
 import 'store.dart';
 import 'theme.dart';
 import 'i18n/i18n.dart';
+import 'package:winter_core/winter_core.dart';
 
-Future<void> main() async {
+void main() => runWinterApp(repo: 'kbju-tracker', appName: 'КБЖУ Трекер', body: _main);
+
+Future<void> _main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final store = AppStore();
   await store.load();
@@ -31,7 +34,7 @@ Future<void> main() async {
     systemNavigationBarColor: AppColors.surface,
     systemNavigationBarIconBrightness: Brightness.light,
   ));
-  runApp(StoreScope(store: store, child: const KbjuApp()));
+  runApp(WinterCrashBanner(child: StoreScope(store: store, child: const KbjuApp())));
 }
 
 class KbjuApp extends StatelessWidget {

@@ -9,6 +9,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  winter_core:
+    git:
+      url: https://github.com/Wateroflord/winter-hub.git
+      path: packages/winter_core
   flutter_localizations:
     sdk: flutter
   file_selector: ^1.0.3
