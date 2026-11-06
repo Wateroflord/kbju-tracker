@@ -13,6 +13,7 @@ import 'language_moved_screen.dart';
 import 'progress_screen.dart';
 import 'today_screen.dart';
 import 'training_screen.dart';
+import '../arc/arc_service.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -39,12 +40,17 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      final arc = ArcService.I;
+      if (arc.connected && (arc.syncedAt == null || DateTime.now().difference(arc.syncedAt!).inMinutes >= 5)) {
+        arc.sync(StoreScope.read(context));
+      }
       StepsService.instance.onResume();
       NotificationService.instance.sync(StoreScope.read(context));
       HealthSync.instance.sync(StoreScope.read(context));
     } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
       StepsService.instance.onPause();
       StoreScope.read(context).flush();
+      if (state == AppLifecycleState.paused && ArcService.I.connected) ArcService.I.sync(StoreScope.read(context));
     }
   }
 

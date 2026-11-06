@@ -126,6 +126,9 @@ if ".KbjuWidget" not in text:
     text = text.replace("    </application>", widget + "    </application>", 1)
 
 text = re.sub(r'android:label="[^"]*"', 'android:label="КБЖУ Трекер"', text, count=1)
+# Сервер Winter Chat (рейтинг Winter Arc) работает по обычному http в домашней сети.
+if "usesCleartextTraffic" not in text:
+    text = text.replace("<application", '<application android:usesCleartextTraffic="true"', 1)
 
 # Резервная копия Android на Google Диск: только файл данных, без фото (лимит копии — 25 МБ).
 _app = re.search(r"<application[^>]*>", text)

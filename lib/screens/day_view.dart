@@ -14,6 +14,7 @@ import 'fasting_screen.dart';
 import 'fill_sheet.dart';
 import 'recipes_screen.dart';
 import '../i18n/i18n.dart';
+import 'food_guide_screen.dart';
 
 /// Экран одного дня: калории, БЖУ, вода, приёмы пищи.
 /// Используется и как вкладка «Сегодня», и для просмотра прошлых дней из календаря.
@@ -104,6 +105,13 @@ class _DayViewState extends State<DayView> {
     return Column(
       children: [
         TabHeader(tr('Питание'), actions: [
+          SquareIconButton(
+            Icons.workspace_premium_outlined,
+            tooltip: tr('Тир-лист и блюда'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const FoodGuideScreen()),
+            ),
+          ),
           SquareIconButton(
             Icons.menu_book_outlined,
             tooltip: tr('Рецепты'),

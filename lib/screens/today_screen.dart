@@ -17,6 +17,7 @@ import 'mood_screen.dart';
 import 'sleep_screen.dart';
 import 'steps_screen.dart';
 import '../i18n/i18n.dart';
+import 'arc_screen.dart';
 
 /// Главный экран: кольца дня, тренировка, привычки, совет дня.
 class TodayScreen extends StatelessWidget {
@@ -50,6 +51,8 @@ class TodayScreen extends StatelessWidget {
             TabHeader(tr('Сегодня'), subtitle: '${weekdaysFull[now.weekday - 1]}, ${fmtDate(now)}'),
             const SizedBox(height: 14),
             const LevelCard(),
+            const SizedBox(height: 10),
+            const ArcCard(),
             const SizedBox(height: 12),
             AppCard(
               padding: const EdgeInsets.fromLTRB(6, 10, 6, 8),

@@ -13,6 +13,7 @@ import 'store.dart';
 import 'theme.dart';
 import 'i18n/i18n.dart';
 import 'package:winter_core/winter_core.dart';
+import 'arc/arc_service.dart';
 
 Future<void> main() => runWinterApp(repo: 'kbju-tracker', appName: 'КБЖУ Трекер', body: _main);
 
@@ -21,6 +22,8 @@ Future<void> _main() async {
   final store = AppStore();
   await store.load();
   store.applyLang();
+  await ArcService.I.load(store);
+  ArcService.I.sync(store); // Winter Arc: отправить очки и обновить рейтинг (в фоне)
   // Шаги, напоминания и виджет есть только на телефоне.
   if (isAndroid) {
     StepsService.instance.init(store);
