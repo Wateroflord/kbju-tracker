@@ -39,9 +39,6 @@ jobs:
       - name: Configure Android manifest
         run: python3 tools/patch_android.py
 
-      - name: Install signing key (so updates install over the old version)
-        run: |
-
       - name: Get packages
         run: flutter pub get
 
