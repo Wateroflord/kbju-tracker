@@ -9,7 +9,7 @@ import '../theme.dart';
 import '../widgets/nav.dart';
 import 'care_screen.dart';
 import 'day_view.dart';
-import 'learn_screen.dart';
+import 'language_moved_screen.dart';
 import 'progress_screen.dart';
 import 'today_screen.dart';
 import 'training_screen.dart';
@@ -63,7 +63,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         1 => const DayView(),
         2 => const TrainingScreen(),
         3 => const CareScreen(),
-        4 => const LearnScreen(),
+        4 => const LanguageMovedScreen(),
         _ => const ProgressScreen(),
       };
 

@@ -154,7 +154,6 @@ class _WeeklyReportScreenState extends State<WeeklyReportScreen> {
               StatTile(label: tr('Сон'), value: w.sleepNights == 0 ? '—' : fmt1(w.avgSleep), sub: tr('часов')),
               StatTile(label: tr('Тренировки'), value: '${w.workouts}', sub: trf('план {0}', [store.workoutsPerWeek]), color: AppColors.accent),
               StatTile(label: tr('Привычки'), value: '${w.habitsPercent}%', sub: tr('выполнено')),
-              StatTile(label: tr('Язык'), value: '${w.learnMinutes}', sub: tr('минут')),
             ],
           ),
           const SizedBox(height: 14),

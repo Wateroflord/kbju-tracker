@@ -45,7 +45,7 @@ class TabsCard extends StatelessWidget {
           const SizedBox(height: 8),
           row('training', Icons.fitness_center, tr('Спорт'), tr('Тренировки, программы, разминки')),
           row('care', Icons.spa_outlined, tr('Уход'), tr('Кожа, волосы, покупки')),
-          row('learn', Icons.translate, tr('Учёба'), tr('Английский, польский, немецкий')),
+          row('learn', Icons.translate, tr('Учёба'), tr('Переехала в Winter Language')),
         ],
       ),
     );

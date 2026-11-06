@@ -131,7 +131,6 @@ Future<String> requestWeekReport(AppStore store, WeekStats w) {
     ..writeln(w.sleepNights == 0 ? 'No sleep data.' : 'Average sleep: ${_f(w.avgSleep)} h (goal ${_f(store.life.sleepGoal)} h).')
     ..writeln('Workouts completed: ${w.workouts} (planned ${store.workoutsPerWeek} per week).')
     ..writeln('Daily habits completion: ${w.habitsPercent}%.')
-    ..writeln('Language learning: ${w.learnMinutes} minutes.')
     ..writeln('Intermittent fasts: ${w.fasts}.')
     ..writeln('Food spending: ${w.spentPln.round()} PLN.')
     ..writeln()

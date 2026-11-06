@@ -15,7 +15,6 @@ const defaultHabits = <Habit>[
   Habit(id: 'water', title: 'Вода по норме', period: HabitPeriod.daily, auto: HabitAuto.water, icon: 'water', builtin: true),
   Habit(id: 'care_am', title: 'Уход утром: умывание, крем, SPF', period: HabitPeriod.daily, icon: 'sun', builtin: true),
   Habit(id: 'care_pm', title: 'Уход вечером: умывание, крем', period: HabitPeriod.daily, icon: 'moon', builtin: true),
-  Habit(id: 'learn', title: 'Язык: дневная цель', period: HabitPeriod.daily, auto: HabitAuto.learn, icon: 'book', builtin: true),
   Habit(id: 'mood', title: 'Отметить настроение', period: HabitPeriod.daily, auto: HabitAuto.mood, icon: 'mood', builtin: true, enabled: false),
   Habit(id: 'mind', title: 'Дыхание или медитация', period: HabitPeriod.daily, auto: HabitAuto.mind, icon: 'spa', builtin: true, enabled: false),
   Habit(id: 'teeth', title: 'Зубы 2 раза + нить', period: HabitPeriod.daily, icon: 'teeth', builtin: true),
@@ -300,7 +299,6 @@ const defaultReminders = <Reminder>[
   Reminder(id: 'care_am', title: 'Уход утром', body: 'Умывание, крем, SPF', hour: 8, minute: 0),
   Reminder(id: 'care_pm', title: 'Уход вечером', body: 'Умывание и крем перед сном', hour: 22, minute: 0),
   Reminder(id: 'workout', title: 'Тренировка', body: 'Сегодня по плану тренировка', hour: 18, minute: 0, fromProgram: true),
-  Reminder(id: 'learn', title: 'Язык', body: 'Пора позаниматься: карточки и тест ждут', hour: 19, minute: 0),
   Reminder(id: 'bedtime', title: 'Пора спать', body: 'Отложи телефон — через час отбой', hour: 22, minute: 30),
   Reminder(id: 'weigh', title: 'Взвешивание', body: 'Взвесься утром натощак и запиши вес', hour: 8, minute: 0, weekdays: [1]),
 ];
