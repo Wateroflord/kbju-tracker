@@ -14,7 +14,7 @@ import 'theme.dart';
 import 'i18n/i18n.dart';
 import 'package:winter_core/winter_core.dart';
 
-void main() => runWinterApp(repo: 'kbju-tracker', appName: 'КБЖУ Трекер', body: _main);
+Future<void> main() => runWinterApp(repo: 'kbju-tracker', appName: 'КБЖУ Трекер', body: _main);
 
 Future<void> _main() async {
   WidgetsFlutterBinding.ensureInitialized();
