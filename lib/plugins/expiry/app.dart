@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'notifications.dart';
 import 'screens/home_screen.dart';
-import 'storage.dart';
 
 class ExpiryApp extends StatelessWidget {
   const ExpiryApp({super.key});

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../../i18n/i18n.dart';
 import 'screens/learn_screen.dart';
-import 'screens/settings_screen.dart';
 import 'life/life_store.dart';
 import 'store.dart';
 import '../../theme.dart';

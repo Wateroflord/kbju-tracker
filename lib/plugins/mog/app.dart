@@ -4,7 +4,6 @@ import 'screens/battle.dart';
 import 'screens/history.dart';
 import 'screens/rate.dart';
 import 'screens/settings.dart';
-import 'store.dart';
 import 'theme.dart';
 
 class MogApp extends StatelessWidget {
