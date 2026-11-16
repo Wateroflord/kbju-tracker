@@ -1,0 +1,36 @@
+start OK
+handle OK
+drawer shows KBJU OK
+manage OK
+toggle Expiry OK
+toggle Winter Language OK
+toggle Chess OK
+toggle Minesweeper OK
+toggle Winter Music OK
+toggle Winter Paint OK
+toggle Drawing lessons OK
+toggle Winter Walks OK
+toggle Forest survival OK
+toggle Mog Battle OK
+open Expiry OK
+Expiry alive OK
+open Winter Language OK
+Winter Language alive OK
+open Chess OK
+Chess alive OK
+open Minesweeper OK
+Minesweeper alive OK
+open Winter Music OK
+Winter Music alive OK
+open Winter Paint OK
+Winter Paint alive OK
+open Drawing lessons OK
+Drawing lessons alive OK
+open Winter Walks OK
+Winter Walks alive OK
+open Forest survival OK
+Forest survival alive OK
+open Mog Battle OK
+Mog Battle alive OK
+back keeps app OK
+back returns to KBJU OK
