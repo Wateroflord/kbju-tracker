@@ -40,7 +40,10 @@ if cmd == "tapscroll":
     for _ in range(5):
         if pos:
             break
-        subprocess.run(["adb", "shell", "input", "swipe", "300", "1400", "300", "600", "400"])
+        size = subprocess.run(["adb", "shell", "wm", "size"], capture_output=True, text=True).stdout
+        m = re.search(r"(\d+)x(\d+)", size)
+        w, h = (int(m.group(1)), int(m.group(2))) if m else (1080, 1920)
+        subprocess.run(["adb", "shell", "input", "swipe", str(w // 2), str(h * 3 // 4), str(w // 2), str(h // 3), "500"])
         time.sleep(1)
         xml = dump()
         pos = find(xml, needle)
