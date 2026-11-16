@@ -2,12 +2,11 @@ name: UI smoke (emulator)
 
 # Ставит x86_64-версию из готовой сборки на эмулятор и проверяет шторку и плагины.
 # Скриншоты — в ветке ui-smoke-out (папка out/).
+# Запуск: пуш в ветку ui-smoke-run, в tools/smoke/run_id.txt — номер запуска «Build APK»
+# (собранного с выключенным publish — тогда файлы лежат в артефактах).
 on:
-  workflow_dispatch:
-    inputs:
-      run_id:
-        description: 'Номер запуска «Build APK» (с publish выключенным — файлы в артефактах)'
-        required: true
+  push:
+    branches: [ui-smoke-run]
 
 permissions:
   contents: write
@@ -19,11 +18,13 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+      - id: rid
+        run: echo "id=$(cat tools/smoke/run_id.txt)" >> "$GITHUB_OUTPUT"
       - uses: actions/download-artifact@v4
         with:
           name: android-test
           path: apks
-          run-id: ${{ inputs.run_id }}
+          run-id: ${{ steps.rid.outputs.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Enable KVM
         run: |
@@ -46,5 +47,5 @@ jobs:
           git checkout --orphan ui-smoke-out
           git rm -rf --cached . > /dev/null
           git add -f out
-          git commit -m "ui smoke ${{ inputs.run_id }}" > /dev/null
+          git commit -m "ui smoke ${{ steps.rid.outputs.id }}" > /dev/null
           git push -f origin ui-smoke-out
