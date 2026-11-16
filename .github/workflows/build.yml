@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   app:
-    uses: Wateroflord/winter-hub/.github/workflows/flutter-app.yml@main
+    uses: Wateroflord/winter-hub/.github/workflows/flutter-app.yml@abi-split
     secrets: inherit
     with:
       project: kbju_tracker
