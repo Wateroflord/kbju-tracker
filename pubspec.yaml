@@ -37,7 +37,7 @@ dependencies:
   audioplayers: ^6.1.0
   audio_service: ^0.18.15
   # Winter Paint, Mog Battle, Music
-  file_picker: 8.0.7
+  file_picker: ^10.3.0
   image: ^4.2.0
   # Winter Walks
   flutter_map: '>=7.0.2 <9.0.0'
