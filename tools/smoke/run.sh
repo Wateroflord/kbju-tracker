@@ -15,29 +15,30 @@ adb shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
 shot 01_start 25
 [ -n "$(adb shell pidof $PKG)" ] && step "start OK" || step "start FAIL"
 
-$UI tap "Плагины" && step "handle OK" || step "handle FAIL"
+$UI tap "Plugins" && step "handle OK" || step "handle FAIL"
 shot 02_drawer
-$UI has "КБЖУ Трекер" && step "drawer shows KBJU OK" || step "drawer shows KBJU FAIL"
+$UI has "Macro Tracker" && step "drawer shows KBJU OK" || step "drawer shows KBJU FAIL"
 
-$UI tap "Включить и выключить" && step "manage OK" || step "manage FAIL"
+$UI tap "Turn on and off" && step "manage OK" || step "manage FAIL"
 shot 03_plugins
-for p in "Шахматы" "Сапёр" "Winter Music"; do $UI tap "$p" && step "toggle $p OK" || step "toggle $p FAIL"; sleep 1; done
+for p in "Chess" "Minesweeper"; do $UI tap "$p" && step "toggle $p OK" || step "toggle $p FAIL"; sleep 1; done
 shot 04_plugins_on 2
 adb shell input keyevent 4
 shot 05_back 2
 
-for p in "Шахматы" "Сапёр" "Winter Music"; do
-  $UI tap "Плагины" >/dev/null; sleep 2
+for p in "Chess" "Minesweeper"; do
+  $UI tap "Plugins" >/dev/null; sleep 2
   $UI tap "$p" && step "open $p OK" || step "open $p FAIL"
   shot "06_$p" 6
   [ -n "$(adb shell pidof $PKG)" ] && step "$p alive OK" || step "$p alive FAIL (crash)"
 done
 
-# «Назад» на главном экране плагина — обратно в КБЖУ.
+# «Назад» на главном экране плагина — обратно в КБЖУ (шторка уже закрыта).
 adb shell input keyevent 4
-shot 07_back_to_kbju 3
+shot 07_back_to_kbju 4
 [ -n "$(adb shell pidof $PKG)" ] && step "back keeps app OK" || step "back keeps app FAIL"
-$UI tap "Плагины" >/dev/null; sleep 2
+$UI has "Male" && step "back returns to KBJU OK" || step "back returns to KBJU FAIL"
+$UI tap "Plugins" >/dev/null; sleep 2
 shot 08_drawer_after 2
 
 adb logcat -d -s AndroidRuntime:E flutter:E flutter:W > out/logcat.txt
