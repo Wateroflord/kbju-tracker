@@ -1,8 +1,7 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:http/http.dart' as http;
+import 'package:winter_core/winter_core.dart';
 
 import 'util.dart';
 import 'i18n/i18n.dart';
@@ -59,15 +58,8 @@ class _TryNextModel implements Exception {
 
 /// Распознавание еды через Google Gemini API.
 class GeminiService {
-  static const _base = 'https://generativelanguage.googleapis.com/v1beta';
-
   /// Если выбранная модель недоступна, пробуем следующие.
-  static const fallbackModels = [
-    'gemini-flash-latest',
-    'gemini-3.8-flash',
-    'gemini-3.6-flash',
-    'gemini-3.5-flash-lite',
-  ];
+  static const fallbackModels = WinterGemini.models;
 
   static Future<AiResult> analyze({
     required String apiKey,
@@ -137,21 +129,14 @@ class GeminiService {
 
   /// Проверка ключа: запрашиваем список моделей.
   static Future<String?> testKey(String apiKey) async {
-    try {
-      final res = await http.get(
-        Uri.parse('$_base/models?pageSize=50'),
-        headers: {'x-goog-api-key': apiKey.trim()},
-      ).timeout(const Duration(seconds: 20));
-      if (res.statusCode == 200) return null;
-      if (res.statusCode == 400 || res.statusCode == 401 || res.statusCode == 403) {
-        return trf('Ключ не принят: {0}', [_errMsg(res.bodyBytes)]);
-      }
-      return trf('Ошибка {0}: {1}', [res.statusCode, _errMsg(res.bodyBytes)]);
-    } on TimeoutException {
-      return tr('Сервер не ответил. Проверь интернет.');
-    } catch (e) {
-      return trf('Нет соединения: {0}', [e]);
-    }
+    final e = await WinterGemini.testKey(apiKey);
+    if (e == null) return null;
+    return switch (e.kind) {
+      GeminiFail.badKey => trf('Ключ не принят: {0}', [_detail(e)]),
+      GeminiFail.timeout => tr('Сервер не ответил. Проверь интернет.'),
+      GeminiFail.offline => trf('Нет соединения: {0}', [e.detail]),
+      _ => trf('Ошибка {0}: {1}', [e.code, _detail(e)]),
+    };
   }
 
   /// Язык, на котором ИИ пишет названия блюд и комментарий.
@@ -184,93 +169,42 @@ class GeminiService {
     return b.toString();
   }
 
-  static String _mime(Uint8List b) {
-    if (b.length > 4 && b[0] == 0x89 && b[1] == 0x50) return 'image/png';
-    if (b.length > 12 && b[0] == 0x52 && b[1] == 0x49 && b[8] == 0x57 && b[9] == 0x45) {
-      return 'image/webp';
-    }
-    return 'image/jpeg';
-  }
-
   static Future<AiResult> _call(String key, String model, Uint8List? image, String hint) async {
     final parts = <Map<String, dynamic>>[
-      {'text': _prompt(hint, image != null)},
+      WinterGemini.text(_prompt(hint, image != null)),
+      if (image != null) WinterGemini.image(image),
     ];
-    if (image != null) {
-      parts.add({
-        'inlineData': {'mimeType': _mime(image), 'data': base64Encode(image)},
-      });
-    }
     return _parse(await _post(key, model, parts, true));
   }
 
+  /// Один запрос к одной модели (общий клиент winter_core). Недоступная модель → [_TryNextModel].
   static Future<String> _post(String key, String model, List<Map<String, dynamic>> parts, bool json) async {
-    final body = jsonEncode({
-      'contents': [
-        {'role': 'user', 'parts': parts},
-      ],
-      if (json) 'generationConfig': {'responseMimeType': 'application/json'},
-    });
-
-    final http.Response res;
     try {
-      res = await http
-          .post(
-            Uri.parse('$_base/models/$model:generateContent'),
-            headers: {
-              'Content-Type': 'application/json',
-              'x-goog-api-key': key,
-            },
-            body: body,
-          )
-          .timeout(const Duration(seconds: 90));
-    } on TimeoutException {
-      throw GeminiException(tr('ИИ слишком долго отвечает. Попробуй ещё раз.'));
-    } catch (e) {
-      throw GeminiException(tr('Нет соединения с интернетом.'));
-    }
-
-    final code = res.statusCode;
-    if (code == 404 || code >= 500) {
-      throw _TryNextModel(trf('Модель {0} недоступна ({1}). Попробуй позже.', [model, code]));
-    }
-    if (code == 429) {
-      throw GeminiException(tr('Превышен лимит запросов Gemini. Подожди минуту и попробуй снова.'));
-    }
-    if (code != 200) {
-      final msg = _errMsg(res.bodyBytes);
-      final low = msg.toLowerCase();
-      if (low.contains('api key') || low.contains('api_key')) {
-        throw GeminiException(tr('Неверный API-ключ. Проверь его во вкладке «Профиль».'));
+      // Модели перебирает сам analyze()/generate(), поэтому здесь — только [model].
+      return await WinterGemini.generate(key: key, model: model, parts: parts, json: json, onlyModel: true);
+    } on GeminiError catch (e) {
+      if (e.kind == GeminiFail.unavailable) {
+        throw _TryNextModel(e.detail.isEmpty
+            ? trf('Модель {0} недоступна ({1}). Попробуй позже.', [model, e.code])
+            : trf('Модель {0} не подходит: {1}', [model, e.detail]));
       }
-      if (code == 400 && low.contains('model')) {
-        throw _TryNextModel(trf('Модель {0} не подходит: {1}', [model, msg]));
-      }
-      throw GeminiException(trf('Ошибка запроса ({0}): {1}', [code, msg]));
+      throw GeminiException(_message(e));
     }
-
-    final Map<String, dynamic> j;
-    try {
-      j = Map<String, dynamic>.from(jsonDecode(utf8.decode(res.bodyBytes)) as Map);
-    } catch (_) {
-      throw GeminiException(tr('Сервер вернул непонятный ответ.'));
-    }
-    final cands = j['candidates'];
-    if (cands is! List || cands.isEmpty) {
-      final fb = j['promptFeedback'];
-      final reason = fb is Map ? fb['blockReason'] : null;
-      throw GeminiException(trf('ИИ не вернул ответ{0}.', [reason != null ? ' ($reason)' : '']));
-    }
-    final content = (cands.first as Map)['content'];
-    final rawParts = content is Map ? content['parts'] : null;
-    final text = (rawParts is List ? rawParts : const [])
-        .whereType<Map>()
-        .where((p) => p['thought'] != true && p['text'] is String)
-        .map((p) => p['text'] as String)
-        .join();
-    if (text.trim().isEmpty) throw GeminiException(tr('ИИ вернул пустой ответ.'));
-    return text;
   }
+
+  static String _detail(GeminiError e) => e.detail.isEmpty ? tr('неизвестная ошибка') : e.detail;
+
+  static String _message(GeminiError e) => switch (e.kind) {
+        GeminiFail.noKey => tr('Добавь API-ключ Gemini во вкладке «Профиль».'),
+        GeminiFail.badKey => tr('Неверный API-ключ. Проверь его во вкладке «Профиль».'),
+        GeminiFail.timeout => tr('ИИ слишком долго отвечает. Попробуй ещё раз.'),
+        GeminiFail.offline => tr('Нет соединения с интернетом.'),
+        GeminiFail.rateLimit => tr('Превышен лимит запросов Gemini. Подожди минуту и попробуй снова.'),
+        GeminiFail.blocked => trf('ИИ не вернул ответ{0}.', [e.detail.isEmpty ? '' : ' (${e.detail})']),
+        GeminiFail.empty => tr('ИИ вернул пустой ответ.'),
+        GeminiFail.badResponse => tr('Сервер вернул непонятный ответ.'),
+        GeminiFail.unavailable || GeminiFail.http => trf('Ошибка запроса ({0}): {1}', [e.code, _detail(e)]),
+      };
 
   static AiResult _parse(String text) {
     final s = text.indexOf('{');
@@ -307,13 +241,5 @@ class GeminiService {
   static double _r(double v) => v < 0 ? 0 : (v * 10).round() / 10;
   static double _r2(double v) => v < 0 ? 0 : (v * 100).round() / 100;
 
-  static String _errMsg(List<int> bytes) {
-    try {
-      final j = jsonDecode(utf8.decode(bytes));
-      if (j is Map && j['error'] is Map) {
-        return (j['error'] as Map)['message']?.toString() ?? tr('неизвестная ошибка');
-      }
-    } catch (_) {}
-    return tr('неизвестная ошибка');
-  }
+
 }

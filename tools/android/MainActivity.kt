@@ -7,13 +7,14 @@ import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts
-import io.flutter.embedding.android.FlutterFragmentActivity
+import com.ryanheise.audioservice.AudioServiceFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.util.Locale
 
-// FlutterFragmentActivity нужен для Health Connect.
-class MainActivity : FlutterFragmentActivity() {
+// FlutterFragmentActivity нужен для Health Connect, AudioService — для фоновой музыки (плагин Winter Music).
+// AudioServiceFragmentActivity = FlutterFragmentActivity + audio_service.
+class MainActivity : AudioServiceFragmentActivity() {
     private var tts: TextToSpeech? = null
     private var ttsReady = false
     private var pending: Pair<String, String>? = null
@@ -36,6 +37,11 @@ class MainActivity : FlutterFragmentActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         val messenger = flutterEngine.dartExecutor.binaryMessenger
+
+        // Плагин «Шахматы»: папка, где лежит движок Stockfish (libstockfish.so).
+        MethodChannel(messenger, "winterchess/engine").setMethodCallHandler { call, result ->
+            if (call.method == "libDir") result.success(applicationInfo.nativeLibraryDir) else result.notImplemented()
+        }
 
         MethodChannel(messenger, "kbju/steps").setMethodCallHandler { call, result ->
             when (call.method) {

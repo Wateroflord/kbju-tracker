@@ -1,6 +1,7 @@
 name: Check (branches)
 
-# Быстрая проверка кода на рабочих ветках: без сборки APK и без выпуска релиза.
+# Быстрая проверка кода на рабочих ветках: анализ и тесты, без сборки и релиза.
+# Полная сборка без релиза: Actions → Build APK → Run workflow (ветка) → снять «publish».
 on:
   push:
     branches-ignore: [main]
@@ -25,6 +26,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: '3.47.9'
           cache: true
       - name: Prepare
         run: |
@@ -40,7 +42,3 @@ jobs:
           [ "$ok" = 1 ]
       - name: Unit tests
         run: flutter test
-      - name: Build APK (not published)
-        run: |
-          set -o pipefail
-          flutter build apk --release 2>&1 | tee build.txt || { python3 .winter/ci/annotate.py build.txt "build"; exit 1; }

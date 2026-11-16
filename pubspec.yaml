@@ -1,5 +1,5 @@
 name: kbju_tracker
-description: Трекер калорий и КБЖУ с распознаванием еды по фото.
+description: Трекер калорий и КБЖУ с распознаванием еды по фото + плагины Winter (шахматы, сапёр, музыка и др.).
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -13,6 +13,7 @@ dependencies:
     git:
       url: https://github.com/Wateroflord/winter-hub.git
       path: packages/winter_core
+      ref: abi-split
   flutter_localizations:
     sdk: flutter
   file_selector: ^1.0.3
@@ -27,6 +28,27 @@ dependencies:
   share_plus: '>=11.0.0 <14.0.0'
   permission_handler: '>=11.3.0 <13.0.0'
   timezone: ^0.9.4
+  url_launcher: ^6.3.0
+  # ---- плагины ----
+  # Шахматы
+  chess: ^0.8.1
+  flutter_svg: ^2.0.10
+  # Winter Music
+  audioplayers: ^6.1.0
+  audio_service: ^0.18.15
+  # Winter Paint, Mog Battle, Music
+  file_picker: 8.0.7
+  image: ^4.2.0
+  # Winter Walks
+  flutter_map: '>=7.0.2 <9.0.0'
+  latlong2: ^0.9.1
+  geolocator: ^13.0.1
+  xml: ^6.5.0
+  # Выживание в лесу
+  flutter_compass: ^0.8.1
+  torch_light: ^1.1.0
+  # Просрочка
+  shared_preferences: ^2.3.0
 
 dev_dependencies:
   flutter_test:
@@ -35,6 +57,19 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/icon/
+    - assets/plugins/chess/
+    - assets/plugins/chess/pieces/
+    - assets/plugins/draw/
+    - assets/plugins/expiry/
+    - assets/plugins/forest/
+    - assets/plugins/language/
+    - assets/plugins/mines/
+    - assets/plugins/mog/
+    - assets/plugins/music/
+    - assets/plugins/paint/
+    - assets/plugins/walks/
 
 flutter_launcher_icons:
   android: true

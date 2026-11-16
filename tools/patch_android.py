@@ -25,6 +25,14 @@ permissions = [
     "android.permission.FOREGROUND_SERVICE_HEALTH",
     "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
     "android.permission.CAMERA",
+    # ---- плагины ----
+    "android.permission.ACCESS_FINE_LOCATION",   # Winter Walks
+    "android.permission.ACCESS_COARSE_LOCATION",
+    "android.permission.FLASHLIGHT",             # Выживание в лесу (фонарик)
+    "android.permission.READ_MEDIA_AUDIO",       # Winter Music
+    "android.permission.READ_EXTERNAL_STORAGE",
+    "android.permission.WAKE_LOCK",
+    "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
 ]
 for p in permissions:
     if p not in text:
@@ -48,6 +56,21 @@ if "com.google.android.apps.healthdata" not in text:
         "        </intent>\n"
         "        <intent>\n"
         '            <action android:name="android.speech.action.RECOGNIZE_SPEECH"/>\n'
+        "        </intent>\n"
+        # плагины: звонок 112 (лес), ссылки и карты (прогулки), камера (Mog Battle)
+        "        <intent>\n"
+        '            <action android:name="android.intent.action.DIAL"/>\n'
+        "        </intent>\n"
+        "        <intent>\n"
+        '            <action android:name="android.intent.action.VIEW"/>\n'
+        '            <data android:scheme="https"/>\n'
+        "        </intent>\n"
+        "        <intent>\n"
+        '            <action android:name="android.intent.action.VIEW"/>\n'
+        '            <data android:scheme="geo"/>\n'
+        "        </intent>\n"
+        "        <intent>\n"
+        '            <action android:name="android.media.action.IMAGE_CAPTURE"/>\n'
         "        </intent>\n"
         "    </queries>\n"
     )
@@ -124,6 +147,29 @@ if ".KbjuWidget" not in text:
         "        </receiver>\n"
     )
     text = text.replace("    </application>", widget + "    </application>", 1)
+
+# Плагин Winter Music: фоновое воспроизведение и кнопки на экране блокировки (audio_service).
+if "com.ryanheise.audioservice.AudioService" not in text:
+    audio = (
+        '        <service android:name="com.ryanheise.audioservice.AudioService"\n'
+        '            android:foregroundServiceType="mediaPlayback"\n'
+        '            android:exported="true">\n'
+        "            <intent-filter>\n"
+        '                <action android:name="android.media.browse.MediaBrowserService"/>\n'
+        "            </intent-filter>\n"
+        "        </service>\n"
+        '        <receiver android:name="com.ryanheise.audioservice.MediaButtonReceiver"\n'
+        '            android:exported="true">\n'
+        "            <intent-filter>\n"
+        '                <action android:name="android.intent.action.MEDIA_BUTTON"/>\n'
+        "            </intent-filter>\n"
+        "        </receiver>\n"
+    )
+    text = text.replace("    </application>", audio + "    </application>", 1)
+
+# Плагин «Шахматы»: движок Stockfish — программа в папке нативных библиотек, её нужно распаковывать.
+if "extractNativeLibs" not in text:
+    text = text.replace("<application", '<application android:extractNativeLibs="true"', 1)
 
 text = re.sub(r'android:label="[^"]*"', 'android:label="КБЖУ Трекер"', text, count=1)
 # Сервер Winter Chat (рейтинг Winter Arc) работает по обычному http в домашней сети.
@@ -215,3 +261,39 @@ for name in ("build.gradle.kts", "build.gradle"):
             src += "\ndependencies {\n" + dep + "\n}\n"
     g.write_text(src, encoding="utf-8")
     print(g, "\n", src)
+
+
+# ---------- Плагины: compileSdk 36 (file_picker, geolocator), Stockfish, упаковка .so ----------
+g = ROOT / "build.gradle.kts"
+gs = g.read_text(encoding="utf-8")
+gs = re.sub(r"compileSdk = [^\n]+", "compileSdk = 36", gs, count=1)
+if "useLegacyPackaging" not in gs:
+    gs = gs.replace("android {", "android {\n    packaging {\n        jniLibs {\n            useLegacyPackaging = true\n        }\n    }", 1)
+g.write_text(gs, encoding="utf-8")
+
+root_gradle = pathlib.Path("android/build.gradle.kts")
+rs = root_gradle.read_text(encoding="utf-8")
+if "compileSdkVersion" not in rs:
+    rs = """subprojects {
+    afterEvaluate {
+        val ext = extensions.findByName("android")
+        if (ext != null) {
+            try {
+                ext.javaClass.getMethod("compileSdkVersion", Int::class.javaPrimitiveType).invoke(ext, 36)
+            } catch (e: Exception) {
+            }
+        }
+    }
+}
+
+""" + rs
+    root_gradle.write_text(rs, encoding="utf-8")
+
+sf = pathlib.Path("tools/sf-bin/libstockfish.so")
+if sf.exists():
+    jni = ROOT / "src/main/jniLibs/arm64-v8a"
+    jni.mkdir(parents=True, exist_ok=True)
+    (jni / "libstockfish.so").write_bytes(sf.read_bytes())
+    print("stockfish:", jni / "libstockfish.so", sf.stat().st_size)
+else:
+    print("WARNING: tools/sf-bin/libstockfish.so нет — шахматы без Stockfish")

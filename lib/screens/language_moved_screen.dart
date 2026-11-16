@@ -8,14 +8,15 @@ import 'package:share_plus/share_plus.dart';
 import '../i18n/i18n.dart';
 import '../learn/learn_logic.dart';
 import '../platform.dart';
+import '../plugins/shell.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../util.dart';
 import '../widgets/common.dart';
 import '../widgets/nav.dart';
 
-/// Вкладка «Учёба» переехала в отдельное приложение Winter Language.
-/// Здесь — только перенос прогресса.
+/// Вкладка «Учёба»: изучение языков — плагин Winter Language (шторка сверху).
+/// Прогресс из КБЖУ переносится в плагин сам при первом открытии.
 class LanguageMovedScreen extends StatelessWidget {
   const LanguageMovedScreen({super.key});
 
@@ -70,12 +71,14 @@ class LanguageMovedScreen extends StatelessWidget {
                 children: [
                   const Icon(Icons.translate, color: AppColors.accent, size: 32),
                   const SizedBox(height: 10),
-                  Text(tr('Изучение языков переехало в Winter Language'), style: Txt.h2),
+                  Text(tr('Изучение языков — в плагине Winter Language'), style: Txt.h2),
                   const SizedBox(height: 8),
                   Text(
-                    tr('Те же слова, тесты, диалоги и озвучка — в отдельном приложении. Установи его через Winter Hub, а потом перенеси прогресс файлом.'),
+                    tr('Те же слова, тесты, диалоги и озвучка. Плагин уже внутри КБЖУ — открой его, выученные слова перенесутся сами.'),
                     style: Txt.small,
                   ),
+                  const SizedBox(height: 12),
+                  PrimaryButton(tr('Открыть Winter Language'), icon: Icons.translate, onPressed: () => WinterShell.open(context, 'language')),
                 ],
               ),
             ),
@@ -92,7 +95,7 @@ class LanguageMovedScreen extends StatelessWidget {
               PrimaryButton(tr('Сохранить прогресс'), icon: Icons.upload_file, onPressed: () => _save(context)),
               const SizedBox(height: 10),
               Text(
-                tr('Отправь файл себе (например, в Telegram) и в Winter Language открой Настройки → «Выбрать файл из КБЖУ».'),
+                tr('Файл нужен, только если Winter Language стоит отдельным приложением на другом устройстве.'),
                 style: Txt.small,
               ),
             ],
