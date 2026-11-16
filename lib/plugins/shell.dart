@@ -58,7 +58,7 @@ class _ShellBody extends StatefulWidget {
   State<_ShellBody> createState() => _ShellBodyState();
 }
 
-class _ShellBodyState extends State<_ShellBody> with SingleTickerProviderStateMixin {
+class _ShellBodyState extends State<_ShellBody> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   static _ShellBodyState? _current;
 
   final host = PluginHost.I;
@@ -73,30 +73,65 @@ class _ShellBodyState extends State<_ShellBody> with SingleTickerProviderStateMi
     super.initState();
     _current = this;
     host.addListener(_rebuild);
+    _moveBackHandlerToEnd();
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeWelcome());
   }
+
+  /// «Назад» на главном экране плагина возвращает в КБЖУ, а не закрывает приложение.
+  /// Обработчики «Назад» вызываются по порядку подписки, поэтому наш должен стоять
+  /// после MaterialApp плагина — переподписываемся после каждого переключения.
+  void _moveBackHandlerToEnd() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      WidgetsBinding.instance.removeObserver(this);
+      WidgetsBinding.instance.addObserver(this);
+    });
+  }
+
+  @override
+  Future<bool> didPopRoute() async {
+    if (_open) {
+      _hideDrawer();
+      return true;
+    }
+    if (host.active != 'kbju') {
+      await _switch('kbju');
+      return true;
+    }
+    return false;
+  }
+
+  void _scheduleWelcome() => WidgetsBinding.instance.addPostFrameCallback((_) => _maybeWelcome());
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final s = StoreScope.read(context);
     if (!identical(s, _store)) {
-      _store?.removeListener(_maybeWelcome);
-      _store = s..addListener(_maybeWelcome);
+      _store?.removeListener(_scheduleWelcome);
+      _store = s..addListener(_scheduleWelcome);
     }
   }
 
   @override
   void dispose() {
     if (_current == this) _current = null;
+    WidgetsBinding.instance.removeObserver(this);
     host.removeListener(_rebuild);
-    _store?.removeListener(_maybeWelcome);
+    _store?.removeListener(_scheduleWelcome);
     _anim.dispose();
     super.dispose();
   }
 
+  String _shown = '';
+
   void _rebuild() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    setState(() {});
+    if (host.active != _shown) {
+      _shown = host.active;
+      _moveBackHandlerToEnd();
+    }
   }
 
   void _showDrawer() {
