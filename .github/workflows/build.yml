@@ -32,3 +32,4 @@ jobs:
       prepare: bash tools/stockfish.sh fetch
       after_build_windows: bash tools/stockfish.sh install
       publish: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
+      hub_ref: abi-split  # TEMP: test
