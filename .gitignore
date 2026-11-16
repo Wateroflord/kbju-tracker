@@ -8,3 +8,4 @@
 pubspec.lock
 *.iml
 .idea/
+tools/sf-bin/

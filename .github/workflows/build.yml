@@ -1,132 +1,36 @@
+# Сборка — общая для всех приложений Winter: winter-hub/.github/workflows/flutter-app.yml
+# (отдельный APK под каждый процессор, подпись, релиз, Windows-установщик).
 name: Build APK
 
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'README.md'
+      - '.github/workflows/check.yml'
+      - '.github/workflows/ui-smoke.yml'
+      - 'tools/smoke/**'
   workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Выпустить релиз (выключи, чтобы только проверить сборку)'
+        type: boolean
+        default: true
 
 permissions:
   contents: write
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Shared CI tools (winter-hub/ci)
-        uses: actions/checkout@v4
-        with:
-          repository: Wateroflord/winter-hub
-          path: .winter
-          sparse-checkout: /ci/
-          sparse-checkout-cone-mode: false
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-
-      - name: Create Android project files
-        run: |
-          flutter create --project-name kbju_tracker --org com.kbju --platforms android .
-          rm -f test/widget_test.dart
-
-      - name: Configure Android manifest
-        run: python3 tools/patch_android.py
-
-      - name: Get packages
-        run: flutter pub get
-
-      - name: Unit tests
-        run: |
-          set -o pipefail
-          flutter test 2>&1 | tee test.txt || { python3 .winter/ci/annotate.py test.txt "tests"; exit 1; }
-
-      - name: App icon
-        continue-on-error: true
-        run: dart run flutter_launcher_icons
-
-      - name: Analyze (errors shown as annotations)
-        run: |
-          rc=0
-          flutter analyze --no-fatal-infos --no-fatal-warnings > analyze.txt 2>&1 || rc=$?
-          cat analyze.txt
-          python3 .winter/ci/annotate.py analyze.txt "analyze"
-          exit $rc
-
-      - name: Build APK
-        run: |
-          set -o pipefail
-          flutter build apk --release --build-number=${{ github.run_number }} --build-name=1.0.${{ github.run_number }} 2>&1 | tee build.txt || { python3 .winter/ci/annotate.py build.txt "build"; exit 1; }
-
-      - name: Sign APK
-        env:
-          WINTER_SIGNING: ${{ secrets.WINTER_SIGNING }}
-        run: python3 .winter/ci/sign_apk.py build/app/outputs/flutter-apk/app-release.apk
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: KBJU-Tracker-APK
-          path: build/app/outputs/flutter-apk/app-release.apk
-
-      - name: Publish release with APK
-        run: |
-          cp build/app/outputs/flutter-apk/app-release.apk KBJU-Tracker.apk
-          gh release create "build-${{ github.run_number }}" KBJU-Tracker.apk \
-            --title "КБЖУ Трекер, сборка ${{ github.run_number }}" \
-            --notes "Телефон: KBJU-Tracker.apk. ПК: KBJU-Tracker-Setup.exe (появится через несколько минут после APK)." \
-            --latest
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  windows:
-    needs: build
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Shared CI tools (winter-hub/ci)
-        uses: actions/checkout@v4
-        with:
-          repository: Wateroflord/winter-hub
-          path: .winter
-          sparse-checkout: /ci/
-          sparse-checkout-cone-mode: false
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-      - name: Create Windows project files
-        shell: bash
-        run: |
-          flutter create --project-name kbju_tracker --org com.kbju --platforms windows .
-          rm -f test/widget_test.dart
-          python tools/patch_windows.py
-          flutter pub get
-          dart run flutter_launcher_icons -f icons_windows.yaml || true
-          sed -i 's/L"kbju_tracker"/L"KBJU Tracker"/' windows/runner/main.cpp || true
-      - name: Build Windows app
-        shell: bash
-        run: |
-          set -o pipefail
-          flutter build windows --release --build-number=${{ github.run_number }} --build-name=1.0.${{ github.run_number }} 2>&1 | tee build.txt || { python3 .winter/ci/annotate.py build.txt "windows"; exit 1; }
-      - name: Build installer
-        shell: pwsh
-        env:
-          BUILD_NO: ${{ github.run_number }}
-        run: |
-          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
-          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null }
-          & $iscc tools\installer.iss
-          if ($LASTEXITCODE -ne 0) { echo "::error title=installer::Inno Setup failed"; exit 1 }
-      - name: Attach to the release
-        shell: pwsh
-        run: |
-          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath KBJU-Tracker-Windows.zip
-          gh release upload "build-${{ github.run_number }}" KBJU-Tracker-Windows.zip dist/KBJU-Tracker-Setup.exe --clobber
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  app:
+    uses: Wateroflord/winter-hub/.github/workflows/flutter-app.yml@main
+    secrets: inherit
+    with:
+      project: kbju_tracker
+      org: com.kbju
+      asset: KBJU-Tracker
+      title: КБЖУ Трекер
+      win_title: KBJU Tracker
+      # Плагин «Шахматы»: движок Stockfish (на телефоне — только в версии arm64).
+      prepare: bash tools/stockfish.sh fetch
+      after_build_windows: bash tools/stockfish.sh install
+      publish: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}

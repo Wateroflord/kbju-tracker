@@ -45,7 +45,10 @@ class NotificationService {
   Future<void> sync(AppStore store) async {
     try {
       await _init();
-      await _plugin.cancelAll();
+      // Только свои напоминания: номера 0–9999. Остальные — у плагинов (например, «Просрочка»).
+      for (final r in await _plugin.pendingNotificationRequests()) {
+        if (r.id >= 0 && r.id < ownIdLimit) await _plugin.cancel(r.id);
+      }
       final list = store.life.reminderList;
       final now = DateTime.now();
       for (var i = 0; i < list.length; i++) {
@@ -67,6 +70,9 @@ class NotificationService {
   }
 
   static const _fastId = 9000;
+
+  /// Номера уведомлений КБЖУ — меньше этого числа. Плагины используют номера от 10000.
+  static const ownIdLimit = 10000;
 
   /// Уведомление об окончании голодания (пересоздаётся при старте/стопе).
   Future<void> syncFasting(AppStore store) async {
