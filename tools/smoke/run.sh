@@ -21,17 +21,30 @@ $UI has "Macro Tracker" && step "drawer shows KBJU OK" || step "drawer shows KBJ
 
 $UI tap "Turn on and off" && step "manage OK" || step "manage FAIL"
 shot 03_plugins
-for p in "Chess" "Minesweeper"; do $UI tap "$p" && step "toggle $p OK" || step "toggle $p FAIL"; sleep 1; done
+ALL=("Expiry" "Winter Language" "Chess" "Minesweeper" "Winter Music" "Winter Paint" "Drawing lessons" "Winter Walks" "Forest survival" "Mog Battle")
+for p in "${ALL[@]}"; do $UI tapscroll "$p" && step "toggle $p OK" || step "toggle $p FAIL"; sleep 1; done
 shot 04_plugins_on 2
 adb shell input keyevent 4
 shot 05_back 2
 
-for p in "Chess" "Minesweeper"; do
+n=0
+for p in "${ALL[@]}"; do
+  n=$((n+1))
   $UI tap "Plugins" >/dev/null; sleep 2
   $UI tap "$p" && step "open $p OK" || step "open $p FAIL"
-  shot "06_$p" 6
-  [ -n "$(adb shell pidof $PKG)" ] && step "$p alive OK" || step "$p alive FAIL (crash)"
+  shot "06_${n}_${p// /_}" 8
+  if [ -z "$(adb shell pidof $PKG)" ]; then
+    step "$p alive FAIL (crash)"
+    adb logcat -d -s AndroidRuntime:E flutter:E > "out/crash_${n}.txt"
+    adb shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1; sleep 15
+  else
+    step "$p alive OK"
+  fi
+  # закрыть разрешения/диалоги, если открылись (например, геолокация)
+  $UI tap "Don’t allow" >/dev/null 2>&1 || $UI tap "Don't allow" >/dev/null 2>&1 || true
 done
+# вернуться в «Сапёр», чтобы проверить «Назад»
+$UI tap "Plugins" >/dev/null; sleep 2; $UI tap "Minesweeper" >/dev/null; sleep 4
 
 # «Назад» на главном экране плагина — обратно в КБЖУ (шторка уже закрыта).
 adb shell input keyevent 4
