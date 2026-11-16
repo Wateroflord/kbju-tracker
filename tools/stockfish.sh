@@ -17,7 +17,12 @@ case "$1" in
       cp "$bin" tools/sf-bin/stockfish.exe
       lic=$(find sf -iname 'copying*' | head -1); [ -n "$lic" ] && cp "$lic" tools/sf-bin/Stockfish-LICENSE.txt || true
     else
-      f=$(echo "$names" | grep -E '^stockfish-android-(arm64|armv8)' | grep -v dotprod | head -1)
+      echo "Файлы Stockfish для Android:"; echo "$names" | grep android || true
+      # Обычная сборка armv8 (работает на всех 64-битных телефонах) — меньше «universal»,
+      # где внутри сразу две программы. Если её нет — берём то, что есть.
+      f=$(echo "$names" | grep -E '^stockfish-android-armv8\.(tar|zip)' | head -1)
+      [ -n "$f" ] || f=$(echo "$names" | grep -E '^stockfish-android-(arm64|armv8)' | grep -v -E 'dotprod|universal' | head -1)
+      [ -n "$f" ] || f=$(echo "$names" | grep -E '^stockfish-android-(arm64|armv8)' | grep -v dotprod | head -1)
       echo "Stockfish: $f"
       gh release download -R official-stockfish/Stockfish -p "$f" -D sf
       (cd sf && { tar -xf "$f" 2>/dev/null || unzip -q "$f"; })
