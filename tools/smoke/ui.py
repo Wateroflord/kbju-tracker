@@ -35,6 +35,16 @@ def find(xml, needle):
 cmd, needle = sys.argv[1], sys.argv[2]
 xml = dump()
 pos = find(xml, needle)
+if cmd == "tapscroll":
+    # Не видно — прокрутить вниз и поискать ещё (до 5 раз).
+    for _ in range(5):
+        if pos:
+            break
+        subprocess.run(["adb", "shell", "input", "swipe", "300", "1400", "300", "600", "400"])
+        time.sleep(1)
+        xml = dump()
+        pos = find(xml, needle)
+    cmd = "tap"
 if cmd == "has":
     print(needle, "found" if pos else "NOT FOUND")
     sys.exit(0 if pos else 1)
