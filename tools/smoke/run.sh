@@ -1,0 +1,45 @@
+#!/bin/bash
+# Проверка супер-приложения на эмуляторе: запуск, шторка, экран плагинов, переключение в плагин и обратно.
+# Скриншоты и журнал — в out/.
+set +e
+APK=$1
+PKG=com.kbju.kbju_tracker
+UI="python3 tools/smoke/ui.py"
+mkdir -p out
+shot() { sleep "${2:-3}"; adb exec-out screencap -p > "out/$1.png"; adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb shell cat /sdcard/ui.xml > "out/$1.xml"; echo "--- $1"; }
+step() { echo "$1" >> out/steps.txt; }
+
+adb install -r "$APK" > out/install.txt 2>&1 || { step "install FAIL"; cat out/install.txt; exit 1; }
+adb logcat -c
+adb shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
+shot 01_start 25
+[ -n "$(adb shell pidof $PKG)" ] && step "start OK" || step "start FAIL"
+
+$UI tap "Плагины" && step "handle OK" || step "handle FAIL"
+shot 02_drawer
+$UI has "КБЖУ Трекер" && step "drawer shows KBJU OK" || step "drawer shows KBJU FAIL"
+
+$UI tap "Включить и выключить" && step "manage OK" || step "manage FAIL"
+shot 03_plugins
+for p in "Шахматы" "Сапёр" "Winter Music"; do $UI tap "$p" && step "toggle $p OK" || step "toggle $p FAIL"; sleep 1; done
+shot 04_plugins_on 2
+adb shell input keyevent 4
+shot 05_back 2
+
+for p in "Шахматы" "Сапёр" "Winter Music"; do
+  $UI tap "Плагины" >/dev/null; sleep 2
+  $UI tap "$p" && step "open $p OK" || step "open $p FAIL"
+  shot "06_$p" 6
+  [ -n "$(adb shell pidof $PKG)" ] && step "$p alive OK" || step "$p alive FAIL (crash)"
+done
+
+# «Назад» на главном экране плагина — обратно в КБЖУ.
+adb shell input keyevent 4
+shot 07_back_to_kbju 3
+[ -n "$(adb shell pidof $PKG)" ] && step "back keeps app OK" || step "back keeps app FAIL"
+$UI tap "Плагины" >/dev/null; sleep 2
+shot 08_drawer_after 2
+
+adb logcat -d -s AndroidRuntime:E flutter:E flutter:W > out/logcat.txt
+cat out/steps.txt
+grep -q FAIL out/steps.txt && exit 1 || exit 0
