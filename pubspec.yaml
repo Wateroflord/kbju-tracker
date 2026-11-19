@@ -49,6 +49,10 @@ dependencies:
   torch_light: ^1.1.0
   # Просрочка
   shared_preferences: ^2.3.0
+  # Push-Up Arena (камера + распознавание позы, экран не гаснет во время подхода)
+  camera: '>=0.11.0 <1.0.0'
+  google_mlkit_pose_detection: '>=0.12.0 <1.0.0'
+  wakelock_plus: '>=1.2.0 <2.0.0'
 
 dev_dependencies:
   flutter_test:
@@ -69,6 +73,7 @@ flutter:
     - assets/plugins/mog/
     - assets/plugins/music/
     - assets/plugins/paint/
+    - assets/plugins/pushups/
     - assets/plugins/walks/
 
 flutter_launcher_icons:

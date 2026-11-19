@@ -16,6 +16,8 @@ import 'mog/store.dart' as mog_s;
 import 'music/app.dart' as music;
 import 'music/media.dart' as music_m;
 import 'paint/app.dart' as paint;
+import 'pushups/app.dart' as pushups;
+import 'pushups/stats.dart' as pushups_s;
 import 'walks/app.dart' as walks;
 
 /// Плагин супер-приложения: бывшее отдельное приложение Winter.
@@ -153,6 +155,15 @@ final List<WinterPlugin> winterPlugins = [
     icon: 'assets/plugins/mog/icon.png',
     build: () => const mog.MogApp(),
     init: mog_s.Store.I.load,
+  ),
+  WinterPlugin(
+    id: 'pushups',
+    name: 'Push-Up Arena',
+    tagline: 'Отжимания один на один',
+    color: const Color(0xFFFF4D5E),
+    icon: 'assets/plugins/pushups/icon.png',
+    build: () => const pushups.PushupsApp(),
+    init: pushups_s.PushStats.I.load,
   ),
 ];
 
