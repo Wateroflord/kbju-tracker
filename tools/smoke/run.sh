@@ -54,6 +54,25 @@ $UI has "Male" && step "back returns to KBJU OK" || step "back returns to KBJU F
 $UI tap "Plugins" >/dev/null; sleep 2
 shot 08_drawer_after 2
 
+# Вкладки: анкета → «Спорт» с новыми программами, вкладки «Учёба» больше нет.
+adb shell am force-stop $PKG
+adb shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
+sleep 15
+$UI tap "Age" >/dev/null && adb shell input text 25
+$UI tap "Height" >/dev/null && adb shell input text 178
+$UI tap "Weight" >/dev/null && adb shell input text 75
+adb shell input keyevent 111
+$UI tapscroll "Calculate and start" && step "onboarding OK" || step "onboarding FAIL"
+shot 09_after_onboarding 6
+$UI has "Study" && step "no Study tab FAIL" || step "no Study tab OK"
+$UI tap "Sport" && step "sport tab OK" || step "sport tab FAIL"
+shot 10_sport 3
+for p in "Full body: A / B / C" "Beginner: machines" "Upper / Lower" "Push / Pull / Legs" "Dumbbells at home" "Home cardio circuit"; do
+  $UI tapscroll "$p" && step "program $p OK" || step "program $p FAIL"; sleep 1
+done
+shot 11_programs 2
+[ -n "$(adb shell pidof $PKG)" ] && step "sport alive OK" || step "sport alive FAIL"
+
 adb logcat -d -s AndroidRuntime:E flutter:E flutter:W > out/logcat.txt
 cat out/steps.txt
 grep -q FAIL out/steps.txt && exit 1 || exit 0

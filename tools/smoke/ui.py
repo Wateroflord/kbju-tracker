@@ -24,7 +24,8 @@ def find(xml, needle):
         n = m.group(0)
         text = (re.search(r' text="([^"]*)"', n) or [None, ""])[1]
         desc = (re.search(r' content-desc="([^"]*)"', n) or [None, ""])[1]
-        if needle in text or needle in desc:
+        hint = (re.search(r' hint="([^"]*)"', n) or [None, ""])[1]  # подписи полей ввода
+        if needle in text or needle in desc or needle in hint:
             b = re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', n)
             if b:
                 x1, y1, x2, y2 = map(int, b.groups())
