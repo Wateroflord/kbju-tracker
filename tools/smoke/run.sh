@@ -65,6 +65,8 @@ $UI edit 2 && adb shell input text 75; sleep 1
 adb shell input keyevent 4; sleep 1  # спрятать клавиатуру
 $UI tapscroll "Calculate and start" && step "onboarding OK" || step "onboarding FAIL"
 shot 09_after_onboarding 6
+# после анкеты — окно «Новое: плагины»
+$UI tap "Done" >/dev/null && sleep 2
 $UI has "Study" && step "no Study tab FAIL" || step "no Study tab OK"
 $UI tap "Sport" && step "sport tab OK" || step "sport tab FAIL"
 shot 10_sport 3
