@@ -62,7 +62,7 @@ sleep 15
 $UI edit 0 && adb shell input text 25; sleep 1
 $UI edit 1 && adb shell input text 178; sleep 1
 $UI edit 2 && adb shell input text 75; sleep 1
-adb shell input keyevent 111
+adb shell input keyevent 4; sleep 1  # спрятать клавиатуру
 $UI tapscroll "Calculate and start" && step "onboarding OK" || step "onboarding FAIL"
 shot 09_after_onboarding 6
 $UI has "Study" && step "no Study tab FAIL" || step "no Study tab OK"
