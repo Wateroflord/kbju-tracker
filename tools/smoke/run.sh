@@ -58,9 +58,10 @@ shot 08_drawer_after 2
 adb shell am force-stop $PKG
 adb shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
 sleep 15
-$UI tap "Age" >/dev/null && adb shell input text 25
-$UI tap "Height" >/dev/null && adb shell input text 178
-$UI tap "Weight" >/dev/null && adb shell input text 75
+# поля анкеты по порядку: возраст, рост, вес
+$UI edit 0 && adb shell input text 25; sleep 1
+$UI edit 1 && adb shell input text 178; sleep 1
+$UI edit 2 && adb shell input text 75; sleep 1
 adb shell input keyevent 111
 $UI tapscroll "Calculate and start" && step "onboarding OK" || step "onboarding FAIL"
 shot 09_after_onboarding 6

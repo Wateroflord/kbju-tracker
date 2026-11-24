@@ -2,6 +2,7 @@
 
 python3 ui.py tap "Шахматы"      — нажать на первый элемент с таким текстом/описанием
 python3 ui.py has "Плагины"      — код 0, если элемент есть на экране
+python3 ui.py edit 0             — нажать первое поле ввода
 """
 import re
 import subprocess
@@ -35,6 +36,17 @@ def find(xml, needle):
 
 cmd, needle = sys.argv[1], sys.argv[2]
 xml = dump()
+if cmd == "edit":
+    # Поля ввода Flutter без подписи в дереве — берём N-е по счёту (0 — первое).
+    fields = re.findall(r'<node [^>]*class="android.widget.EditText"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', xml)
+    i = int(needle)
+    if i >= len(fields):
+        print("NOT FOUND: field", i, "of", len(fields))
+        sys.exit(1)
+    x1, y1, x2, y2 = map(int, fields[i])
+    subprocess.run(["adb", "shell", "input", "tap", str((x1 + x2) // 2), str((y1 + y2) // 2)])
+    print("tap field", i)
+    sys.exit(0)
 pos = find(xml, needle)
 if cmd == "tapscroll":
     # Не видно — прокрутить вниз и поискать ещё (до 5 раз).
