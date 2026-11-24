@@ -17,6 +17,9 @@ class PluginHost extends ChangeNotifier {
   /// Пользователь уже выбрал плагины в первый раз.
   bool asked = false;
 
+  /// Плагины, которые один раз включились сами (Winter Language вместо вкладки «Учёба»).
+  final Set<String> autoEnabled = {};
+
   /// Открытый сейчас плагин.
   String active = 'kbju';
 
@@ -46,6 +49,9 @@ class PluginHost extends ChangeNotifier {
           ..clear()
           ..addAll([for (final e in (j['enabled'] as List? ?? const [])) '$e'].where((id) => pluginById(id) != null));
         asked = j['asked'] == true;
+        autoEnabled
+          ..clear()
+          ..addAll([for (final e in (j['auto'] as List? ?? const [])) '$e']);
         final last = '${j['active'] ?? 'kbju'}';
         if (isOn(last)) active = last;
       }
@@ -58,7 +64,8 @@ class PluginHost extends ChangeNotifier {
 
   Future<void> _save() async {
     try {
-      await _file?.writeAsString(jsonEncode({'enabled': enabled.toList(), 'asked': asked, 'active': active}));
+      await _file?.writeAsString(
+          jsonEncode({'enabled': enabled.toList(), 'asked': asked, 'active': active, 'auto': autoEnabled.toList()}));
     } catch (_) {}
   }
 
@@ -105,6 +112,15 @@ class PluginHost extends ChangeNotifier {
       enabled.remove(id);
       if (active == id) active = 'kbju';
     }
+    notifyListeners();
+    await _save();
+  }
+
+  /// Включить плагин сам один раз. Если пользователь потом его выключит — больше не включаем.
+  Future<void> enableOnce(String id) async {
+    if (pluginById(id) == null || autoEnabled.contains(id)) return;
+    autoEnabled.add(id);
+    enabled.add(id);
     notifyListeners();
     await _save();
   }

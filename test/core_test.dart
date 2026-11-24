@@ -150,7 +150,7 @@ void main() {
       a.setHcDay('2026-11-01', [const HcWorkout(start: 1000, end: 1801000, type: 'RUNNING', kcal: 300)]);
       final b = ExtraStore(() {})..load(jsonDecode(jsonEncode(a.toJson())));
       expect(b.tabVisible('care'), isFalse);
-      expect(b.tabVisible('learn'), isTrue);
+      expect(b.tabVisible('training'), isTrue);
       expect(b.hcWorkouts, isTrue);
       expect(b.hcLog['2026-11-01']!.single.minutes, 30);
     });

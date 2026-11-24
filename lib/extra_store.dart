@@ -31,7 +31,7 @@ class HcWorkout {
 }
 
 /// Вкладки, которые можно скрыть.
-const hideableTabs = ['training', 'care', 'learn'];
+const hideableTabs = ['training', 'care'];
 
 /// Настройки и данные, добавленные позже: скрытые вкладки, Health Connect.
 /// Сохраняются в общем JSON под ключом `extra`.

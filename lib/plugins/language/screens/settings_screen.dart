@@ -48,7 +48,7 @@ class SettingsScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  tr('Раньше учёба была вкладкой в КБЖУ Трекере. В КБЖУ открой вкладку «Учёба» и нажми «Сохранить прогресс» (или сделай обычную копию в профиле), потом выбери этот файл здесь. Уже выученное в Winter Language не пропадёт.'),
+                  tr('Прогресс из этого КБЖУ Трекера переносится сам. Учил слова в КБЖУ на другом телефоне? Сделай там копию в профиле и выбери этот файл здесь. Уже выученное в Winter Language не пропадёт.'),
                   style: Txt.small,
                 ),
                 const SizedBox(height: 12),
@@ -76,7 +76,7 @@ class SettingsScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          Text(tr('Winter Language — приложение семейства Winter Hub. Обновления ставятся через Winter Hub.'), style: Txt.small),
+          Text(tr('Winter Language — плагин КБЖУ Трекера. Обновляется вместе с ним через Winter Hub.'), style: Txt.small),
         ],
       ),
     );

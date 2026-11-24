@@ -43,5 +43,8 @@ Future<void> _main() async {
     life: () => store.life.toJson(),
   );
   await PluginHost.I.load();
+  // Вкладки «Учёба» больше нет — языки только в плагине Winter Language. У кого есть выученные слова,
+  // плагин включается сам (один раз: если потом выключить, сам больше не включится).
+  if (store.life.learnCards.values.any((m) => m.isNotEmpty)) await PluginHost.I.enableOnce('language');
   runApp(WinterCrashBanner(child: StoreScope(store: store, child: const WinterShell())));
 }
