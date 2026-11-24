@@ -271,6 +271,39 @@ if "useLegacyPackaging" not in gs:
     gs = gs.replace("android {", "android {\n    packaging {\n        jniLibs {\n            useLegacyPackaging = true\n        }\n    }", 1)
 g.write_text(gs, encoding="utf-8")
 
+# ---------- WorkManager: падение при запуске (сборка 36) ----------
+# Push-Up Arena (камера + ML Kit) затянула старый WorkManager 2.7.0 с базой Room 2.2.5.
+# Их правила для R8 написаны под старый режим: R8 вырезал конструктор WorkDatabase_Impl,
+# и приложение падало сразу при запуске («Failed to create an instance of WorkDatabase»)
+# на любом процессоре. Поэтому: (1) все модули androidx.work — современной версии,
+# (2) конструктор баз Room и воркеров нельзя вырезать.
+WORK_VERSION = "2.10.1"
+gs = g.read_text(encoding="utf-8")
+if "androidx.work" not in gs:
+    gs += (
+        "\n// Все модули WorkManager одной современной версии (см. tools/patch_android.py).\n"
+        "configurations.all {\n"
+        "    resolutionStrategy.eachDependency {\n"
+        f'        if (requested.group == "androidx.work") useVersion("{WORK_VERSION}")\n'
+        "    }\n"
+        "}\n"
+    )
+if 'proguardFiles("proguard-rules.pro")' not in gs:
+    gs, n = re.subn(r"(buildTypes\s*\{\s*release\s*\{)", r'\1\n            proguardFiles("proguard-rules.pro")', gs, count=1)
+    print("proguard-rules.pro подключён в release:", bool(n))
+g.write_text(gs, encoding="utf-8")
+rules = ROOT / "proguard-rules.pro"
+old_rules = rules.read_text(encoding="utf-8") if rules.exists() else ""
+if "androidx.room.RoomDatabase" not in old_rules:
+    rules.write_text(old_rules + """
+# База WorkManager/Room создаётся через рефлексию — без конструктора приложение падает при запуске.
+-keep class * extends androidx.room.RoomDatabase { <init>(); }
+-keep class androidx.work.impl.WorkDatabase_Impl { <init>(...); }
+-keep class * extends androidx.work.ListenableWorker { <init>(android.content.Context, androidx.work.WorkerParameters); }
+-keep class * extends androidx.work.InputMerger { <init>(); }
+""", encoding="utf-8")
+print("WorkManager:", WORK_VERSION, "+ правила R8")
+
 root_gradle = pathlib.Path("android/build.gradle.kts")
 rs = root_gradle.read_text(encoding="utf-8")
 if "compileSdkVersion" not in rs:
