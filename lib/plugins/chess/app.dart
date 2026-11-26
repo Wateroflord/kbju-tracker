@@ -93,7 +93,7 @@ class _MenuState extends State<Menu> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('Скачай нейросеть Stockfish', style: W.h2),
           const SizedBox(height: 4),
-          const Text('Один раз, около 75 МБ (лучше по Wi-Fi). Без неё уровни от «Любителя» и разбор партий '
+          const Text('Один раз, около 100 МБ (лучше по Wi-Fi). Без неё уровни от «Любителя» и разбор партий '
               'играет встроенный бот попроще. В обновления КБЖУ она больше не входит — они стали легче.',
               style: W.small),
           const SizedBox(height: 10),
