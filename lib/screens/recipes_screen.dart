@@ -12,6 +12,7 @@ import '../widgets/sheets.dart';
 import '../i18n/i18n.dart';
 import 'barcode_screen.dart';
 import 'food_picker.dart';
+import 'meal_plan_screen.dart';
 
 /// Рецепт как одна позиция еды на [grams] граммов готового блюда.
 AiFoodItem recipeItem(Recipe r, double grams) {
@@ -40,7 +41,13 @@ class RecipesScreen extends StatelessWidget {
         Navigator.of(context).push(MaterialPageRoute(builder: (_) => RecipeEditorScreen(recipe: r)));
     return Scaffold(
       backgroundColor: AppColors.bg,
-      appBar: subAppBar(tr('Рецепты')),
+      appBar: subAppBar(tr('Рецепты'), actions: [
+        IconButton(
+          tooltip: tr('План питания'),
+          icon: const Icon(Icons.calendar_month_outlined),
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MealPlanScreen())),
+        ),
+      ]),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'new_recipe',
         backgroundColor: AppColors.accent,
@@ -59,6 +66,21 @@ class RecipesScreen extends StatelessWidget {
             style: Txt.small,
           ),
           const SizedBox(height: 12),
+          AppCard(
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MealPlanScreen())),
+            child: Row(children: [
+              const Icon(Icons.calendar_month_outlined, color: AppColors.accent2),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(tr('План питания на неделю'), style: Txt.h2),
+                  Text(tr('Рецепты по дням → продукты сами в списке покупок'), style: Txt.small),
+                ]),
+              ),
+              const Icon(Icons.chevron_right, color: AppColors.muted),
+            ]),
+          ),
+          const SizedBox(height: 8),
           if (list.isEmpty)
             AppCard(
               onTap: () => open(),

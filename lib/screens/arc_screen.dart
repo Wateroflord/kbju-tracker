@@ -226,6 +226,7 @@ class _ArcScreenState extends State<ArcScreen> {
             _part(tr('Шаги'), mine.steps, 20),
             _part(tr('Тренировка'), mine.workout, 20),
           ]),
+          _challenge(arc),
           SectionLabel(tr('Рейтинг')),
           Segmented<ArcPeriod>(
             values: ArcPeriod.values,
@@ -249,6 +250,57 @@ class _ArcScreenState extends State<ArcScreen> {
           const SizedBox(height: 16),
           GhostButton(tr('Выйти из Winter Arc'), icon: Icons.logout, onPressed: arc.logout),
         ],
+      ),
+    );
+  }
+
+  /// Челлендж недели: категория меняется каждый понедельник, у всех друзей одна и та же.
+  Widget _challenge(ArcService arc) {
+    final ch = challengeFor(today());
+    final rows = arc.weekBoard(ch);
+    final winner = arc.lastWeekWinner();
+    final daysLeft = 7 - today().weekday;
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: AppCard(
+        borderColor: _ice.withValues(alpha: 0.5),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Text(ch.emoji, style: const TextStyle(fontSize: 26)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(trf('Челлендж недели: {0}', [tr(ch.title)]), style: Txt.h2),
+                Text(
+                  '${tr(ch.desc)} ${daysLeft == 0 ? tr('Последний день!') : trf('Осталось дней: {0}', [daysLeft])}',
+                  style: Txt.small,
+                ),
+              ]),
+            ),
+          ]),
+          const SizedBox(height: 8),
+          if (rows.isEmpty || rows.first.points == 0)
+            Text(tr('Пока ни у кого нет очков в этой категории.'), style: Txt.small)
+          else
+            for (var i = 0; i < rows.length && i < 5; i++)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(children: [
+                  SizedBox(width: 30, child: Text(_medal(i), textAlign: TextAlign.center)),
+                  Expanded(
+                    child: Text(rows[i].name,
+                        style: Txt.body.copyWith(
+                            fontWeight: rows[i].userId == arc.userId ? FontWeight.w800 : FontWeight.w500,
+                            color: rows[i].userId == arc.userId ? _ice : null)),
+                  ),
+                  Text('${rows[i].points}', style: Txt.body.copyWith(fontWeight: FontWeight.w700)),
+                ]),
+              ),
+          if (winner != null) ...[
+            const SizedBox(height: 6),
+            Text(trf('Победитель прошлой недели: {0} 🏆', [winner.name]), style: Txt.small.copyWith(color: _ice)),
+          ],
+        ]),
       ),
     );
   }

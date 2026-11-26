@@ -1,5 +1,6 @@
 import '../util.dart';
 import 'food_models.dart';
+import 'meal_plan.dart';
 
 /// Дополнительные данные питания. Сохраняются в общем JSON под ключом `food`.
 class FoodStore {
@@ -26,6 +27,9 @@ class FoodStore {
   // Недельные разборы ИИ: понедельник недели -> текст
   final Map<String, String> reports = {};
 
+  // План питания на неделю: день недели (1 — понедельник … 7) -> блюда
+  final Map<int, List<PlanMeal>> mealPlan = {};
+
   int _id = 0;
   String newId(String prefix) => '${prefix}_${DateTime.now().microsecondsSinceEpoch}_${_id++}';
 
@@ -41,6 +45,7 @@ class FoodStore {
     budgetPln = 0;
     usdRate = 3.6;
     reports.clear();
+    mealPlan.clear();
     if (!silent) _notify();
   }
 
@@ -56,6 +61,7 @@ class FoodStore {
         'budgetPln': budgetPln,
         'usdRate': usdRate,
         'reports': reports,
+        'mealPlan': {for (final e in mealPlan.entries) if (e.value.isNotEmpty) '${e.key}': e.value.map((m) => m.toJson()).toList()},
       };
 
   static List<Map<String, dynamic>> maps(dynamic v) =>
@@ -67,6 +73,15 @@ class FoodStore {
     final j = Map<String, dynamic>.from(raw);
     favorites.addAll(maps(j['favorites']).map(FavFood.fromJson).where((f) => f.name.isNotEmpty));
     recipes.addAll(maps(j['recipes']).map(Recipe.fromJson).where((r) => r.id.isNotEmpty && r.name.isNotEmpty));
+    final mp = j['mealPlan'];
+    if (mp is Map) {
+      mp.forEach((k, v) {
+        final d = int.tryParse('$k') ?? 0;
+        if (d < 1 || d > 7 || v is! List) return;
+        final list = [for (final x in v) PlanMeal.fromJson(x)].whereType<PlanMeal>().toList();
+        if (list.isNotEmpty) mealPlan[d] = list;
+      });
+    }
     final pr = j['products'];
     if (pr is Map) {
       pr.forEach((k, v) {
@@ -221,6 +236,40 @@ class FoodStore {
 
   void removeFavorite(String id) {
     favorites.removeWhere((f) => f.id == id);
+    _notify();
+  }
+
+  // ---------- план питания ----------
+
+  void addPlanMeal(int weekday, String recipeId, double portions) {
+    (mealPlan[weekday] ??= []).add(PlanMeal(recipeId, portions));
+    _notify();
+  }
+
+  void removePlanMeal(int weekday, int index) {
+    final l = mealPlan[weekday];
+    if (l == null || index < 0 || index >= l.length) return;
+    l.removeAt(index);
+    if (l.isEmpty) mealPlan.remove(weekday);
+    _notify();
+  }
+
+  /// Скопировать день плана на другие дни (например, понедельник на всю неделю).
+  void copyPlanDay(int from, List<int> to) {
+    final src = mealPlan[from] ?? const [];
+    for (final d in to) {
+      if (d == from) continue;
+      if (src.isEmpty) {
+        mealPlan.remove(d);
+      } else {
+        mealPlan[d] = List.of(src);
+      }
+    }
+    _notify();
+  }
+
+  void clearPlan() {
+    mealPlan.clear();
     _notify();
   }
 

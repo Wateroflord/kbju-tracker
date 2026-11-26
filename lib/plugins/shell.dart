@@ -16,6 +16,10 @@ class WinterShell extends StatefulWidget {
   /// Открыть плагин из любого места (например, из вкладки «Учёба» КБЖУ).
   static Future<void> open(BuildContext context, String id) => _ShellBodyState._current?._switch(id) ?? PluginHost.I.open(id);
 
+  /// То же без контекста (кнопки виджета на главном экране телефона).
+  static Future<void> switchTo(String id) =>
+      PluginHost.I.active == id ? Future.value() : (_ShellBodyState._current?._switch(id) ?? PluginHost.I.open(id));
+
   @override
   State<WinterShell> createState() => _WinterShellState();
 }

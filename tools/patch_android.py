@@ -172,6 +172,11 @@ if "extractNativeLibs" not in text:
     text = text.replace("<application", '<application android:extractNativeLibs="true"', 1)
 
 text = re.sub(r'android:label="[^"]*"', 'android:label="КБЖУ Трекер"', text, count=1)
+# Свой класс приложения: ловит падения Android-части до запуска Flutter (tools/android/WinterApp.kt).
+text = text.replace('android:name="${applicationName}"', 'android:name=".WinterApp"', 1)
+_tag = re.search(r"<application[^>]*>", text)
+if _tag and "android:name=" not in _tag.group(0):
+    text = text.replace("<application", '<application android:name=".WinterApp"', 1)
 # Сервер Winter Chat (рейтинг Winter Arc) работает по обычному http в домашней сети.
 if "usesCleartextTraffic" not in text:
     text = text.replace("<application", '<application android:usesCleartextTraffic="true"', 1)
@@ -199,7 +204,7 @@ for act in acts:
     act.unlink()
 kotlin_dir = ROOT / "src/main/kotlin/com/kbju/kbju_tracker"
 kotlin_dir.mkdir(parents=True, exist_ok=True)
-for name in ("MainActivity.kt", "StepService.kt", "KbjuWidget.kt"):
+for name in ("MainActivity.kt", "StepService.kt", "KbjuWidget.kt", "WinterApp.kt"):
     (kotlin_dir / name).write_text((TOOLS / name).read_text(encoding="utf-8"), encoding="utf-8")
     print("copied", kotlin_dir / name)
 drawable = ROOT / "src/main/res/drawable"
@@ -328,5 +333,11 @@ if sf.exists():
     jni.mkdir(parents=True, exist_ok=True)
     (jni / "libstockfish.so").write_bytes(sf.read_bytes())
     print("stockfish:", jni / "libstockfish.so", sf.stat().st_size)
+    sf86 = pathlib.Path("tools/sf-bin/x86_64/libstockfish.so")
+    if sf86.exists():
+        jni86 = ROOT / "src/main/jniLibs/x86_64"
+        jni86.mkdir(parents=True, exist_ok=True)
+        (jni86 / "libstockfish.so").write_bytes(sf86.read_bytes())
+        print("stockfish x86_64:", sf86.stat().st_size)
 else:
     print("WARNING: tools/sf-bin/libstockfish.so нет — шахматы без Stockfish")

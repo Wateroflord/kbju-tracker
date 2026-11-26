@@ -5,9 +5,36 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../i18n/i18n.dart';
+import '../life/notifications.dart';
 import '../store.dart';
 import '../util.dart';
 import 'arc_score.dart';
+
+/// Челлендж недели: категория меняется каждый понедельник, у всех друзей одна и та же.
+class ArcChallenge {
+  final String cat; // total / steps / workout / sleep / food / water
+  final String title, desc, emoji;
+  const ArcChallenge(this.cat, this.title, this.desc, this.emoji);
+}
+
+const arcChallenges = [
+  ArcChallenge('steps', 'Неделя шагов', 'Больше всех очков за шаги до воскресенья.', '👟'),
+  ArcChallenge('workout', 'Неделя тренировок', 'Кто чаще закроет тренировку по плану.', '🏋️'),
+  ArcChallenge('sleep', 'Неделя сна', 'Спи 7+ часов — сон тоже дисциплина.', '😴'),
+  ArcChallenge('food', 'Неделя питания', 'Калории в норме каждый день.', '🥗'),
+  ArcChallenge('water', 'Неделя воды', 'Выпивай свою норму воды.', '💧'),
+  ArcChallenge('total', 'Неделя дисциплины', 'Больше всех очков Winter Arc за неделю.', '❄️'),
+];
+
+/// Понедельник недели дня [day].
+DateTime weekStart(DateTime day) => DateTime(day.year, day.month, day.day - (day.weekday - 1));
+
+/// Челлендж недели, в которую входит [day] (по номеру недели от 5 января 2026 — понедельник).
+ArcChallenge challengeFor(DateTime day) {
+  final w = daysBetween(DateTime(2026, 1, 5), weekStart(day)) ~/ 7;
+  return arcChallenges[((w % arcChallenges.length) + arcChallenges.length) % arcChallenges.length];
+}
 
 /// Место в рейтинге Winter Arc.
 class ArcRow {
@@ -49,6 +76,7 @@ class ArcService extends ChangeNotifier {
         start = '${j['start'] ?? ''}';
         end = '${j['end'] ?? ''}';
         records = [for (final r in (j['records'] as List? ?? const [])) Map<String, dynamic>.from(r as Map)];
+        lastOrder = [for (final x in (j['order'] as List? ?? const [])) '$x'];
       }
     } catch (_) {}
     notifyListeners();
@@ -65,6 +93,7 @@ class ArcService extends ChangeNotifier {
         'start': start,
         'end': end,
         'records': records,
+        'order': lastOrder,
       }));
     } catch (_) {}
   }
@@ -147,6 +176,7 @@ class ArcService extends ChangeNotifier {
     userId = '';
     name = '';
     records = [];
+    lastOrder = [];
     await _save();
     notifyListeners();
   }
@@ -220,7 +250,7 @@ class ArcService extends ChangeNotifier {
         'perPage': '500',
         'page': '$page',
         'expand': 'user',
-        'fields': 'day,total,user,expand.user.name,expand.user.username',
+        'fields': 'day,total,food,water,sleep,steps,workout,user,expand.user.name,expand.user.username',
       });
       final r = await http.get(q, headers: _auth).timeout(const Duration(seconds: 20));
       if (r.statusCode != 200) throw _err(r, 'Не удалось загрузить рейтинг (${r.statusCode})');
@@ -230,6 +260,7 @@ class ArcService extends ChangeNotifier {
         all.add({
           'day': '${it['day']}',
           'total': (it['total'] as num?)?.toInt() ?? 0,
+          for (final c in const ['food', 'water', 'sleep', 'steps', 'workout']) c: (it[c] as num?)?.toInt() ?? 0,
           'user': '${it['user']}',
           'name': '${u['name'] ?? ''}'.trim().isNotEmpty ? '${u['name']}' : '${u['username'] ?? '?'}',
         });
@@ -237,6 +268,68 @@ class ArcService extends ChangeNotifier {
       if (page >= ((j['totalPages'] as num?)?.toInt() ?? 1)) break;
     }
     records = all;
+    _checkOvertake();
+  }
+
+  /// Порядок мест в общем рейтинге на прошлой синхронизации (id пользователей).
+  List<String> lastOrder = [];
+
+  /// «Друг тебя обогнал» — уведомление после синхронизации (при открытии и закрытии приложения).
+  void _checkOvertake() {
+    final order = [for (final r in board(ArcPeriod.arc)) r.userId];
+    final passed = overtakers(lastOrder, order, userId);
+    lastOrder = order;
+    if (passed.isEmpty) return;
+    final rows = board(ArcPeriod.arc);
+    final names = [for (final r in rows) if (passed.contains(r.userId)) r.name];
+    final place = order.indexOf(userId) + 1;
+    NotificationService.instance.showNow(
+      9200,
+      tr('Тебя обогнали в Winter Arc'),
+      trf('{0} теперь выше тебя — ты на {1}-м месте. Догоняй! ❄️', [names.join(', '), place]),
+    );
+  }
+
+  /// Кто был ниже меня в [before], а теперь выше в [after] (чистая логика, проверяется тестами).
+  static List<String> overtakers(List<String> before, List<String> after, String me) {
+    final b = before.indexOf(me), a = after.indexOf(me);
+    if (b < 0 || a < 0) return const [];
+    return [
+      for (var i = 0; i < a; i++)
+        if (before.indexOf(after[i]) > b) after[i],
+    ];
+  }
+
+  /// Рейтинг челленджа недели: очки категории с понедельника по сегодня.
+  List<ArcRow> weekBoard(ArcChallenge ch, {DateTime? day}) {
+    final d = day ?? today();
+    final from = dkey(weekStart(d));
+    final to = dkey(d);
+    return categoryBoard(records, ch.cat, from, to);
+  }
+
+  /// Победитель прошлой недели (null — никто не набрал очков).
+  ArcRow? lastWeekWinner({DateTime? day}) {
+    final mon = weekStart(day ?? today());
+    final prevMon = addDays(mon, -7);
+    final rows = categoryBoard(records, challengeFor(prevMon).cat, dkey(prevMon), dkey(addDays(mon, -1)));
+    return rows.isEmpty || rows.first.points == 0 ? null : rows.first;
+  }
+
+  /// Сумма очков категории [cat] за дни [from]…[to] (total — все очки).
+  static List<ArcRow> categoryBoard(List<Map<String, dynamic>> recs, String cat, String from, String to) {
+    final pts = <String, int>{}, tot = <String, int>{}, names = <String, String>{};
+    for (final r in recs) {
+      final d = '${r['day']}';
+      if (d.compareTo(from) < 0 || d.compareTo(to) > 0) continue;
+      final u = '${r['user']}';
+      names[u] = '${r['name']}';
+      pts[u] = (pts[u] ?? 0) + ((r[cat] as num?)?.toInt() ?? 0);
+      tot[u] = (tot[u] ?? 0) + ((r['total'] as num?)?.toInt() ?? 0);
+    }
+    final rows = [for (final u in pts.keys) ArcRow(u, names[u] ?? '?', points: pts[u]!, today: tot[u]!)];
+    rows.sort((a, b) => b.points != a.points ? b.points.compareTo(a.points) : b.today.compareTo(a.today));
+    return rows;
   }
 
   List<ArcRow> board(ArcPeriod p) => leaderboard(records, p, todayKey(), start);

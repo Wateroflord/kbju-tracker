@@ -11,6 +11,7 @@ import '../widgets/common.dart';
 import '../widgets/nav.dart';
 import '../widgets/sheets.dart';
 import 'ai_program_screen.dart';
+import 'interval_timer_screen.dart';
 import 'program_editor.dart';
 import 'routine_screen.dart';
 import 'strength_screen.dart';
@@ -87,6 +88,8 @@ class TrainingScreen extends StatelessWidget {
                 Expanded(child: _ToolTile(Icons.self_improvement, tr('Разминка и растяжка'), () => const RoutinesScreen())),
                 const SizedBox(width: 8),
                 Expanded(child: _ToolTile(Icons.calculate_outlined, tr('Сила и 1ПМ'), () => const OneRmScreen())),
+                const SizedBox(width: 8),
+                Expanded(child: _ToolTile(Icons.timer_outlined, tr('Таймер круговой'), () => const IntervalTimerScreen())),
               ],
             ),
             ),

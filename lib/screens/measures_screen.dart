@@ -9,6 +9,7 @@ import '../widgets/charts.dart';
 import '../widgets/common.dart';
 import '../widgets/nav.dart';
 import '../widgets/sheets.dart';
+import 'progress_photos_screen.dart';
 import '../i18n/i18n.dart';
 
 /// Карточка замеров для вкладки «Прогресс».
@@ -271,6 +272,23 @@ class _MeasuresScreenState extends State<MeasuresScreen> {
                     style: Txt.small,
                   ),
                 ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          AppCard(
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProgressPhotosScreen())),
+            child: Row(
+              children: [
+                const Icon(Icons.photo_camera_back_outlined, color: AppColors.accent2, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(tr('Фото прогресса'), style: Txt.h2),
+                    Text(tr('Снимки по датам и сравнение «до / после»'), style: Txt.small),
+                  ]),
+                ),
+                const Icon(Icons.chevron_right, color: AppColors.muted),
               ],
             ),
           ),

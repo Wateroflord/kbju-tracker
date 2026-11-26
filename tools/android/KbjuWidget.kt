@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
+import org.json.JSONObject
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -17,6 +18,33 @@ import java.util.Locale
 class KbjuWidget : AppWidgetProvider() {
     companion object {
         private const val PREFS = "kbju_widget"
+        const val ACTION_PHOTO = "com.kbju.kbju_tracker.WIDGET_PHOTO"
+        const val ACTION_WATER = "com.kbju.kbju_tracker.WIDGET_WATER"
+
+        /** «+ вода» с виджета: сразу видно на виджете, а в приложение попадает при следующем открытии. */
+        fun addWater(c: Context) {
+            val p = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val ml = p.getLong("waterStep", 250)
+            val today = StepStore.today()
+            val e = p.edit()
+            if (p.getString("day", "") != today) {
+                e.putString("day", today).putLong("kcal", 0).putLong("protein", 0).putLong("water", 0).putLong("steps", 0)
+            }
+            e.putLong("water", (if (p.getString("day", "") == today) p.getLong("water", 0) else 0) + ml)
+            val pending = try { JSONObject(p.getString("water_pending", "{}") ?: "{}") } catch (x: Exception) { JSONObject() }
+            pending.put(today, pending.optLong(today, 0) + ml)
+            e.putString("water_pending", pending.toString())
+            e.apply()
+            updateAll(c)
+        }
+
+        /** Вода, добавленная с виджета (день → мл); после чтения обнуляется. */
+        fun takePendingWater(c: Context): String {
+            val p = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val s = p.getString("water_pending", "{}") ?: "{}"
+            p.edit().remove("water_pending").apply()
+            return s
+        }
 
         fun save(c: Context, data: Map<String, Any?>) {
             val e = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
@@ -82,11 +110,32 @@ class KbjuWidget : AppWidgetProvider() {
             }
             val pi = PendingIntent.getActivity(c, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
             v.setOnClickPendingIntent(R.id.w_root, pi)
+
+            // Кнопки: «📷 Еда» — открыть приложение сразу с камерой; «+ вода» — без открытия приложения.
+            v.setTextViewText(R.id.w_btn_photo, s("photoBtn", "📷 Еда"))
+            v.setTextViewText(R.id.w_btn_water, s("waterBtn", "💧 +${p.getLong("waterStep", 250)} ${s("ml", "мл")}"))
+            val photo = Intent(c, MainActivity::class.java).apply {
+                action = ACTION_PHOTO
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            }
+            v.setOnClickPendingIntent(R.id.w_btn_photo,
+                PendingIntent.getActivity(c, 1, photo, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
+            val water = Intent(c, KbjuWidget::class.java).apply { action = ACTION_WATER }
+            v.setOnClickPendingIntent(R.id.w_btn_water,
+                PendingIntent.getBroadcast(c, 2, water, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
             mgr.updateAppWidget(id, v)
         }
     }
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         for (id in appWidgetIds) update(context, appWidgetManager, id)
+    }
+
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action == ACTION_WATER) {
+            addWater(context)
+            return
+        }
+        super.onReceive(context, intent)
     }
 }

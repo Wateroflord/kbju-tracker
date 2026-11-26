@@ -98,6 +98,29 @@ class NotificationService {
     );
   }
 
+  /// Показать уведомление сразу (Winter Arc: «друг тебя обогнал»).
+  Future<void> showNow(int id, String title, String body) async {
+    try {
+      await _init();
+      await _plugin.show(
+        id,
+        title,
+        body,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'arc',
+            'Winter Arc',
+            channelDescription: tr('Рейтинг с друзьями'),
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('notification failed: $e');
+    }
+  }
+
   Future<void> _scheduleRaw(int id, String title, String body, DateTime localTime) async {
     final at = tz.TZDateTime.from(localTime.toUtc(), tz.UTC);
     await _plugin.zonedSchedule(

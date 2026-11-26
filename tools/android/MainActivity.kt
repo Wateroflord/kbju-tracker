@@ -3,6 +3,7 @@ package com.kbju.kbju_tracker
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import android.view.WindowManager
@@ -15,6 +16,26 @@ import java.util.Locale
 // FlutterFragmentActivity нужен для Health Connect, AudioService — для фоновой музыки (плагин Winter Music).
 // AudioServiceFragmentActivity = FlutterFragmentActivity + audio_service.
 class MainActivity : AudioServiceFragmentActivity() {
+    companion object {
+        /** Действие с виджета, которое ещё не забрал Flutter («photo»). */
+        @Volatile var pendingAction: String? = null
+    }
+
+    private fun takeIntent(i: Intent?) {
+        if (i?.action == KbjuWidget.ACTION_PHOTO) pendingAction = "photo"
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        takeIntent(intent)
+        super.onCreate(savedInstanceState)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        takeIntent(intent)
+    }
+
     private var tts: TextToSpeech? = null
     private var ttsReady = false
     private var pending: Pair<String, String>? = null
@@ -98,6 +119,12 @@ class MainActivity : AudioServiceFragmentActivity() {
                     KbjuWidget.updateAll(this)
                     result.success(true)
                 }
+                "takeAction" -> {
+                    val a = pendingAction
+                    pendingAction = null
+                    result.success(a)
+                }
+                "takeWater" -> result.success(KbjuWidget.takePendingWater(this))
                 else -> result.notImplemented()
             }
         }

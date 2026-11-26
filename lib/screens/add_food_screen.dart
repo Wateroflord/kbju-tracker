@@ -21,7 +21,9 @@ import '../platform.dart';
 class AddFoodScreen extends StatefulWidget {
   final DateTime date;
   final Meal meal;
-  const AddFoodScreen({super.key, required this.date, required this.meal});
+  /// Сразу открыть камеру (кнопка «📷 Еда» на виджете).
+  final bool openCamera;
+  const AddFoodScreen({super.key, required this.date, required this.meal, this.openCamera = false});
 
   @override
   State<AddFoodScreen> createState() => _AddFoodScreenState();
@@ -36,6 +38,16 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
   String? error;
   String? note;
   List<ItemFields> items = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.openCamera) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _pick(ImageSource.camera);
+      });
+    }
+  }
 
   @override
   void dispose() {

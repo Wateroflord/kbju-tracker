@@ -21,6 +21,7 @@ dependencies:
   google_fonts: ^6.2.1
   health: '>=11.0.0 <14.0.0'
   http: ^1.2.2
+  crypto: ^3.0.6
   image_picker: ^1.1.2
   mobile_scanner: ^7.0.0
   path_provider: ^2.1.4

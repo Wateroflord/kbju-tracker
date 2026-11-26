@@ -52,6 +52,9 @@ class Menu extends StatefulWidget {
 
 class _MenuState extends State<Menu> {
   bool? engine;
+  double? _dl; // прогресс скачивания нейросети
+  String? _dlError;
+  bool _dlCancel = false;
 
   @override
   void initState() {
@@ -60,6 +63,57 @@ class _MenuState extends State<Menu> {
     Stockfish.instance.start().then((ok) {
       if (mounted) setState(() => engine = ok);
     });
+  }
+
+  Future<void> _downloadNets() async {
+    setState(() {
+      _dl = 0;
+      _dlError = null;
+      _dlCancel = false;
+    });
+    try {
+      await Stockfish.instance.downloadNets((p) {
+        if (mounted) setState(() => _dl = p);
+      }, cancelled: () => _dlCancel || !mounted);
+      final ok = await Stockfish.instance.start();
+      if (mounted) setState(() => engine = ok);
+    } catch (e) {
+      if (mounted) setState(() => _dlError = _dlCancel ? null : '$e');
+    } finally {
+      if (mounted) setState(() => _dl = null);
+    }
+  }
+
+  Widget _netsCard() {
+    final dl = _dl;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: WCard(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Скачай нейросеть Stockfish', style: W.h2),
+          const SizedBox(height: 4),
+          const Text('Один раз, около 75 МБ (лучше по Wi-Fi). Без неё уровни от «Любителя» и разбор партий '
+              'играет встроенный бот попроще. В обновления КБЖУ она больше не входит — они стали легче.',
+              style: W.small),
+          const SizedBox(height: 10),
+          if (dl != null) ...[
+            ClipRRect(borderRadius: BorderRadius.circular(4), child: LinearProgressIndicator(value: dl > 0 ? dl : null, minHeight: 6)),
+            const SizedBox(height: 6),
+            Row(children: [
+              Expanded(child: Text('Скачиваю… ${(dl * 100).round()}%', style: W.small)),
+              TextButton(onPressed: () => setState(() => _dlCancel = true), child: const Text('Отмена')),
+            ]),
+          ] else
+            Row(children: [
+              FilledButton.icon(onPressed: _downloadNets, icon: const Icon(Icons.download), label: const Text('Скачать')),
+              if (_dlError != null) ...[
+                const SizedBox(width: 12),
+                Expanded(child: Text(_dlError!, style: W.small.copyWith(color: W.bad))),
+              ],
+            ]),
+        ]),
+      ),
+    );
   }
 
   void go(Widget w) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => w)).then((_) => setState(() {}));
@@ -97,13 +151,16 @@ class _MenuState extends State<Menu> {
                             ? 'Запускаю Stockfish…'
                             : engine!
                                 ? 'Движок Stockfish подключён'
-                                : 'Stockfish недоступен на этом устройстве — играет встроенный бот',
+                                : Stockfish.instance.needsNets
+                                    ? 'Скачай нейросеть Stockfish — пока играет встроенный бот'
+                                    : 'Stockfish недоступен на этом устройстве — играет встроенный бот',
                         style: W.small.copyWith(color: engine == true ? W.good : W.muted),
                       ),
                     ]),
                   ),
                 ]),
                 const SizedBox(height: 16),
+                if (engine == false && Stockfish.instance.needsNets) _netsCard(),
                 tile(Icons.smart_toy_outlined, 'Игра с ботом', '8 уровней: от новичка до полного Stockfish', () => go(const BotSetup())),
                 tile(Icons.people_outline, 'Вдвоём на одном устройстве', 'С часами, доска может поворачиваться', () => go(const LocalSetup())),
                 tile(Icons.extension_outlined, 'Задачи', 'Мат в 1–3 хода, вилки, связки — ${Store.solved.length} решено', () => go(const PuzzleScreen())),

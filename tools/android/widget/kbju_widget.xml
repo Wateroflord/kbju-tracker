@@ -52,4 +52,11 @@
         <TextView android:id="@+id/w_water_val" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#EDEDEF" android:textSize="11sp" android:textStyle="bold" />
     </LinearLayout>
     <ProgressBar android:id="@+id/w_water_bar" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="5dp" android:layout_marginTop="3dp" android:max="100" android:progressDrawable="@drawable/widget_bar_cyan" />
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
+        <TextView android:id="@+id/w_btn_photo" android:layout_width="0dp" android:layout_height="30dp" android:layout_weight="1" android:layout_marginEnd="4dp"
+            android:background="@drawable/widget_btn" android:gravity="center" android:text="📷 Еда" android:textColor="#EDEDEF" android:textSize="12sp" android:textStyle="bold" />
+        <TextView android:id="@+id/w_btn_water" android:layout_width="0dp" android:layout_height="30dp" android:layout_weight="1" android:layout_marginStart="4dp"
+            android:background="@drawable/widget_btn" android:gravity="center" android:text="💧 +250 мл" android:textColor="#EDEDEF" android:textSize="12sp" android:textStyle="bold" />
+    </LinearLayout>
 </LinearLayout>

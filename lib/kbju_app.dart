@@ -7,6 +7,9 @@ import 'screens/onboarding_screen.dart';
 import 'store.dart';
 import 'theme.dart';
 
+/// Навигатор КБЖУ (кнопка «📷 Еда» на виджете открывает экран добавления еды).
+final kbjuNavKey = GlobalKey<NavigatorState>();
+
 /// КБЖУ Трекер — основной плагин супер-приложения (см. plugins/shell.dart).
 class KbjuApp extends StatelessWidget {
   const KbjuApp({super.key});
@@ -17,6 +20,7 @@ class KbjuApp extends StatelessWidget {
     final lang = StoreScope.of(context).lang;
     return MaterialApp(
       key: ValueKey('app_$lang'),
+      navigatorKey: kbjuNavKey,
       title: tr('КБЖУ Трекер'),
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),

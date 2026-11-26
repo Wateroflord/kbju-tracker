@@ -4,8 +4,11 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:chess/chess.dart' as ch;
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 
 /// Оценка позиции с точки зрения стороны, которая ходит. mate: ходов до мата (минус — мат нам).
 class Eval {
@@ -40,7 +43,13 @@ const botLevels = [
   BotLevel('Stockfish', 3000, 20, 1500),
 ];
 
+/// Откуда телефон скачивает нейросети Stockfish (их туда выкладывает сборка, tools/stockfish.sh).
+const stockfishNetsUrl = 'https://github.com/Wateroflord/kbju-tracker/releases/download/stockfish-nets/';
+
 /// Движок Stockfish (UCI) — отдельная программа рядом с приложением.
+///
+/// На телефоне программа маленькая (без встроенной нейросети), а сама нейросеть (~75 МБ)
+/// скачивается один раз при первом открытии шахмат — так обновления КБЖУ не тянут её каждый раз.
 class Stockfish {
   Stockfish._();
   static final Stockfish instance = Stockfish._();
@@ -51,7 +60,18 @@ class Stockfish {
   bool? _available;
   String? error;
 
+  /// Нейросети, которых не хватает движку (имена файлов nn-….nnue). Пусто — всё на месте.
+  List<String> missingNets = const [];
+  bool get needsNets => missingNets.isNotEmpty;
+
   bool get running => _p != null;
+
+  /// Папка с нейросетями (не попадает в резервную копию Android — там только файл данных КБЖУ).
+  static Future<Directory> netDir() async {
+    final d = Directory('${(await getApplicationSupportDirectory()).path}${Platform.pathSeparator}stockfish');
+    await d.create(recursive: true);
+    return d;
+  }
 
   static Future<String?> _path() async {
     try {
@@ -79,18 +99,47 @@ class Stockfish {
       return false;
     }
     try {
-      final p = await Process.start(path, []);
+      final dir = await netDir();
+      // Рабочая папка = папка нейросетей: движок сам находит в ней файлы с нужными именами.
+      final p = await Process.start(path, [], workingDirectory: dir.path);
       _p = p;
       p.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen(_lines.add);
       p.stderr.drain<void>();
-      p.exitCode.then((_) => _p = null);
+      p.exitCode.then((_) {
+        if (identical(_p, p)) _p = null;
+      });
+      // Какие нейросети нужны движку: «option name EvalFile… default nn-….nnue».
+      final nets = <String, String>{};
+      final sub = _lines.stream.listen((l) {
+        final m = RegExp(r'^option name (EvalFile\w*) type string default (nn-[0-9a-f]+\.nnue)').firstMatch(l);
+        if (m != null) nets[m.group(1)!] = m.group(2)!;
+      });
       _send('uci');
       await _wait((l) => l == 'uciok', const Duration(seconds: 8));
+      await sub.cancel();
       final threads = math.max(1, math.min(4, Platform.numberOfProcessors - 1));
       _send('setoption name Threads value $threads');
       _send('setoption name Hash value 64');
+      final missing = <String>[];
+      for (final e in nets.entries) {
+        final f = File('${dir.path}${Platform.pathSeparator}${e.value}');
+        if (f.existsSync()) {
+          _send('setoption name ${e.key} value ${f.path}');
+        } else {
+          missing.add(e.value);
+        }
+      }
       _send('isready');
       await _wait((l) => l == 'readyok', const Duration(seconds: 8));
+      // Файлов нет — проверяем, не встроена ли нейросеть в сам движок (Windows, старые сборки).
+      if (missing.isNotEmpty && !await _probe(p)) {
+        missingNets = missing;
+        error = 'Нужно скачать нейросеть Stockfish';
+        stop();
+        _available = false;
+        return false;
+      }
+      missingNets = const [];
       _available = true;
       return true;
     } catch (e) {
@@ -103,6 +152,81 @@ class Stockfish {
   }
 
   void _send(String cmd) => _p?.stdin.writeln(cmd);
+
+  /// Может ли движок посчитать ход (без нейросети он пишет ошибку и закрывается).
+  Future<bool> _probe(Process p) async {
+    try {
+      _send('position startpos');
+      _send('go depth 1');
+      return await Future.any([
+        _lines.stream.firstWhere((l) => l.startsWith('bestmove')).then((_) => true),
+        p.exitCode.then((_) => false),
+      ]).timeout(const Duration(seconds: 10));
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Скачать недостающие нейросети (один раз). [progress] — 0…1.
+  /// Каждый файл проверяется: имя nn-XXXXXXXXXXXX.nnue — это начало его SHA-256.
+  Future<void> downloadNets(void Function(double) progress, {bool Function()? cancelled}) async {
+    final dir = await netDir();
+    final names = List<String>.from(missingNets);
+    final client = http.Client();
+    try {
+      // Размеры — чтобы прогресс шёл по всем файлам сразу.
+      final sizes = <String, int>{};
+      for (final n in names) {
+        try {
+          final r = await client.head(Uri.parse('$stockfishNetsUrl$n')).timeout(const Duration(seconds: 20));
+          sizes[n] = int.tryParse(r.headers['content-length'] ?? '') ?? 0;
+        } catch (_) {
+          sizes[n] = 0;
+        }
+      }
+      final total = sizes.values.fold<int>(0, (a, b) => a + b);
+      var done = 0;
+      for (final n in names) {
+        final res = await client.send(http.Request('GET', Uri.parse('$stockfishNetsUrl$n'))).timeout(const Duration(seconds: 30));
+        if (res.statusCode != 200) throw 'Сервер ответил ${res.statusCode}';
+        final part = File('${dir.path}${Platform.pathSeparator}$n.part');
+        final sink = part.openWrite();
+        final chunks = _DigestSink();
+        final hasher = sha256.startChunkedConversion(chunks);
+        try {
+          await for (final c in res.stream.timeout(const Duration(seconds: 30))) {
+            if (cancelled?.call() ?? false) throw 'Отменено';
+            sink.add(c);
+            hasher.add(c);
+            done += c.length;
+            if (total > 0) progress((done / total).clamp(0.0, 1.0));
+          }
+        } finally {
+          await sink.close();
+        }
+        hasher.close();
+        final want = RegExp(r'^nn-([0-9a-f]+)\.nnue$').firstMatch(n)?.group(1) ?? '';
+        if (want.isEmpty || !chunks.value.toString().startsWith(want)) {
+          await part.delete();
+          throw 'Файл скачался с ошибкой — попробуй ещё раз';
+        }
+        await part.rename('${dir.path}${Platform.pathSeparator}$n');
+      }
+      missingNets = const [];
+      _available = null; // следующий start() запустит движок с нейросетью
+    } on TimeoutException {
+      throw 'Связь пропала — попробуй ещё раз';
+    } on SocketException {
+      throw 'Нет интернета';
+    } finally {
+      client.close();
+      try {
+        for (final f in dir.listSync().whereType<File>().where((f) => f.path.endsWith('.part'))) {
+          f.deleteSync();
+        }
+      } catch (_) {}
+    }
+  }
 
   Future<String> _wait(bool Function(String) test, Duration timeout) =>
       _lines.stream.firstWhere(test).timeout(timeout);
@@ -163,6 +287,15 @@ class Stockfish {
     _p?.kill();
     _p = null;
   }
+}
+
+class _DigestSink implements Sink<Digest> {
+  Digest? _v;
+  Digest get value => _v!;
+  @override
+  void add(Digest data) => _v = data;
+  @override
+  void close() {}
 }
 
 // ---------------- Встроенный простой бот (если Stockfish недоступен) ----------------
