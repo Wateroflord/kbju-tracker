@@ -4,6 +4,7 @@ python3 ui.py tap "Шахматы"      — нажать на первый эл�
 python3 ui.py has "Плагины"      — код 0, если элемент есть на экране
 python3 ui.py edit 0             — нажать первое поле ввода
 """
+import html
 import re
 import subprocess
 import sys
@@ -26,6 +27,7 @@ def find(xml, needle):
         text = (re.search(r' text="([^"]*)"', n) or [None, ""])[1]
         desc = (re.search(r' content-desc="([^"]*)"', n) or [None, ""])[1]
         hint = (re.search(r' hint="([^"]*)"', n) or [None, ""])[1]  # подписи полей ввода
+        text, desc, hint = html.unescape(text), html.unescape(desc), html.unescape(hint)  # «&amp;» → «&»
         if needle in text or needle in desc or needle in hint:
             b = re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', n)
             if b:

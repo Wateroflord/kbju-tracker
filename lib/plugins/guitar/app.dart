@@ -6,7 +6,10 @@ import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
+
+import '../../platform.dart';
 
 import '../common/ui.dart';
 import '../common/wav.dart';
@@ -113,7 +116,7 @@ class _TunerScreenState extends State<TunerScreen> with WidgetsBindingObserver {
   DateTime _lastHeard = DateTime(2000);
   DateTime? _inTuneSince;
 
-  bool listening = false;
+  bool listening = false, needAsk = false;
   String? error;
   double? hz;
   int tuningIndex = 0;
@@ -126,20 +129,35 @@ class _TunerScreenState extends State<TunerScreen> with WidgetsBindingObserver {
     super.initState();
     tuningIndex = GuitarStore.get('tuning', 0);
     WidgetsBinding.instance.addObserver(this);
-    if (widget.active) _start();
+    if (widget.active) _autoStart();
   }
 
   @override
   void didUpdateWidget(TunerScreen old) {
     super.didUpdateWidget(old);
-    if (widget.active && !old.active) _start();
+    if (widget.active && !old.active) _autoStart();
     if (!widget.active && old.active) _stop();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) _stop();
-    if (state == AppLifecycleState.resumed && widget.active) _start();
+    if (state == AppLifecycleState.resumed && widget.active) _autoStart();
+  }
+
+  /// Сам включаем микрофон, только если доступ уже дали. Спрашивать — только по кнопке,
+  /// иначе окно разрешения выскакивало бы при каждом открытии (и снова после «Запретить»).
+  Future<void> _autoStart() async {
+    if (listening) return;
+    if (isAndroid) {
+      try {
+        if (!await Permission.microphone.isGranted) {
+          if (mounted) setState(() => needAsk = true);
+          return;
+        }
+      } catch (_) {}
+    }
+    await _start();
   }
 
   @override
@@ -155,9 +173,17 @@ class _TunerScreenState extends State<TunerScreen> with WidgetsBindingObserver {
     try {
       final rec = _rec ??= AudioRecorder();
       if (!await rec.hasPermission()) {
-        setState(() => error = 'Нет доступа к микрофону. Разреши его в настройках телефона.');
+        if (!mounted) return;
+        final forever = isAndroid && await Permission.microphone.isPermanentlyDenied;
+        setState(() {
+          needAsk = false;
+          error = forever
+              ? 'Доступ к микрофону запрещён. Включи его: Настройки телефона → Приложения → КБЖУ Трекер → Разрешения → Микрофон.'
+              : 'Без микрофона тюнер не слышит гитару. Нажми «Разрешить микрофон» ещё раз.';
+        });
         return;
       }
+      needAsk = false;
       final stream = await rec.startStream(const RecordConfig(
         encoder: AudioEncoder.pcm16bits,
         sampleRate: _rate,
@@ -263,6 +289,16 @@ class _TunerScreenState extends State<TunerScreen> with WidgetsBindingObserver {
             GuitarStore.set('tuning', i);
           }),
       ]),
+      if (needAsk && error == null) ...[
+        const SizedBox(height: 12),
+        WCard(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Тюнер слушает гитару через микрофон. Звук никуда не отправляется и не записывается.', style: W.body),
+            const SizedBox(height: 8),
+            FilledButton.icon(onPressed: _start, icon: const Icon(Icons.mic), label: const Text('Включить микрофон')),
+          ]),
+        ),
+      ],
       if (error != null) ...[
         const SizedBox(height: 12),
         WCard(
@@ -270,7 +306,10 @@ class _TunerScreenState extends State<TunerScreen> with WidgetsBindingObserver {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(error!, style: W.body),
             const SizedBox(height: 8),
-            FilledButton(onPressed: _start, child: const Text('Попробовать снова')),
+            Wrap(spacing: 8, children: [
+              FilledButton(onPressed: _start, child: const Text('Разрешить микрофон')),
+              if (isAndroid) OutlinedButton(onPressed: openAppSettings, child: const Text('Настройки')),
+            ]),
           ]),
         ),
       ],
