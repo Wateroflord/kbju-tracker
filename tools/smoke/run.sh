@@ -78,18 +78,26 @@ for p in "Full body: A / B / C" "Beginner: machines" "Upper / Lower" "Push / Pul
 done
 shot 11_programs 2
 [ -n "$(adb shell pidof $PKG)" ] && step "sport alive OK" || step "sport alive FAIL"
-$UI tapscroll "Circuit timer" && step "circuit timer OK" || step "circuit timer FAIL"
+# Инструменты — вверху вкладки «Спорт».
+SZ=$(adb shell wm size | grep -oE '[0-9]+x[0-9]+' | tail -1); W=${SZ%x*}; H=${SZ#*x}
+totop() { for i in 1 2 3 4; do adb shell input swipe $((W/2)) $((H/3)) $((W/2)) $((H*4/5)) 300; sleep 0.5; done; }
+totop
+$UI tap "Circuit timer" && step "circuit timer OK" || step "circuit timer FAIL"
 shot 12_timer 3
-$UI has "Tabata 20/10" && step "timer modes OK" || step "timer modes FAIL"
-adb shell input keyevent 4; sleep 2
+if $UI has "Tabata 20/10"; then step "timer modes OK"; adb shell input keyevent 4; sleep 2; else step "timer modes FAIL"; fi
 
 # Рецепты → план питания на неделю.
 $UI tap "Food" >/dev/null; sleep 2
 $UI tapscroll "Recipes" >/dev/null; sleep 2
-$UI tapscroll "Weekly meal plan" && step "meal plan OK" || step "meal plan FAIL"
-shot 13_meal_plan 3
-$UI has "Monday" && step "meal plan days OK" || step "meal plan days FAIL"
-adb shell input keyevent 4; sleep 1; adb shell input keyevent 4; sleep 1
+if $UI tapscroll "Weekly meal plan"; then
+  step "meal plan OK"
+  shot 13_meal_plan 3
+  $UI has "Monday" && step "meal plan days OK" || step "meal plan days FAIL"
+  adb shell input keyevent 4; sleep 1
+else
+  step "meal plan FAIL"; shot 13_meal_plan 1
+fi
+$UI has "Weekly meal plan" && { adb shell input keyevent 4; sleep 1; }
 
 # Шахматы: лобби игр с друзьями без входа показывает, что нужен вход.
 $UI tap "Plugins" >/dev/null; sleep 2
