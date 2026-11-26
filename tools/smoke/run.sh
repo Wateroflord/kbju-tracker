@@ -21,7 +21,7 @@ $UI has "Macro Tracker" && step "drawer shows KBJU OK" || step "drawer shows KBJ
 
 $UI tap "Turn on and off" && step "manage OK" || step "manage FAIL"
 shot 03_plugins
-ALL=("Expiry" "Winter Language" "Chess" "Minesweeper" "Winter Music" "Winter Paint" "Drawing lessons" "Winter Walks" "Forest survival" "Mog Battle")
+ALL=("Expiry" "Winter Language" "Chess" "Minesweeper" "Winter Music" "Winter Paint" "Drawing lessons" "Winter Walks" "Forest survival" "Mog Battle" "Winter Guitar" "Shifts & pay" "Focus")
 for p in "${ALL[@]}"; do $UI tapscroll "$p" && step "toggle $p OK" || step "toggle $p FAIL"; sleep 1; done
 shot 04_plugins_on 2
 adb shell input keyevent 4
@@ -65,7 +65,8 @@ $UI edit 2 && adb shell input text 75; sleep 1
 adb shell input keyevent 4; sleep 1  # спрятать клавиатуру
 $UI tapscroll "Calculate and start" && step "onboarding OK" || step "onboarding FAIL"
 shot 09_after_onboarding 6
-# после анкеты — окно «Новое: плагины»
+# после анкеты — окно «Новое: плагины»: включить все (ниже понадобятся Шахматы)
+$UI tap "Select all" >/dev/null; sleep 1
 $UI tap "Done" >/dev/null && sleep 2
 $UI has "Study" && step "no Study tab FAIL" || step "no Study tab OK"
 $UI tap "Sport" && step "sport tab OK" || step "sport tab FAIL"
@@ -75,6 +76,28 @@ for p in "Full body: A / B / C" "Beginner: machines" "Upper / Lower" "Push / Pul
 done
 shot 11_programs 2
 [ -n "$(adb shell pidof $PKG)" ] && step "sport alive OK" || step "sport alive FAIL"
+$UI tapscroll "Circuit timer" && step "circuit timer OK" || step "circuit timer FAIL"
+shot 12_timer 3
+$UI has "Tabata 20/10" && step "timer modes OK" || step "timer modes FAIL"
+adb shell input keyevent 4; sleep 2
+
+# Рецепты → план питания на неделю.
+$UI tap "Food" >/dev/null; sleep 2
+$UI tapscroll "Recipes" >/dev/null; sleep 2
+$UI tapscroll "Weekly meal plan" && step "meal plan OK" || step "meal plan FAIL"
+shot 13_meal_plan 3
+$UI has "Monday" && step "meal plan days OK" || step "meal plan days FAIL"
+adb shell input keyevent 4; sleep 1; adb shell input keyevent 4; sleep 1
+
+# Шахматы: лобби игр с друзьями без входа показывает, что нужен вход.
+$UI tap "Plugins" >/dev/null; sleep 2
+$UI tap "Chess" >/dev/null; sleep 5
+shot 14_chess 2
+$UI tapscroll "С другом по сети" && step "chess online lobby OK" || step "chess online lobby FAIL"
+shot 15_chess_lobby 4
+$UI has "Нужен вход на сервер друзей" && step "lobby asks login OK" || step "lobby asks login FAIL"
+adb shell input keyevent 4; sleep 2
+[ -n "$(adb shell pidof $PKG)" ] && step "chess alive OK" || step "chess alive FAIL"
 
 adb logcat -d -s AndroidRuntime:E flutter:E flutter:W > out/logcat.txt
 cat out/steps.txt

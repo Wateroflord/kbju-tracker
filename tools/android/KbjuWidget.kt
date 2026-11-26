@@ -120,9 +120,9 @@ class KbjuWidget : AppWidgetProvider() {
             }
             v.setOnClickPendingIntent(R.id.w_btn_photo,
                 PendingIntent.getActivity(c, 1, photo, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
-            val water = Intent(c, KbjuWidget::class.java).apply { action = ACTION_WATER }
+            val addWaterIntent = Intent(c, KbjuWidget::class.java).apply { action = ACTION_WATER }
             v.setOnClickPendingIntent(R.id.w_btn_water,
-                PendingIntent.getBroadcast(c, 2, water, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
+                PendingIntent.getBroadcast(c, 2, addWaterIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
             mgr.updateAppWidget(id, v)
         }
     }
