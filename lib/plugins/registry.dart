@@ -7,7 +7,9 @@ import 'draw/app.dart' as draw;
 import 'expiry/app.dart' as expiry;
 import 'expiry/notifications.dart' as expiry_n;
 import 'expiry/storage.dart' as expiry_s;
+import 'focus/app.dart' as focus;
 import 'forest/app.dart' as forest;
+import 'guitar/app.dart' as guitar;
 import 'language/app.dart' as language;
 import 'language/store.dart' as language_s;
 import 'mines/app.dart' as mines;
@@ -18,6 +20,7 @@ import 'music/media.dart' as music_m;
 import 'paint/app.dart' as paint;
 import 'pushups/app.dart' as pushups;
 import 'pushups/stats.dart' as pushups_s;
+import 'shifts/app.dart' as shifts;
 import 'walks/app.dart' as walks;
 
 /// Плагин супер-приложения: бывшее отдельное приложение Winter.
@@ -164,6 +167,33 @@ final List<WinterPlugin> winterPlugins = [
     icon: 'assets/plugins/pushups/icon.png',
     build: () => const pushups.PushupsApp(),
     init: pushups_s.PushStats.I.load,
+  ),
+  WinterPlugin(
+    id: 'guitar',
+    name: 'Winter Guitar',
+    tagline: 'Тюнер, метроном и аккорды',
+    color: const Color(0xFFFFB35C),
+    icon: 'assets/plugins/guitar/icon.png',
+    build: () => const guitar.GuitarApp(),
+    init: guitar.GuitarStore.load,
+  ),
+  WinterPlugin(
+    id: 'shifts',
+    name: 'Смены и зарплата',
+    tagline: 'График, часы и заработок',
+    color: const Color(0xFF6EE7B7),
+    icon: 'assets/plugins/shifts/icon.png',
+    build: () => const shifts.ShiftsApp(),
+    init: shifts.ShiftStore.I.load,
+  ),
+  WinterPlugin(
+    id: 'focus',
+    name: 'Фокус',
+    tagline: 'Помидоры и задачи по проектам',
+    color: const Color(0xFFFF7A6B),
+    icon: 'assets/plugins/focus/icon.png',
+    build: () => const focus.FocusApp(),
+    init: focus.FocusStore.I.load,
   ),
 ];
 

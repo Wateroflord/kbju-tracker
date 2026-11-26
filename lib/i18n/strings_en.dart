@@ -1727,4 +1727,12 @@ const Map<String, String> stringsEn = {
   'Выпивай свою норму воды.': 'Drink your daily water goal.',
   'Неделя дисциплины': 'Discipline week',
   'Больше всех очков Winter Arc за неделю.': 'Most Winter Arc points this week.',
+  // Плагины: Winter Guitar, Смены и зарплата, Фокус
+  'Тюнер, метроном и аккорды': 'Tuner, metronome and chords',
+  'Смены и зарплата': 'Shifts & pay',
+  'График, часы и заработок': 'Schedule, hours and earnings',
+  'Фокус': 'Focus',
+  'Помидоры и задачи по проектам': 'Pomodoros and tasks by project',
+  'Новые плагины': 'New plugins',
+  'Появились новые плагины. Отметь, какие включить — они появятся в шторке сверху. Потом это можно поменять в шторке → ⚙.': 'New plugins are available. Tick the ones to turn on — they will appear in the top drawer. You can change this later in the drawer → ⚙.',
 };

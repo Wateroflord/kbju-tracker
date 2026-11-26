@@ -20,6 +20,18 @@ class PluginHost extends ChangeNotifier {
   /// Плагины, которые один раз включились сами (Winter Language вместо вкладки «Учёба»).
   final Set<String> autoEnabled = {};
 
+  /// Плагины, которые пользователь уже видел в списке. Появились новые после обновления — предложим включить.
+  final Set<String> known = {};
+
+  /// Плагины, добавленные после первого выбора (у старых пользователей их ещё нет в known).
+  static const _addedLater = {'guitar', 'shifts', 'focus'};
+
+  /// Новые плагины, о которых пользователь ещё не знает.
+  List<WinterPlugin> get fresh => [
+        for (final p in winterPlugins)
+          if (!p.core && !known.contains(p.id) && !enabled.contains(p.id)) p,
+      ];
+
   /// Открытый сейчас плагин.
   String active = 'kbju';
 
@@ -52,6 +64,12 @@ class PluginHost extends ChangeNotifier {
         autoEnabled
           ..clear()
           ..addAll([for (final e in (j['auto'] as List? ?? const [])) '$e']);
+        final k = j['known'];
+        known
+          ..clear()
+          ..addAll(k is List
+              ? [for (final e in k) '$e']
+              : [for (final p in winterPlugins) if (!_addedLater.contains(p.id)) p.id]);
         final last = '${j['active'] ?? 'kbju'}';
         if (isOn(last)) active = last;
       }
@@ -65,7 +83,13 @@ class PluginHost extends ChangeNotifier {
   Future<void> _save() async {
     try {
       await _file?.writeAsString(
-          jsonEncode({'enabled': enabled.toList(), 'asked': asked, 'active': active, 'auto': autoEnabled.toList()}));
+          jsonEncode({
+            'enabled': enabled.toList(),
+            'asked': asked,
+            'active': active,
+            'auto': autoEnabled.toList(),
+            'known': known.toList(),
+          }));
     } catch (_) {}
   }
 
@@ -131,6 +155,15 @@ class PluginHost extends ChangeNotifier {
       ..clear()
       ..addAll(ids);
     asked = true;
+    known.addAll(winterPlugins.map((p) => p.id));
+    notifyListeners();
+    await _save();
+  }
+
+  /// После обновления: какие из новых плагинов включить.
+  Future<void> finishNew(Set<String> ids) async {
+    enabled.addAll(ids);
+    known.addAll(winterPlugins.map((p) => p.id));
     notifyListeners();
     await _save();
   }

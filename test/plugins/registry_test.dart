@@ -12,7 +12,7 @@ void main() {
     }
     expect(winterPlugins.first.id, 'kbju');
     expect(winterPlugins.where((p) => p.core).map((p) => p.id), ['kbju']);
-    expect(winterPlugins.length, 12);
+    expect(winterPlugins.length, 15);
   });
 
   test('ассеты плагинов объявлены в pubspec.yaml', () {

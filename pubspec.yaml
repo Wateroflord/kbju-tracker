@@ -54,6 +54,8 @@ dependencies:
   camera: '>=0.11.0 <1.0.0'
   google_mlkit_pose_detection: '>=0.12.0 <1.0.0'
   wakelock_plus: '>=1.2.0 <2.0.0'
+  # Winter Guitar (тюнер слушает микрофон)
+  record: '>=5.2.0 <7.0.0'
 
 dev_dependencies:
   flutter_test:
@@ -68,13 +70,16 @@ flutter:
     - assets/plugins/chess/pieces/
     - assets/plugins/draw/
     - assets/plugins/expiry/
+    - assets/plugins/focus/
     - assets/plugins/forest/
+    - assets/plugins/guitar/
     - assets/plugins/language/
     - assets/plugins/mines/
     - assets/plugins/mog/
     - assets/plugins/music/
     - assets/plugins/paint/
     - assets/plugins/pushups/
+    - assets/plugins/shifts/
     - assets/plugins/walks/
 
 flutter_launcher_icons:

@@ -25,6 +25,7 @@ permissions = [
     "android.permission.FOREGROUND_SERVICE_HEALTH",
     "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
     "android.permission.CAMERA",
+    "android.permission.RECORD_AUDIO",           # Winter Guitar (тюнер)
     # ---- плагины ----
     "android.permission.ACCESS_FINE_LOCATION",   # Winter Walks
     "android.permission.ACCESS_COARSE_LOCATION",

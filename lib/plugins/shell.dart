@@ -157,19 +157,25 @@ class _ShellBodyState extends State<_ShellBody> with SingleTickerProviderStateMi
     }
   }
 
-  /// Один раз после обновления: спросить, какие плагины включить.
+  /// Один раз после обновления: спросить, какие плагины включить (в первый раз — все, потом — только новые).
   Future<void> _maybeWelcome() async {
-    if (_welcomeShown || host.asked || !mounted) return;
+    if (_welcomeShown || !mounted) return;
+    if (host.asked && host.fresh.isEmpty) return;
     if (_store?.profile == null) return; // сначала — первая настройка КБЖУ
     final ctx = widget.nav.currentContext;
     if (ctx == null) return;
     _welcomeShown = true;
+    final onlyNew = host.asked ? host.fresh : null;
     final picked = await showDialog<Set<String>>(
       context: ctx,
       barrierDismissible: false,
-      builder: (_) => const _WelcomeDialog(),
+      builder: (_) => _WelcomeDialog(only: onlyNew),
     );
-    await host.finishWelcome(picked ?? const {});
+    if (onlyNew != null) {
+      await host.finishNew(picked ?? const {});
+    } else {
+      await host.finishWelcome(picked ?? const {});
+    }
     if ((picked ?? const {}).isNotEmpty) _showDrawer();
   }
 
@@ -457,7 +463,9 @@ class PluginsScreen extends StatelessWidget {
 
 /// Первый запуск после обновления: какие плагины включить.
 class _WelcomeDialog extends StatefulWidget {
-  const _WelcomeDialog();
+  /// Только эти плагины (новые после обновления). null — все.
+  final List<WinterPlugin>? only;
+  const _WelcomeDialog({this.only});
 
   @override
   State<_WelcomeDialog> createState() => _WelcomeDialogState();
@@ -468,18 +476,22 @@ class _WelcomeDialogState extends State<_WelcomeDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final list = winterPlugins.where((p) => !p.core).toList();
+    final list = widget.only ?? winterPlugins.where((p) => !p.core).toList();
+    final isNew = widget.only != null;
     return AlertDialog(
       backgroundColor: AppColors.surface,
-      title: Text(tr('Новое: плагины'), style: const TextStyle(fontWeight: FontWeight.w800)),
+      title: Text(isNew ? tr('Новые плагины') : tr('Новое: плагины'), style: const TextStyle(fontWeight: FontWeight.w800)),
       content: SizedBox(
         width: 420,
         child: SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(
-              tr('Теперь в КБЖУ есть другие приложения Winter. Отметь, какие нужны — '
-                  'переключаться между ними можно шторкой сверху (потяни полоску вверху экрана). '
-                  'Потом это можно поменять в шторке → ⚙.'),
+              isNew
+                  ? tr('Появились новые плагины. Отметь, какие включить — они появятся в шторке сверху. '
+                      'Потом это можно поменять в шторке → ⚙.')
+                  : tr('Теперь в КБЖУ есть другие приложения Winter. Отметь, какие нужны — '
+                      'переключаться между ними можно шторкой сверху (потяни полоску вверху экрана). '
+                      'Потом это можно поменять в шторке → ⚙.'),
               style: const TextStyle(color: AppColors.muted, fontSize: 13, height: 1.35),
             ),
             const SizedBox(height: 8),

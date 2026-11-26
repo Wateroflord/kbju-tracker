@@ -64,9 +64,9 @@ class Notifier {
   static Future<void> reschedule(AppStore store) async {
     if (!_ready) return;
     try {
-      // Только свои уведомления (номера от 10000): напоминания КБЖУ не трогаем.
+      // Только свои уведомления (номера 10000–99999): напоминания КБЖУ и других плагинов не трогаем.
       for (final r in await _plugin.pendingNotificationRequests()) {
-        if (r.id >= 10000) await _plugin.cancel(r.id);
+        if (r.id >= 10000 && r.id < 100000) await _plugin.cancel(r.id);
       }
       final now = DateTime.now();
       final Map<DateTime, List<String>> byDay = {};
