@@ -67,7 +67,9 @@ $UI tapscroll "Calculate and start" && step "onboarding OK" || step "onboarding 
 shot 09_after_onboarding 6
 # после анкеты — окно «Новое: плагины»: включить все (ниже понадобятся Шахматы)
 $UI tap "Select all" >/dev/null; sleep 1
-$UI tap "Done" >/dev/null && sleep 2
+$UI tap "Done" >/dev/null && sleep 3
+# с выбранными плагинами сразу открывается шторка — закрыть её
+$UI has "Turn on and off" && { adb shell input keyevent 4; sleep 2; }
 $UI has "Study" && step "no Study tab FAIL" || step "no Study tab OK"
 $UI tap "Sport" && step "sport tab OK" || step "sport tab FAIL"
 shot 10_sport 3
