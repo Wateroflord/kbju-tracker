@@ -228,7 +228,7 @@ class _IntervalTimerScreenState extends State<IntervalTimerScreen> {
     final totalLeft = !active
         ? _build().fold<int>(0, (s, x) => s + x.seconds)
         : segs.skip(index + 1).fold<int>(0, (s, x) => s + x.seconds) + left;
-    final rounds = (active ? segs : _build()).where((s) => s.kind == 'work').length;
+    final totalRounds = (active ? segs : _build()).where((s) => s.kind == 'work').length;
     final color = seg == null
         ? AppColors.muted
         : done
@@ -302,9 +302,9 @@ class _IntervalTimerScreenState extends State<IntervalTimerScreen> {
               Text(seg == null ? _mmss(totalLeft) : _mmss(left), style: Txt.num(72).copyWith(color: color)),
               const SizedBox(height: 4),
               if (seg != null && seg.round > 0)
-                Text(trf('Раунд {0} из {1}', [seg.round, rounds]), style: Txt.body)
+                Text(trf('Раунд {0} из {1}', [seg.round, totalRounds]), style: Txt.body)
               else
-                Text(trf('Раундов: {0}', [rounds]), style: Txt.body),
+                Text(trf('Раундов: {0}', [totalRounds]), style: Txt.body),
               const SizedBox(height: 4),
               Text(trf('Осталось всего {0}', [_mmss(totalLeft)]), style: Txt.small),
               if (seg != null && !done) ...[

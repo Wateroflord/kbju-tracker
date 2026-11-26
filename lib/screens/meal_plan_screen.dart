@@ -48,10 +48,12 @@ class MealPlanScreen extends StatelessWidget {
                 constraints: BoxConstraints(maxHeight: MediaQuery.of(c).size.height * 0.45),
                 child: ListView(shrinkWrap: true, children: [
                   for (final r in recipes)
-                    RadioListTile<String>(
-                      value: r.id,
-                      groupValue: picked?.id,
-                      onChanged: (_) => set(() => picked = r),
+                    ListTile(
+                      onTap: () => set(() => picked = r),
+                      leading: Icon(
+                        picked?.id == r.id ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                        color: picked?.id == r.id ? Theme.of(c).colorScheme.primary : null,
+                      ),
                       title: Text(r.name, style: Txt.body),
                       subtitle: Text(
                         trf('{0} ккал · {1} г белка на порцию', [
