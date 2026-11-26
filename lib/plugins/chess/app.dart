@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'board.dart';
 import 'engine.dart';
 import 'lessons.dart';
+import 'online.dart';
 import '../common/ui.dart';
 
 const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -162,6 +163,7 @@ class _MenuState extends State<Menu> {
                 const SizedBox(height: 16),
                 if (engine == false && Stockfish.instance.needsNets) _netsCard(),
                 tile(Icons.smart_toy_outlined, 'Игра с ботом', '8 уровней: от новичка до полного Stockfish', () => go(const BotSetup())),
+                tile(Icons.public, 'С другом по сети', 'Через сервер Winter Chat — ходите, когда удобно', () => go(const OnlineChessLobby())),
                 tile(Icons.people_outline, 'Вдвоём на одном устройстве', 'С часами, доска может поворачиваться', () => go(const LocalSetup())),
                 tile(Icons.extension_outlined, 'Задачи', 'Мат в 1–3 хода, вилки, связки — ${Store.solved.length} решено', () => go(const PuzzleScreen())),
                 tile(Icons.school_outlined, 'Уроки', 'Правила и основы для начинающих — ${Store.lessonsDone.length} из ${lessons.length}', () => go(const LessonsScreen())),
@@ -577,7 +579,7 @@ class GamesScreen extends StatelessWidget {
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                             Text('${g['text'] ?? g['result']}', style: W.body.copyWith(fontWeight: FontWeight.w700)),
                             Text(
-                              '${g['mode'] == 'bot' ? 'Бот «${g['level']}», ты за ${g['player'] == 'w' ? 'белых' : 'чёрных'}' : 'Вдвоём'} · ${((g['moves'] as List?) ?? const []).length ~/ 2 + 1} ходов · ${'${g['date']}'.substring(0, 10)}',
+                              '${switch (g['mode']) { 'bot' => 'Бот «${g['level']}», ты за ${g['player'] == 'w' ? 'белых' : 'чёрных'}', 'friend' => 'С другом: ${g['level']}, ты за ${g['player'] == 'w' ? 'белых' : 'чёрных'}', _ => 'Вдвоём' }} · ${((g['moves'] as List?) ?? const []).length ~/ 2 + 1} ходов · ${'${g['date']}'.substring(0, 10)}',
                               style: W.small,
                             ),
                           ]),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'game.dart';
+import 'race.dart';
 import '../common/ui.dart';
 
 class MinesApp extends StatelessWidget {
@@ -173,6 +174,22 @@ class _MenuScreenState extends State<MenuScreen> {
                     SizedBox(width: 12),
                     Expanded(child: Text('Своё поле: размер и число мин', style: W.body)),
                     Icon(Icons.chevron_right, color: W.muted),
+                  ]),
+                ),
+                const SizedBox(height: 8),
+                WCard(
+                  borderColor: W.accent.withValues(alpha: 0.5),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RaceLobby())).then((_) => setState(() {})),
+                  child: Row(children: [
+                    Icon(Icons.sports_score, color: W.accent),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('Гонка с другом', style: W.h2),
+                        Text('Одинаковое поле — кто быстрее. Через сервер Winter Chat', style: W.small),
+                      ]),
+                    ),
+                    const Icon(Icons.chevron_right, color: W.muted),
                   ]),
                 ),
                 const Section('Настройки'),
@@ -378,7 +395,7 @@ class _GameScreenState extends State<GameScreen> {
                     onTap: () => _tap(i),
                     onLongPress: () => _flag(i),
                     onSecondaryTap: () => _flag(i),
-                    child: _CellView(cell: b.cells[i], size: cell, exploded: b.exploded == i, hinted: hinted == i, lost: b.state == GameState.lost),
+                    child: MineCellView(cell: b.cells[i], size: cell, exploded: b.exploded == i, hinted: hinted == i, lost: b.state == GameState.lost),
                   ),
                 ),
               );
@@ -437,11 +454,11 @@ const _numColors = [
   Color(0xFF8A9BB8),
 ];
 
-class _CellView extends StatelessWidget {
+class MineCellView extends StatelessWidget {
   final Cell cell;
   final double size;
   final bool exploded, hinted, lost;
-  const _CellView({required this.cell, required this.size, required this.exploded, required this.hinted, required this.lost});
+  const MineCellView({super.key, required this.cell, required this.size, required this.exploded, required this.hinted, required this.lost});
 
   @override
   Widget build(BuildContext context) {

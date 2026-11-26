@@ -2,10 +2,12 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kbju_tracker/games/games_service.dart';
 import 'package:kbju_tracker/plugins/focus/model.dart';
 import 'package:kbju_tracker/plugins/guitar/chords.dart';
 import 'package:kbju_tracker/plugins/guitar/pitch.dart';
 import 'package:kbju_tracker/plugins/guitar/sound.dart';
+import 'package:kbju_tracker/plugins/mines/game.dart';
 import 'package:kbju_tracker/plugins/shifts/models.dart';
 
 Float64List _tone(double hz, {int rate = 22050, int n = 2048}) => Float64List.fromList([
@@ -142,6 +144,45 @@ void main() {
       expect(s.shortBreak, 5);
       expect(s.longBreak, 90);
       expect(FocusSettings.fromJson(null).work, 25);
+    });
+  });
+
+  group('Игры с друзьями', () {
+    test('гонка в сапёр: у двоих одинаковое поле', () {
+      for (final l in levels) {
+        final a = Board(l.w, l.h, l.mines, noGuess: true, seed: 12345)..reveal((l.h ~/ 2) * l.w + l.w ~/ 2);
+        final b = Board(l.w, l.h, l.mines, noGuess: true, seed: 12345)..reveal((l.h ~/ 2) * l.w + l.w ~/ 2);
+        expect([for (final c in a.cells) c.mine], [for (final c in b.cells) c.mine], reason: l.id);
+        expect(a.opened, b.opened);
+        expect(a.opened, greaterThan(0));
+        expect(a.safeCells, l.w * l.h - l.mines);
+      }
+    });
+
+    test('партия с сервера: имена, моё и чужое состояние', () {
+      final g = GameRec.fromJson({
+        'id': 'g1',
+        'kind': 'mines',
+        'status': 'playing',
+        'host': 'u1',
+        'guest': 'u2',
+        'seq': 3,
+        'state': {'level': 'mid', 'seed': 7},
+        'host_state': {'open': 10},
+        'guest_state': null,
+        'updated': '2026-11-26 20:00:00.000Z',
+        'expand': {
+          'host': {'name': 'Стас', 'username': 'stas'},
+          'guest': {'name': '', 'username': 'vova'},
+        },
+      });
+      expect(g.playing, isTrue);
+      expect(g.opponentName('u1'), 'vova');
+      expect(g.opponentName('u2'), 'Стас');
+      expect(g.myState('u1')['open'], 10);
+      expect(g.theirState('u1'), isEmpty);
+      expect(g.seq, 3);
+      expect(g.updated, isNotNull);
     });
   });
 }

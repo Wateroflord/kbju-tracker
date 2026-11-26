@@ -188,7 +188,7 @@ class _ShiftsHomeState extends State<ShiftsHome> {
             borderColor: W.accent.withValues(alpha: 0.6),
             onTap: () => _edit(shift: next),
             child: Row(children: [
-              const Icon(Icons.work_outline, color: W.accent),
+              Icon(Icons.work_outline, color: W.accent),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

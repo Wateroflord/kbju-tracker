@@ -31,9 +31,10 @@ class Board {
   int? exploded;
   DateTime? started;
   Duration elapsed = Duration.zero;
-  final math.Random _rnd = math.Random();
+  final math.Random _rnd;
 
-  Board(this.w, this.h, this.mines, {this.noGuess = false}) {
+  /// [seed] — одинаковое поле у двух игроков (гонка с другом): то же зерно и та же первая клетка.
+  Board(this.w, this.h, this.mines, {this.noGuess = false, int? seed}) : _rnd = seed == null ? math.Random() : math.Random(seed) {
     cells = List.generate(w * h, (_) => Cell());
   }
 
@@ -52,6 +53,10 @@ class Board {
   }
 
   int get flags => cells.where((c) => c.flag).length;
+
+  /// Сколько безопасных клеток открыто (для прогресса в гонке).
+  int get opened => cells.where((c) => c.open && !c.mine).length;
+  int get safeCells => w * h - mines;
   int get minesLeft => mines - flags;
 
   /// Расставить мины так, чтобы первая клетка и её соседи были пустыми.
