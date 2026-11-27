@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../common/notify.dart';
 import '../common/ui.dart';
 import '../common/wav.dart';
+import 'boards_screen.dart';
 import 'model.dart';
 
 const _accent = Color(0xFFFF7A6B);
@@ -348,6 +349,11 @@ class _FocusHomeState extends State<FocusHome> with WidgetsBindingObserver {
         title: const Text('Фокус'),
         actions: [
           IconButton(
+            tooltip: 'Общие доски с друзьями',
+            icon: const Icon(Icons.groups_outlined),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SharedBoardsScreen())),
+          ),
+          IconButton(
             tooltip: 'Статистика',
             icon: const Icon(Icons.bar_chart),
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FocusStats())),
@@ -482,6 +488,21 @@ class _FocusHomeState extends State<FocusHome> with WidgetsBindingObserver {
             padding: EdgeInsets.only(top: 6),
             child: Text('Нажми на задачу — помидоры будут засчитываться ей.', style: W.small),
           ),
+        const SizedBox(height: 12),
+        WCard(
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SharedBoardsScreen())),
+          child: const Row(children: [
+            Icon(Icons.groups_outlined, color: W.ice),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Общие доски', style: W.h2),
+                Text('Задачи проекта с другом — например FalseMemory', style: W.small),
+              ]),
+            ),
+            Icon(Icons.chevron_right, color: W.muted),
+          ]),
+        ),
         if (done.isNotEmpty) ...[
           const SizedBox(height: 8),
           TextButton(
