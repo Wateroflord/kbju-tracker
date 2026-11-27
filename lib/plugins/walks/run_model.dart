@@ -191,3 +191,12 @@ double kmLastDays(Iterable<Run> runs, DateTime now, {int days = 7}) {
   final from = now.subtract(Duration(days: days)).millisecondsSinceEpoch;
   return runs.where((r) => r.start >= from).fold<double>(0, (s, r) => s + r.meters) / 1000;
 }
+
+/// Пробежка засчитывается в Winter Arc как тренировка: от 2 км или от 15 минут.
+bool countsForArc(Run r) => r.meters >= 2000 || r.seconds >= 15 * 60;
+
+/// Дни (ГГГГ-ММ-ДД, по местному времени), когда была засчитываемая пробежка.
+Set<String> arcRunDays(Iterable<Run> runs) => {
+      for (final r in runs)
+        if (countsForArc(r)) '${r.date.year}-${r.date.month.toString().padLeft(2, '0')}-${r.date.day.toString().padLeft(2, '0')}',
+    };

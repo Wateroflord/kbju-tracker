@@ -70,4 +70,13 @@ void main() {
       expect(kmLastDays(runs, now), 5);
     });
   });
+  test('какие пробежки идут в Winter Arc', () {
+    final d = DateTime(2026, 11, 28, 9);
+    final runs = [
+      Run(id: 'a', start: d.millisecondsSinceEpoch, seconds: 600, meters: 2100),
+      Run(id: 'b', start: d.add(const Duration(days: 1)).millisecondsSinceEpoch, seconds: 16 * 60, meters: 1500),
+      Run(id: 'c', start: d.add(const Duration(days: 2)).millisecondsSinceEpoch, seconds: 300, meters: 900),
+    ];
+    expect(arcRunDays(runs), {'2026-11-28', '2026-11-29'});
+  });
 }

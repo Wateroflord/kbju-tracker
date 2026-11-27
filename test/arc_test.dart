@@ -48,6 +48,18 @@ void main() {
       expect(week.first.total, 0);
     });
 
+    test('пробежки — тоже тренировки, до 3 в неделю', () {
+      final s = AppStore();
+      final k = todayKey();
+      ArcRules.runDays = () => [k];
+      try {
+        expect(arcScores(s, k, k).single.workout, 20);
+      } finally {
+        ArcRules.runDays = null;
+      }
+      expect(arcScores(s, k, k).single.workout, 0);
+    });
+
     test('сравнение с записью сервера', () {
       const d = ArcDay('2026-11-06', food: 30, sleep: 20);
       expect(d.sameAs({'food': 30, 'water': 0, 'sleep': 20, 'steps': 0, 'workout': 0}), isTrue);

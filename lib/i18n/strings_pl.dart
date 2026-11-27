@@ -1647,7 +1647,7 @@ const Map<String, String> stringsPl = {
   'Вода: выпил дневную норму — 10': 'Woda: wypita dzienna norma — 10',
   'Сон: 7+ часов — 20, 6–7 часов — 10': 'Sen: 7+ godzin — 20, 6–7 godzin — 10',
   'Шаги: дневная цель — 20, хотя бы 70% цели — 10': 'Kroki: dzienny cel — 20, co najmniej 70% celu — 10',
-  'Тренировка: завершённая тренировка — 20 (в неделю — не больше, чем в твоём плане)': 'Trening: ukończony trening — 20 (w tygodniu — nie więcej niż w twoim planie)',
+  'Тренировка: завершённая тренировка — 20 (в неделю — не больше, чем в твоём плане). Пробежка от 2 км или 15 минут в Winter Walks — тоже тренировка (до 3 в неделю)': 'Trening: ukończony trening — 20 (w tygodniu — nie więcej niż w twoim planie). Bieg od 2 km lub 15 minut w Winter Walks też się liczy (do 3 w tygodniu)',
   'Серия 🔥 — дни подряд с 50+ очками': 'Seria 🔥 — dni z rzędu z 50+ punktami',
   'Очки за последние 7 дней можно добрать: например, записать сон утром.': 'Punkty z ostatnich 7 dni można jeszcze dobrać: np. zapisać sen rano.',
   'Снимки по датам и сравнение «до / после»': 'Zdjęcia według dat i porównanie „przed / po”',

@@ -11,6 +11,7 @@ import '../util.dart';
 /// - Шаги: норма — 20, хотя бы 70% нормы — 10.
 /// - Тренировка: завершённая тренировка — 20 (в неделю считается не больше,
 ///   чем тренировок в плане, чтобы нельзя было набить очки лишними).
+///   Пробежка из Winter Walks (от 2 км или от 15 минут) тоже тренировка — до 3 в неделю.
 class ArcDay {
   final String day;
   final int food, water, sleep, steps, workout;
@@ -32,6 +33,10 @@ class ArcDay {
 class ArcRules {
   static const max = {'food': 30, 'water': 10, 'sleep': 20, 'steps': 20, 'workout': 20};
   static const days = 365;
+
+  /// Дни пробежек из Winter Walks (ключи ГГГГ-ММ-ДД). Подключает реестр плагинов.
+  static Iterable<String> Function()? runDays;
+  static const runsPerWeek = 3;
 
   static int food(DayStatus s) => switch (s) {
         DayStatus.good => 30,
@@ -71,7 +76,10 @@ class ArcRules {
 List<ArcDay> arcScores(AppStore store, String from, String to) {
   final life = store.life;
   final workoutDays = life.sessions.where((s) => s.finished).map((s) => s.date);
-  final counted = ArcRules.countedWorkoutDays(workoutDays, store.workoutsPerWeek);
+  final counted = {
+    ...ArcRules.countedWorkoutDays(workoutDays, store.workoutsPerWeek),
+    ...ArcRules.countedWorkoutDays(ArcRules.runDays?.call() ?? const <String>[], ArcRules.runsPerWeek),
+  };
   final out = <ArcDay>[];
   var d = parseKey(from);
   final end = parseKey(to);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../arc/arc_score.dart' show ArcRules;
 import '../i18n/i18n.dart';
 import '../kbju_app.dart';
 import 'budget/app.dart' as budget;
@@ -23,6 +24,8 @@ import 'pushups/app.dart' as pushups;
 import 'pushups/stats.dart' as pushups_s;
 import 'shifts/app.dart' as shifts;
 import 'walks/app.dart' as walks;
+import 'walks/run.dart' as walks_run;
+import 'walks/run_model.dart' as walks_run_model;
 
 /// Плагин супер-приложения: бывшее отдельное приложение Winter.
 class WinterPlugin {
@@ -220,9 +223,14 @@ void connectPluginsToKbju({
   required String Function() geminiKey,
   required Map<String, dynamic> Function() life,
   double Function(int year, int month)? foodSpent,
+  void Function()? arcSync,
 }) {
   language_s.AppStore.onUiLang = setLang;
   language_s.AppStore.kbjuLife = life;
   mog_s.Store.sharedKey = geminiKey;
   budget.BudgetStore.kbjuFood = foodSpent;
+  // Пробежки Winter Walks идут в Winter Arc как тренировки.
+  ArcRules.runDays = () => walks_run_model.arcRunDays(walks_run.RunStore.I.runs);
+  walks_run.RunStore.onChanged = arcSync;
+  walks_run.RunStore.I.load().then((_) => arcSync?.call());
 }

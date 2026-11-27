@@ -42,6 +42,7 @@ Future<void> _main() async {
     geminiKey: () => store.apiKey,
     life: () => store.life.toJson(),
     foodSpent: (y, m) => store.food.expensesOfMonth(y, m).fold<double>(0, (s, e) => s + store.food.toPln(e)),
+    arcSync: () => ArcService.I.sync(store),
   );
   await PluginHost.I.load();
   // Вкладки «Учёба» больше нет — языки только в плагине Winter Language. У кого есть выученные слова,

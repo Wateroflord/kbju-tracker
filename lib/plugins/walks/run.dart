@@ -23,6 +23,9 @@ class RunStore extends ChangeNotifier {
   static final I = RunStore._();
   RunStore._();
 
+  /// Пробежки изменились — пересчитать Winter Arc (подключает реестр плагинов).
+  static void Function()? onChanged;
+
   final _file = JsonStore('walks_runs.json');
   bool loaded = false;
   List<Run> runs = [];
@@ -39,6 +42,7 @@ class RunStore extends ChangeNotifier {
   Future<void> save() async {
     runs.sort((a, b) => b.start.compareTo(a.start));
     notifyListeners();
+    onChanged?.call();
     await _file.write({
       'v': 1,
       'runs': [for (final r in runs) r.toJson()],
@@ -110,6 +114,10 @@ class _RunsTabState extends State<RunsTab> {
             ),
           ),
           if (!_hasGps) const Padding(padding: EdgeInsets.only(top: 8), child: Text('Пробежки записываются на телефоне — там есть GPS.', style: W.small)),
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text('Пробежка от 2 км или 15 минут — это тренировка в Winter Arc (+20 очков, до 3 в неделю).', style: W.small),
+          ),
         ]),
       ),
       if (runs.isNotEmpty) ...[
