@@ -46,6 +46,8 @@ class BudgetStore extends ChangeNotifier {
   bool loaded = false;
   List<Tx> txs = [];
   List<Goal> goals = [];
+  List<Recurring> recurring = [];
+  Map<String, double> catLimits = {}; // лимиты трат по категориям на месяц
   double limit = 0; // 0 — без лимита
   String currency = 'zł';
   bool useKbjuFood = true;
@@ -55,11 +57,37 @@ class BudgetStore extends ChangeNotifier {
     fromJson(await _file.read());
     loaded = true;
     await ShiftStore.I.load();
+    await applyRecurring();
   }
+
+  /// Создать записи по регулярным платежам, которым пришёл срок.
+  Future<int> applyRecurring([DateTime? now]) async {
+    if (recurring.isEmpty) return 0;
+    final r = dueRecurring(recurring, now ?? DateTime.now());
+    final have = {for (final t in txs) t.id};
+    final add = r.txs.where((t) => !have.contains(t.id)).toList();
+    var changed = add.isNotEmpty;
+    for (var i = 0; i < recurring.length; i++) {
+      if (r.recurring[i].last != recurring[i].last) changed = true;
+    }
+    recurring = r.recurring;
+    if (add.isNotEmpty) txs = [...txs, ...add];
+    if (changed) await save();
+    return add.length;
+  }
+
+  /// Превышен ли лимит категории [cat] в месяце [year]/[month]: (потрачено, лимит) или null.
+  ({double spent, double limit})? overLimit(String cat, int year, int month) =>
+      overLimits(monthOf(year, month), {if (catLimits[cat] != null) cat: catLimits[cat]!})[cat];
 
   void fromJson(Map<String, dynamic> j) {
     txs = (j['txs'] as List? ?? []).map(Tx.fromJson).whereType<Tx>().toList();
     goals = (j['goals'] as List? ?? []).map(Goal.fromJson).whereType<Goal>().toList();
+    recurring = (j['rec'] as List? ?? []).map(Recurring.fromJson).whereType<Recurring>().toList();
+    catLimits = {
+      for (final e in ((j['catLimits'] as Map?) ?? const {}).entries)
+        if (e.value is num && (e.value as num) > 0) '${e.key}': (e.value as num).toDouble(),
+    };
     limit = (j['limit'] as num?)?.toDouble() ?? 0;
     currency = j['currency']?.toString() ?? 'zł';
     useKbjuFood = j['kbjuFood'] != false;
@@ -69,6 +97,8 @@ class BudgetStore extends ChangeNotifier {
         'v': 1,
         'txs': [for (final t in txs) t.toJson()],
         'goals': [for (final g in goals) g.toJson()],
+        'rec': [for (final r in recurring) r.toJson()],
+        'catLimits': catLimits,
         'limit': limit,
         'currency': currency,
         'kbjuFood': useKbjuFood,
@@ -156,7 +186,7 @@ class _BudgetHomeState extends State<BudgetHome> {
     final n = DateTime.now();
     month = DateTime(n.year, n.month);
     st.addListener(_changed);
-    st.load().then((_) => _changed());
+    st.load().then((_) => st.applyRecurring()).then((_) => _changed());
   }
 
   @override
@@ -298,6 +328,10 @@ class _BudgetHomeState extends State<BudgetHome> {
           WCard(
             child: Column(children: [
               for (final e in sum.topCats) _catRow(catById(e.key), e.value, sum.expense, kbju: e.key == kbjuFoodCat.id),
+              const Padding(
+                padding: EdgeInsets.only(top: 6),
+                child: Text('Нажми на категорию, чтобы поставить ей лимит на месяц', style: W.small),
+              ),
             ]),
           ),
         ],
@@ -351,28 +385,44 @@ class _BudgetHomeState extends State<BudgetHome> {
         ]),
       );
 
-  Widget _catRow(BudgetCat c, double v, double total, {bool kbju = false}) => Padding(
+  Widget _catRow(BudgetCat c, double v, double total, {bool kbju = false}) {
+    final lim = st.catLimits[c.id] ?? 0;
+    final over = lim > 0 && v > lim;
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => editCatLimit(context, c),
+      child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 5),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Text(c.emoji, style: const TextStyle(fontSize: 16)),
             const SizedBox(width: 8),
             Expanded(child: Text(c.name, style: W.body)),
-            Text(_money(v), style: W.body),
+            Text(
+              lim > 0 ? '${money(v)} / ${_money(lim)}' : _money(v),
+              style: W.body.copyWith(color: over ? W.bad : W.text),
+            ),
           ]),
           const SizedBox(height: 4),
           ClipRRect(
             borderRadius: BorderRadius.circular(3),
             child: LinearProgressIndicator(
-              value: total <= 0 ? 0 : (v / total).clamp(0, 1).toDouble(),
+              value: lim > 0 ? (v / lim).clamp(0, 1).toDouble() : (total <= 0 ? 0 : (v / total).clamp(0, 1).toDouble()),
               minHeight: 5,
               backgroundColor: W.border,
-              color: Color(c.color),
+              color: over ? W.bad : (lim > 0 && v > lim * 0.8 ? W.warn : Color(c.color)),
             ),
           ),
+          if (over)
+            Padding(
+              padding: const EdgeInsets.only(top: 3),
+              child: Text('Лимит превышен на ${_money(v - lim)}', style: W.small.copyWith(color: W.bad)),
+            ),
           if (kbju) const Padding(padding: EdgeInsets.only(top: 3), child: Text('Записано в КБЖУ → «Расходы»', style: W.small)),
         ]),
-      );
+      ),
+    );
+  }
 
   Widget _txTile(Tx t) {
     final c = catById(t.cat);
@@ -477,6 +527,40 @@ class _History extends StatelessWidget {
       ),
     ]);
   }
+}
+
+/// Поставить / убрать лимит трат категории на месяц.
+Future<void> editCatLimit(BuildContext context, BudgetCat c) async {
+  final st = BudgetStore.I;
+  final cur = st.catLimits[c.id] ?? 0;
+  final ctl = TextEditingController(text: cur > 0 ? _num(cur) : '');
+  final r = await showDialog<String>(
+    context: context,
+    builder: (d) => AlertDialog(
+      title: Text('${c.emoji} ${c.name}'),
+      content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Сколько можно тратить на это в месяц?', style: W.small),
+        const SizedBox(height: 10),
+        TextField(
+          controller: ctl,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(labelText: 'Лимит', border: const OutlineInputBorder(), suffixText: st.currency),
+          onSubmitted: (v) => Navigator.pop(d, v),
+        ),
+      ]),
+      actions: [
+        if (cur > 0) TextButton(onPressed: () => Navigator.pop(d, ''), child: const Text('Убрать лимит')),
+        TextButton(onPressed: () => Navigator.pop(d), child: const Text('Отмена')),
+        FilledButton(onPressed: () => Navigator.pop(d, ctl.text), child: const Text('Готово')),
+      ],
+    ),
+  );
+  if (r == null) return;
+  final v = parseAmount(r);
+  st.catLimits = {...st.catLimits}..remove(c.id);
+  if (v != null) st.catLimits[c.id] = v;
+  await st.save();
 }
 
 // ───────────────────────────── Копилки ─────────────────────────────
@@ -671,8 +755,9 @@ Future<void> _goalEditor(BuildContext context, {Goal? goal}) async {
 class TxEditor extends StatefulWidget {
   final Tx? tx;
   final bool income;
+  final bool repeat;
   final DateTime month;
-  const TxEditor({super.key, this.tx, this.income = false, required this.month});
+  const TxEditor({super.key, this.tx, this.income = false, this.repeat = false, required this.month});
 
   @override
   State<TxEditor> createState() => _TxEditorState();
@@ -681,6 +766,7 @@ class TxEditor extends StatefulWidget {
 class _TxEditorState extends State<TxEditor> {
   final st = BudgetStore.I;
   late bool income = widget.tx?.income ?? widget.income;
+  late bool repeat = widget.repeat;
   late String cat = widget.tx?.cat ?? (income ? 'salary' : 'food');
   late DateTime day;
   late final amount = TextEditingController(text: widget.tx != null ? _num(widget.tx!.amount) : '');
@@ -738,8 +824,22 @@ class _TxEditorState extends State<TxEditor> {
       note: note.text.trim(),
     );
     st.txs = [for (final x in st.txs) if (x.id != t.id) x, t];
+    if (widget.tx == null && repeat) {
+      st.recurring = [
+        ...st.recurring,
+        Recurring(id: st.id(), amount: a, cat: cat, income: income, note: t.note, day: day.day, last: monthKey(day.year, day.month)),
+      ];
+    }
     await st.save();
-    if (mounted) Navigator.pop(context);
+    final made = await st.applyRecurring();
+    if (!mounted) return;
+    final over = income ? null : st.overLimit(cat, day.year, day.month);
+    if (over != null) {
+      toast(context, 'Лимит на «${catById(cat).name}» превышен: ${_money(over.spent)} из ${_money(over.limit)}');
+    } else if (made > 0) {
+      toast(context, 'Добавлены прошлые месяцы регулярного платежа: $made');
+    }
+    Navigator.pop(context);
   }
 
   Future<void> _delete() async {
@@ -800,6 +900,22 @@ class _TxEditorState extends State<TxEditor> {
           textCapitalization: TextCapitalization.sentences,
           decoration: const InputDecoration(labelText: 'Заметка (необязательно)', hintText: 'Например: Biedronka, билет в Краков', border: OutlineInputBorder()),
         ),
+        if (widget.tx == null)
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: repeat,
+            onChanged: (v) => setState(() => repeat = v),
+            title: const Text('Повторять каждый месяц', style: W.body),
+            subtitle: Text(
+              repeat ? 'Каждое ${day.day}-е число запись появится сама' : 'Телефон, подписки, проезд, аренда…',
+              style: W.small,
+            ),
+          )
+        else if (widget.tx!.id.startsWith('rec-'))
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text('Создано регулярным платежом. Изменить сам платёж — в настройках бюджета.', style: W.small),
+          ),
         const SizedBox(height: 20),
         FilledButton(onPressed: _save, child: const Padding(padding: EdgeInsets.all(12), child: Text('Сохранить'))),
       ]),
@@ -847,6 +963,81 @@ class _BudgetSettingsState extends State<BudgetSettings> {
     st.limit = parseAmount(limitCtl.text) ?? 0;
     st.currency = curCtl.text.trim().isEmpty ? 'zł' : curCtl.text.trim();
     st.save();
+  }
+
+  Widget _recTile(Recurring r) {
+    final c = catById(r.cat);
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Text(c.emoji, style: const TextStyle(fontSize: 20)),
+      title: Text(r.note.isEmpty ? c.name : r.note, style: W.body),
+      subtitle: Text('Каждое ${r.day}-е число · ${c.name}', style: W.small),
+      trailing: Text('${r.income ? '+' : '−'}${money(r.amount)}', style: W.body.copyWith(color: r.income ? W.good : W.text)),
+      onTap: () => _editRec(r),
+    );
+  }
+
+  Future<void> _editRec(Recurring r) async {
+    final amount = TextEditingController(text: _num(r.amount));
+    final day = TextEditingController(text: '${r.day}');
+    final res = await showDialog<String>(
+      context: context,
+      builder: (d) => AlertDialog(
+        title: Text(r.note.isEmpty ? catById(r.cat).name : r.note),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(
+            controller: amount,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(labelText: 'Сумма', border: const OutlineInputBorder(), suffixText: st.currency),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: day,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Какого числа (1–31)', border: OutlineInputBorder()),
+          ),
+          const SizedBox(height: 8),
+          const Text('Уже созданные записи не меняются — только следующие.', style: W.small),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(d, 'delete'), child: const Text('Удалить', style: TextStyle(color: W.bad))),
+          TextButton(onPressed: () => Navigator.pop(d), child: const Text('Отмена')),
+          FilledButton(onPressed: () => Navigator.pop(d, 'save'), child: const Text('Сохранить')),
+        ],
+      ),
+    );
+    if (res == null) return;
+    if (res == 'delete') {
+      st.recurring = [for (final x in st.recurring) if (x.id != r.id) x];
+    } else {
+      final a = parseAmount(amount.text);
+      final dd = int.tryParse(day.text.trim());
+      if (a == null || dd == null || dd < 1 || dd > 31) {
+        if (mounted) toast(context, 'Проверь сумму и число');
+        return;
+      }
+      st.recurring = [for (final x in st.recurring) x.id == r.id ? x.copyWith(amount: a, day: dd) : x];
+    }
+    await st.save();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _addCatLimit() async {
+    final cats = budgetCats.where((c) => !c.income && !st.catLimits.containsKey(c.id)).toList();
+    final c = await showModalBottomSheet<BudgetCat>(
+      context: context,
+      builder: (b) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final c in cats) Chip2('${c.emoji} ${c.name}', onTap: () => Navigator.pop(b, c)),
+          ]),
+        ),
+      ),
+    );
+    if (c == null || !mounted) return;
+    await editCatLimit(context, c);
+    if (mounted) setState(() {});
   }
 
   Future<void> _exportCsv() async {
@@ -918,6 +1109,42 @@ class _BudgetSettingsState extends State<BudgetSettings> {
           ]),
           const SizedBox(height: 6),
           const Text('С лимитом видно, сколько можно тратить в день до конца месяца. Оставь пустым — без лимита.', style: W.small),
+          Section(
+            'Регулярные платежи',
+            trailing: TextButton.icon(
+              onPressed: () async {
+                final n = DateTime.now();
+                await Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => TxEditor(repeat: true, month: DateTime(n.year, n.month))),
+                );
+                if (mounted) setState(() {});
+              },
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Добавить'),
+            ),
+          ),
+          if (st.recurring.isEmpty)
+            const Text('Траты и доходы, которые бывают каждый месяц, — записываются сами в нужное число.', style: W.small)
+          else
+            for (final r in st.recurring) _recTile(r),
+          Section(
+            'Лимиты по категориям',
+            trailing: TextButton.icon(onPressed: _addCatLimit, icon: const Icon(Icons.add, size: 18), label: const Text('Добавить')),
+          ),
+          if (st.catLimits.isEmpty)
+            const Text('Например: «Кафе и доставка» — не больше 200 zł в месяц. Превысишь — бюджет предупредит.', style: W.small)
+          else
+            for (final e in st.catLimits.entries)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Text(catById(e.key).emoji, style: const TextStyle(fontSize: 20)),
+                title: Text(catById(e.key).name, style: W.body),
+                trailing: Text('${_money(e.value)} / мес', style: W.body),
+                onTap: () async {
+                  await editCatLimit(context, catById(e.key));
+                  if (mounted) setState(() {});
+                },
+              ),
           const Section('Связь с другими плагинами'),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,

@@ -143,3 +143,22 @@ extension TrainingCalc on LifeStore {
   /// Тренировок за последние 7 дней.
   int sessionsLast7() => finishedSessionsBetween(addDays(today(), -6), addDays(today(), 1));
 }
+
+/// Стандартные блины (кг) — от тяжёлых к лёгким.
+const standardPlates = [25.0, 20.0, 15.0, 10.0, 5.0, 2.5, 1.25];
+
+/// Какие блины повесить на КАЖДУЮ сторону штанги, чтобы набрать [target] кг с грифом [bar].
+/// Если точно не собрать — ближайший меньший вес. [total] — сколько выйдет на самом деле.
+({List<double> perSide, double total}) platesFor(double target, {double bar = 20, List<double> plates = standardPlates}) {
+  if (target <= bar) return (perSide: const <double>[], total: bar);
+  var side = (target - bar) / 2;
+  final out = <double>[];
+  for (final p in plates) {
+    while (side + 1e-9 >= p) {
+      out.add(p);
+      side -= p;
+    }
+  }
+  final total = bar + 2 * out.fold<double>(0, (s, p) => s + p);
+  return (perSide: out, total: total);
+}

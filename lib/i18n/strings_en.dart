@@ -1735,4 +1735,11 @@ const Map<String, String> stringsEn = {
   'Помидоры и задачи по проектам': 'Pomodoros and tasks by project',
   'Новые плагины': 'New plugins',
   'Появились новые плагины. Отметь, какие включить — они появятся в шторке сверху. Потом это можно поменять в шторке → ⚙.': 'New plugins are available. Tick the ones to turn on — they will appear in the top drawer. You can change this later in the drawer → ⚙.',
+  'Блины на штангу': 'Barbell plates',
+  'Нужный вес': 'Target weight',
+  'Гриф: 20 кг — обычный, 15 — женский, 10 — лёгкий': 'Bar: 20 kg — standard, 15 — women\'s, 10 — light',
+  'Только гриф — блины не нужны.': 'Just the bar — no plates needed.',
+  'НА КАЖДУЮ СТОРОНУ': 'ON EACH SIDE',
+  'Итого {0} кг': 'Total {0} kg',
+  'Ровно не собрать — получится {0} кг': 'Can\'t make it exactly — you\'ll get {0} kg',
 };

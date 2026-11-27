@@ -20,11 +20,14 @@ class OneRmScreen extends StatefulWidget {
 class _OneRmScreenState extends State<OneRmScreen> {
   final weight = TextEditingController(text: '60');
   final reps = TextEditingController(text: '8');
+  final plateTarget = TextEditingController(text: '60');
+  double bar = 20;
 
   @override
   void dispose() {
     weight.dispose();
     reps.dispose();
+    plateTarget.dispose();
     super.dispose();
   }
 
@@ -108,6 +111,13 @@ class _OneRmScreenState extends State<OneRmScreen> {
               ],
             ),
           ),
+          SectionLabel(tr('Блины на штангу')),
+          _PlatesCard(
+            target: plateTarget,
+            bar: bar,
+            onBar: (v) => setState(() => bar = v),
+            onChanged: () => setState(() {}),
+          ),
           SectionLabel(tr('Сила по упражнениям')),
           if (rows.isEmpty)
             AppCard(child: Text(tr('После тренировок с весом здесь появится расчётный 1ПМ по каждому упражнению.'), style: Txt.small))
@@ -151,3 +161,96 @@ class _OneRmScreenState extends State<OneRmScreen> {
 }
 
 double _round25(double v) => (v / 2.5).round() * 2.5;
+
+/// Калькулятор блинов: что повесить на каждую сторону.
+class _PlatesCard extends StatelessWidget {
+  final TextEditingController target;
+  final double bar;
+  final ValueChanged<double> onBar;
+  final VoidCallback onChanged;
+  const _PlatesCard({required this.target, required this.bar, required this.onBar, required this.onChanged});
+
+  static Color _color(double p) => switch (p) {
+        25.0 => const Color(0xFFE5484D),
+        20.0 => const Color(0xFF3E7BFA),
+        15.0 => const Color(0xFFF5C542),
+        10.0 => const Color(0xFF3DD68C),
+        5.0 => const Color(0xFFEDEDEF),
+        2.5 => const Color(0xFFB04A4D),
+        _ => const Color(0xFF8B8D93),
+      };
+
+  static String _kg(double v) => v == v.roundToDouble()
+      ? v.toStringAsFixed(0)
+      : v.toStringAsFixed(2).replaceAll(RegExp(r'0+$'), '').replaceAll('.', appLang.decimal);
+
+  @override
+  Widget build(BuildContext context) {
+    final t = parseNum(target.text) ?? 0;
+    final r = platesFor(t, bar: bar);
+    // Одинаковые блины — группой: «20 × 2».
+    final groups = <double, int>{};
+    for (final p in r.perSide) {
+      groups[p] = (groups[p] ?? 0) + 1;
+    }
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: NumField(target, tr('Нужный вес'), suffix: tr('кг'), onChanged: (_) => onChanged())),
+              const SizedBox(width: 10),
+              for (final b in const [20.0, 15.0, 10.0])
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: ChoiceChip(
+                    label: Text(_kg(b)),
+                    selected: bar == b,
+                    onSelected: (_) => onBar(b),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(tr('Гриф: 20 кг — обычный, 15 — женский, 10 — лёгкий'), style: Txt.small),
+          const SizedBox(height: 14),
+          if (t <= bar)
+            Text(tr('Только гриф — блины не нужны.'), style: Txt.body)
+          else ...[
+            Text(tr('НА КАЖДУЮ СТОРОНУ'), style: Txt.label),
+            const SizedBox(height: 8),
+            // Рисунок штанги: блины от центра наружу.
+            SizedBox(
+              height: 70,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(width: 40, height: 8, color: AppColors.accent2),
+                  Container(width: 6, height: 26, color: AppColors.accent2),
+                  for (final p in r.perSide)
+                    Container(
+                      width: 12,
+                      height: 22 + 48 * (p / 25),
+                      margin: const EdgeInsets.only(left: 2),
+                      decoration: BoxDecoration(color: _color(p), borderRadius: BorderRadius.circular(3)),
+                    ),
+                  Container(width: 18, height: 8, color: AppColors.accent2),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(groups.entries.map((e) => e.value > 1 ? '${_kg(e.key)} × ${e.value}' : _kg(e.key)).join('  +  '), style: Txt.num(18)),
+            const SizedBox(height: 4),
+            Text(
+              (r.total - t).abs() < 0.01
+                  ? trf('Итого {0} кг', [_kg(r.total)])
+                  : trf('Ровно не собрать — получится {0} кг', [_kg(r.total)]),
+              style: Txt.small,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}

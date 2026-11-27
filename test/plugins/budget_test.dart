@@ -66,5 +66,25 @@ void main() {
       expect(parseAmount('0'), isNull);
       expect(parseAmount('abc'), isNull);
     });
+
+    test('регулярные платежи: создаёт пропущенные месяцы один раз', () {
+      const r = Recurring(id: 'p', amount: 50, cat: 'phone', day: 31, last: '2026-09', note: 'Телефон');
+      final res = dueRecurring([r], DateTime(2026, 11, 29));
+      // Октябрь — 31-е, ноябрь — ещё не наступило (30-е).
+      expect(res.txs.map((t) => t.day), ['2026-10-31']);
+      expect(res.recurring.single.last, '2026-10');
+      final res2 = dueRecurring(res.recurring, DateTime(2026, 11, 30));
+      expect(res2.txs.single.day, '2026-11-30'); // в ноябре 30 дней
+      expect(res2.txs.single.id, 'rec-p-2026-11');
+      expect(dueRecurring(res2.recurring, DateTime(2026, 11, 30)).txs, isEmpty);
+      expect(Recurring.fromJson(r.toJson())!.note, 'Телефон');
+    });
+
+    test('лимиты по категориям', () {
+      final m = summarizeMonth(txs, 2026, 11);
+      final over = overLimits(m, {'food': 100, 'transport': 50, 'games': 0});
+      expect(over.keys, ['food']);
+      expect(over['food']!.spent, closeTo(150.5, 0.001));
+    });
   });
 }

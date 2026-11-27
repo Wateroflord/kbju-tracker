@@ -204,3 +204,107 @@ double? parseAmount(String s) {
 }
 
 String todayKey([DateTime? now]) => dayKey(now ?? DateTime.now());
+
+// ───────────────────────────── Регулярные платежи ─────────────────────────────
+
+String monthKey(int year, int month) => '$year-${month.toString().padLeft(2, '0')}';
+
+/// Повторяется каждый месяц в день [day] (телефон, подписка, аренда, стипендия…).
+class Recurring {
+  final String id, cat, note;
+  final double amount;
+  final bool income;
+  final int day; // 1…31 (в коротком месяце — последний день)
+  final String last; // последний месяц, за который уже создана запись, 'yyyy-MM'
+
+  const Recurring({
+    required this.id,
+    required this.amount,
+    required this.cat,
+    required this.day,
+    required this.last,
+    this.income = false,
+    this.note = '',
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'a': amount,
+        'c': cat,
+        'd': day,
+        'l': last,
+        if (income) 'i': true,
+        if (note.isNotEmpty) 'n': note,
+      };
+
+  static Recurring? fromJson(dynamic j) {
+    if (j is! Map || j['id'] == null) return null;
+    final a = (j['a'] as num?)?.toDouble() ?? 0;
+    final last = j['l']?.toString() ?? '';
+    if (a <= 0 || !RegExp(r'^\d{4}-\d{2}$').hasMatch(last)) return null;
+    return Recurring(
+      id: j['id'].toString(),
+      amount: a,
+      cat: j['c']?.toString() ?? 'other',
+      day: ((j['d'] as num?)?.toInt() ?? 1).clamp(1, 31),
+      last: last,
+      income: j['i'] == true,
+      note: j['n']?.toString() ?? '',
+    );
+  }
+
+  Recurring copyWith({double? amount, String? cat, int? day, String? last, bool? income, String? note}) => Recurring(
+        id: id,
+        amount: amount ?? this.amount,
+        cat: cat ?? this.cat,
+        day: day ?? this.day,
+        last: last ?? this.last,
+        income: income ?? this.income,
+        note: note ?? this.note,
+      );
+}
+
+/// Какие записи пора создать по регулярным платежам к дате [now].
+/// Возвращает новые записи и обновлённые платежи (с новым `last`).
+/// Удалённую вручную запись повторно не создаёт: месяц уже отмечен в `last`.
+({List<Tx> txs, List<Recurring> recurring}) dueRecurring(List<Recurring> list, DateTime now) {
+  final out = <Tx>[];
+  final upd = <Recurring>[];
+  for (final r in list) {
+    final p = r.last.split('-');
+    var y = int.parse(p[0]), m = int.parse(p[1]);
+    var last = r.last;
+    // Не больше 24 месяцев за раз — если приложение долго не открывали.
+    for (var guard = 0; guard < 24; guard++) {
+      m++;
+      if (m > 12) {
+        m = 1;
+        y++;
+      }
+      final days = DateTime(y, m + 1, 0).day;
+      final d = DateTime(y, m, r.day > days ? days : r.day);
+      if (d.isAfter(DateTime(now.year, now.month, now.day))) break;
+      out.add(Tx(
+        id: 'rec-${r.id}-${monthKey(y, m)}',
+        day: dayKey(d),
+        amount: r.amount,
+        cat: r.cat,
+        income: r.income,
+        note: r.note,
+      ));
+      last = monthKey(y, m);
+    }
+    upd.add(last == r.last ? r : r.copyWith(last: last));
+  }
+  return (txs: out, recurring: upd);
+}
+
+/// Категории, где траты за месяц превысили свой лимит: id → (потрачено, лимит).
+Map<String, ({double spent, double limit})> overLimits(BudgetMonth m, Map<String, double> limits) {
+  final out = <String, ({double spent, double limit})>{};
+  limits.forEach((cat, lim) {
+    final s = m.byCat[cat] ?? 0;
+    if (lim > 0 && s > lim) out[cat] = (spent: s, limit: lim);
+  });
+  return out;
+}

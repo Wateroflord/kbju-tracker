@@ -1735,4 +1735,11 @@ const Map<String, String> stringsPl = {
   'Помидоры и задачи по проектам': 'Pomodoro i zadania w projektach',
   'Новые плагины': 'Nowe wtyczki',
   'Появились новые плагины. Отметь, какие включить — они появятся в шторке сверху. Потом это можно поменять в шторке → ⚙.': 'Pojawiły się nowe wtyczki. Zaznacz, które włączyć — pojawią się w górnej szufladzie. Później możesz to zmienić w szufladzie → ⚙.',
+  'Блины на штангу': 'Talerze na sztangę',
+  'Нужный вес': 'Docelowy ciężar',
+  'Гриф: 20 кг — обычный, 15 — женский, 10 — лёгкий': 'Gryf: 20 kg — zwykły, 15 — damski, 10 — lekki',
+  'Только гриф — блины не нужны.': 'Sam gryf — talerze niepotrzebne.',
+  'НА КАЖДУЮ СТОРОНУ': 'NA KAŻDĄ STRONĘ',
+  'Итого {0} кг': 'Razem {0} kg',
+  'Ровно не собрать — получится {0} кг': 'Dokładnie się nie da — wyjdzie {0} kg',
 };
