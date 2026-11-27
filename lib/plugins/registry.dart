@@ -138,7 +138,7 @@ final List<WinterPlugin> winterPlugins = [
   WinterPlugin(
     id: 'walks',
     name: 'Winter Walks',
-    tagline: 'Куда пойти гулять и где фоткать',
+    tagline: 'Куда пойти гулять, где фоткать и пробежки',
     color: const Color(0xFF7FC8FF),
     icon: 'assets/plugins/walks/icon.png',
     build: () => const walks.WalksApp(),

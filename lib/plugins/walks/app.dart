@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'geo.dart';
 import 'news.dart';
 import 'places.dart';
+import 'run.dart';
 import '../common/ui.dart';
 
 /// Журнал ошибок в папке приложения (log.txt) — помогает разобраться, если что-то не работает.
@@ -255,7 +256,7 @@ class _HomeState extends State<Home> {
           builder: (context, _) => Column(children: [
             // Не const: шапка и вкладки должны перерисовываться, когда меняются данные.
             // ignore: prefer_const_constructors
-            _Header(),
+            if (tab != 3) _Header(),
             Expanded(child: IndexedStack(index: tab, children: [
               // ignore: prefer_const_constructors
               PlacesTab(),
@@ -263,6 +264,7 @@ class _HomeState extends State<Home> {
               NewsTab(),
               // ignore: prefer_const_constructors
               FavsTab(),
+              const RunsTab(),
             ])),
           ]),
         ),
@@ -276,6 +278,7 @@ class _HomeState extends State<Home> {
           NavigationDestination(icon: Icon(Icons.explore_outlined), label: 'Куда пойти'),
           NavigationDestination(icon: Icon(Icons.newspaper_outlined), label: 'Новости'),
           NavigationDestination(icon: Icon(Icons.bookmark_border), label: 'Избранное'),
+          NavigationDestination(icon: Icon(Icons.directions_run), label: 'Бег'),
         ],
       ),
     );

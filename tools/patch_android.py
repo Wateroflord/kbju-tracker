@@ -29,6 +29,7 @@ permissions = [
     # ---- плагины ----
     "android.permission.ACCESS_FINE_LOCATION",   # Winter Walks
     "android.permission.ACCESS_COARSE_LOCATION",
+    "android.permission.FOREGROUND_SERVICE_LOCATION",  # Winter Walks: пробежка с выключенным экраном
     "android.permission.FLASHLIGHT",             # Выживание в лесу (фонарик)
     "android.permission.READ_MEDIA_AUDIO",       # Winter Music
     "android.permission.READ_EXTERNAL_STORAGE",

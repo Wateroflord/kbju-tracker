@@ -1510,7 +1510,7 @@ const Map<String, String> stringsEn = {
   'Музыка, лайки и плейлисты': 'Music, likes and playlists',
   'Рисование и пиксель-арт': 'Drawing and pixel art',
   'Курс рисования с нуля': 'Drawing course from scratch',
-  'Куда пойти гулять и где фоткать': 'Where to walk and take photos',
+  'Куда пойти гулять, где фоткать и пробежки': 'Where to walk, take photos and run',
   'Справочник, компас, фонарик': 'Guide, compass, flashlight',
   'ИИ оценивает внешность и стиль': 'AI rates looks and style',
   'Изучение языков — в плагине Winter Language': 'Language learning is in the Winter Language plugin',
@@ -1742,4 +1742,6 @@ const Map<String, String> stringsEn = {
   'НА КАЖДУЮ СТОРОНУ': 'ON EACH SIDE',
   'Итого {0} кг': 'Total {0} kg',
   'Ровно не собрать — получится {0} кг': 'Can\'t make it exactly — you\'ll get {0} kg',
+  'Бюджет': 'Budget',
+  'Траты, доходы и копилки': 'Spending, income and savings jars',
 };

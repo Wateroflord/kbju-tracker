@@ -1510,7 +1510,7 @@ const Map<String, String> stringsPl = {
   'Музыка, лайки и плейлисты': 'Muzyka, polubienia i playlisty',
   'Рисование и пиксель-арт': 'Rysowanie i pixel art',
   'Курс рисования с нуля': 'Kurs rysunku od zera',
-  'Куда пойти гулять и где фоткать': 'Gdzie iść na spacer i robić zdjęcia',
+  'Куда пойти гулять, где фоткать и пробежки': 'Gdzie iść na spacer, robić zdjęcia i biegać',
   'Справочник, компас, фонарик': 'Poradnik, kompas, latarka',
   'ИИ оценивает внешность и стиль': 'AI ocenia wygląd i styl',
   'Изучение языков — в плагине Winter Language': 'Nauka języków — we wtyczce Winter Language',
@@ -1742,4 +1742,6 @@ const Map<String, String> stringsPl = {
   'НА КАЖДУЮ СТОРОНУ': 'NA KAŻDĄ STRONĘ',
   'Итого {0} кг': 'Razem {0} kg',
   'Ровно не собрать — получится {0} кг': 'Dokładnie się nie da — wyjdzie {0} kg',
+  'Бюджет': 'Budżet',
+  'Траты, доходы и копилки': 'Wydatki, przychody i skarbonki',
 };
