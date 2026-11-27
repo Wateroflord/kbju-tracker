@@ -9,6 +9,7 @@ import '../common/notify.dart';
 import '../common/ui.dart';
 import '../common/wav.dart';
 import 'boards_screen.dart';
+import 'boards_service.dart';
 import 'model.dart';
 
 const _accent = Color(0xFFFF7A6B);
@@ -56,6 +57,13 @@ class FocusStore extends ChangeNotifier {
   int doneInCycle = 0;
   String? project, task;
 
+  /// Задача с общей доски, на которую идут помидоры (вместо своей задачи).
+  String? boardTask;
+  String boardTaskTitle = '', boardName = '';
+
+  /// Помидоры для задач досок, которые не удалось отправить (нет связи): id задачи → сколько.
+  Map<String, int> boardPending = {};
+
   bool get running => endsAt != null;
   bool get paused => pausedLeft != null;
   bool get idle => !running && !paused;
@@ -76,6 +84,16 @@ class FocusStore extends ChangeNotifier {
     }
     project = j['project']?.toString();
     task = j['task']?.toString();
+    final b = j['board'];
+    if (b is Map && b['task'] != null) {
+      boardTask = '${b['task']}';
+      boardTaskTitle = '${b['title'] ?? ''}';
+      boardName = '${b['name'] ?? ''}';
+    }
+    boardPending = {
+      for (final e in ((j['boardPending'] as Map?) ?? const {}).entries)
+        if (e.value is num && (e.value as num) > 0) '${e.key}': (e.value as num).toInt(),
+    };
     if (projects.isEmpty) projects = [const FocusProject('main', 'Общее', 0)];
     if (project == null || !projects.any((p) => p.id == project && !p.archived)) {
       project = projects.firstWhere((p) => !p.archived, orElse: () => projects.first).id;
@@ -94,7 +112,43 @@ class FocusStore extends ChangeNotifier {
       'timer': {'phase': phase.name, 'endsAt': endsAt, 'left': pausedLeft, 'cycle': doneInCycle},
       'project': project,
       'task': task,
+      if (boardTask != null) 'board': {'task': boardTask, 'title': boardTaskTitle, 'name': boardName},
+      if (boardPending.isNotEmpty) 'boardPending': boardPending,
     });
+  }
+
+  /// Помидоры пойдут задаче с общей доски.
+  Future<void> focusBoardTask(String id, String title, String board) async {
+    boardTask = id;
+    boardTaskTitle = title;
+    boardName = board;
+    task = null;
+    await save();
+  }
+
+  Future<void> clearBoardTask() async {
+    boardTask = null;
+    boardTaskTitle = '';
+    boardName = '';
+    await save();
+  }
+
+  /// Отправить на сервер помидоры, которые ждут связи.
+  Future<void> flushBoard() async {
+    if (boardPending.isEmpty || !BoardsService.I.connected) return;
+    final left = <String, int>{};
+    for (final e in boardPending.entries) {
+      try {
+        await BoardsService.I.addPomodoros(e.key, e.value);
+      } on BoardsError catch (err) {
+        // Задачу удалили — забываем; нет связи — попробуем позже.
+        if (!err.message.startsWith('Не найдено')) left[e.key] = e.value;
+      } catch (_) {
+        left[e.key] = e.value;
+      }
+    }
+    boardPending = left;
+    await save();
   }
 
   String newId() => '${DateTime.now().microsecondsSinceEpoch}';
@@ -167,6 +221,11 @@ class FocusStore extends ChangeNotifier {
       doneInCycle++;
       final t = currentTask;
       if (t != null) tasks = [for (final x in tasks) x.id == t.id ? x.copyWith(pomodoros: x.pomodoros + 1) : x];
+      final bt = boardTask;
+      if (bt != null) {
+        boardPending = {...boardPending, bt: (boardPending[bt] ?? 0) + 1};
+        unawaited(flushBoard());
+      }
     }
     phase = nextPhase(finished, doneInCycle, settings.longEvery);
     if (phase == Phase.longBreak) doneInCycle = 0;
@@ -240,7 +299,10 @@ class _FocusHomeState extends State<FocusHome> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) st.tick();
+    if (state == AppLifecycleState.resumed) {
+      st.tick();
+      st.flushBoard();
+    }
   }
 
   @override
@@ -408,6 +470,28 @@ class _FocusHomeState extends State<FocusHome> with WidgetsBindingObserver {
             ),
           ),
         ),
+        if (st.boardTask != null) ...[
+          const SizedBox(height: 12),
+          WCard(
+            borderColor: color,
+            padding: const EdgeInsets.fromLTRB(14, 8, 4, 8),
+            child: Row(children: [
+              const Icon(Icons.groups_outlined, color: W.ice, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(st.boardTaskTitle, style: W.body, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(
+                    'Общая доска «${st.boardName}» — помидоры видны всем'
+                    '${st.boardPending.isNotEmpty ? ' · ждут связи: ${st.boardPending.values.fold<int>(0, (a, b) => a + b)}' : ''}',
+                    style: W.small,
+                  ),
+                ]),
+              ),
+              IconButton(tooltip: 'Убрать', icon: const Icon(Icons.close, size: 18, color: W.muted), onPressed: st.clearBoardTask),
+            ]),
+          ),
+        ],
         const SizedBox(height: 16),
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           IconButton.outlined(
@@ -453,6 +537,10 @@ class _FocusHomeState extends State<FocusHome> with WidgetsBindingObserver {
               borderColor: t.id == st.task ? color : null,
               onTap: () {
                 st.task = st.task == t.id ? null : t.id;
+                if (st.task != null) {
+                  st.boardTask = null;
+                  st.boardTaskTitle = '';
+                }
                 st.save();
               },
               child: Row(children: [

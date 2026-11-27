@@ -9,6 +9,7 @@ import '../../kbju_app.dart';
 import '../../screens/arc_screen.dart';
 import '../common/ui.dart';
 import '../shell.dart';
+import 'app.dart' show FocusStore;
 import 'boards_model.dart';
 import 'boards_service.dart';
 
@@ -368,9 +369,23 @@ class _BoardScreenState extends State<BoardScreen> {
                 for (final m in board.members)
                   Chip2(m == svc.me ? 'Я' : (board.nameOf(m).isEmpty ? '?' : board.nameOf(m)), selected: assignee == m, onTap: () => set(() => assignee = m)),
               ]),
-              if (t.author.isNotEmpty) ...[
+              if (t.author.isNotEmpty || t.pomodoros > 0) ...[
                 const SizedBox(height: 10),
-                Text('Добавил: ${t.author == svc.me ? 'ты' : board.nameOf(t.author)}', style: W.small),
+                Text(
+                  [
+                    if (t.author.isNotEmpty) 'Добавил: ${t.author == svc.me ? 'ты' : board.nameOf(t.author)}',
+                    if (t.pomodoros > 0) '🍅×${t.pomodoros} (${t.pomodoros * FocusStore.I.settings.work} мин)',
+                  ].join(' · '),
+                  style: W.small,
+                ),
+              ],
+              if (t.status != 'done') ...[
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.pop(c, 'focus'),
+                  icon: const Text('🍅'),
+                  label: Text(FocusStore.I.boardTask == t.id ? 'Помидоры уже идут этой задаче' : 'Работать над ней с таймером'),
+                ),
               ],
               const SizedBox(height: 14),
               Row(children: [
@@ -384,6 +399,14 @@ class _BoardScreenState extends State<BoardScreen> {
       ),
     );
     if (!mounted) return;
+    if (r == 'focus') {
+      await FocusStore.I.focusBoardTask(t.id, t.title, board.name);
+      if (t.status == 'todo') await _move(t, 'doing');
+      if (!mounted) return;
+      toast(context, 'Готово: запускай помидор — он засчитается задаче «${t.title}»');
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      return;
+    }
     if (r == 'delete') {
       if (!await confirmDialog(context, 'Удалить задачу?', '«${t.title}» пропадёт у всех участников доски.', ok: 'Удалить')) return;
       try {
@@ -575,6 +598,11 @@ class _BoardScreenState extends State<BoardScreen> {
                 ),
               ),
               if (t.note.isNotEmpty) Text(t.note, style: W.small, maxLines: 2, overflow: TextOverflow.ellipsis),
+              if (t.pomodoros > 0 || FocusStore.I.boardTask == t.id)
+                Text(
+                  '${t.pomodoros > 0 ? '🍅×${t.pomodoros}' : ''}${FocusStore.I.boardTask == t.id ? '${t.pomodoros > 0 ? ' · ' : ''}сейчас в таймере' : ''}',
+                  style: W.small,
+                ),
               if (who.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),

@@ -128,6 +128,11 @@ class BoardsService {
     return BoardTask.fromJson(_json(r) as Map);
   }
 
+  /// Прибавить помидоры задаче (атомарно на сервере — два человека не перезапишут друг друга).
+  Future<void> addPomodoros(String id, int n) async {
+    await _send(() => http.patch(_u('/api/collections/board_tasks/records/$id'), headers: _h, body: jsonEncode({'pomodoros+': n})));
+  }
+
   Future<void> deleteTask(String id) async {
     await _send(() => http.delete(_u('/api/collections/board_tasks/records/$id'), headers: _h));
   }
