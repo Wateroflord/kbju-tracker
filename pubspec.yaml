@@ -66,6 +66,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icon/
+    - assets/plugins/budget/
     - assets/plugins/chess/
     - assets/plugins/chess/pieces/
     - assets/plugins/draw/

@@ -115,26 +115,129 @@ class ShiftTemplate {
   String get label => '${name.isEmpty ? '' : '$name '}${hm(start)}–${hm(end)}';
 }
 
+/// Как считать «на руки».
+enum PayMode {
+  /// Только брутто.
+  none,
+
+  /// Свой процент вычетов из расчётного листа.
+  custom,
+
+  /// Umowa zlecenie, до 26 лет: ZUS + здоровье, PIT 0 (ulga dla młodych).
+  zlecenieYoung,
+
+  /// Umowa zlecenie, 26 лет и старше: ZUS + здоровье + PIT 12 %.
+  zlecenie,
+
+  /// Студент / ученик до 26 лет на zlecenie: ничего не вычитают.
+  student,
+}
+
+PayMode payModeFrom(Object? s, double deduction) {
+  for (final m in PayMode.values) {
+    if (m.name == s) return m;
+  }
+  return deduction > 0 ? PayMode.custom : PayMode.none;
+}
+
+/// Ставки 2026 года для umowa zlecenie — часть, которую платит сам работник.
+class ZlecenieRates {
+  static const pension = 0.0976; // emerytalna
+  static const disability = 0.015; // rentowa
+  static const sickness = 0.0245; // chorobowa — по желанию
+  static const health = 0.09; // zdrowotna, от брутто минус соц. взносы
+  static const costs = 0.20; // koszty uzyskania przychodu
+  static const pit = 0.12; // первая ставка налога
+  static const youngLimit = 85528.0; // ulga dla młodych — лимит в год
+  static const pit2 = 300.0; // kwota zmniejszająca podatek в месяц (если подан PIT-2)
+}
+
+/// Из чего складывается «на руки».
+class NetBreakdown {
+  final double gross, social, health, pit;
+  const NetBreakdown(this.gross, {this.social = 0, this.health = 0, this.pit = 0});
+  double get deductions => social + health + pit;
+  double get net => gross - deductions;
+}
+
+double _r2(double v) => (v * 100).roundToDouble() / 100;
+
+/// Брутто → нетто.
+/// [ytdBefore] — сколько брутто уже заработано в этом году до этих денег (для лимита ulga dla młodych).
+NetBreakdown netFromGross(
+  double gross,
+  PayMode mode, {
+  bool sickness = false,
+  bool pit2 = false,
+  double deductionPct = 0,
+  double ytdBefore = 0,
+}) {
+  if (gross <= 0) return NetBreakdown(gross < 0 ? 0 : gross);
+  switch (mode) {
+    case PayMode.none:
+    case PayMode.student:
+      return NetBreakdown(gross);
+    case PayMode.custom:
+      return NetBreakdown(gross, social: _r2(gross * deductionPct.clamp(0, 100) / 100));
+    case PayMode.zlecenie:
+    case PayMode.zlecenieYoung:
+      final social = _r2(gross * (ZlecenieRates.pension + ZlecenieRates.disability + (sickness ? ZlecenieRates.sickness : 0)));
+      final health = _r2((gross - social) * ZlecenieRates.health);
+      // Какая часть денег облагается налогом: для молодых — только то, что выше годового лимита.
+      var taxedGross = gross;
+      if (mode == PayMode.zlecenieYoung) {
+        double over(double v) => v > ZlecenieRates.youngLimit ? v - ZlecenieRates.youngLimit : 0;
+        taxedGross = over(ytdBefore + gross) - over(ytdBefore);
+      }
+      var pit = 0.0;
+      if (taxedGross > 0) {
+        final taxedSocial = social * taxedGross / gross;
+        final income = taxedGross - taxedSocial;
+        final base = (income - income * ZlecenieRates.costs).roundToDouble(); // база — до целых злотых
+        pit = (base * ZlecenieRates.pit - (pit2 ? ZlecenieRates.pit2 : 0)).roundToDouble(); // налог — до целых злотых
+        if (pit < 0) pit = 0;
+      }
+      return NetBreakdown(gross, social: social, health: health, pit: pit);
+  }
+}
+
 class MonthSummary {
   final int shifts, minutes;
-  final double brutto, netto;
-  const MonthSummary(this.shifts, this.minutes, this.brutto, this.netto);
+  final NetBreakdown pay;
+  const MonthSummary(this.shifts, this.minutes, this.pay);
+  double get brutto => pay.gross;
+  double get netto => pay.net;
 }
 
 /// Итог за месяц: смены, часы, сколько заработано до и после вычетов.
-/// [deductionPct] — процент вычетов, который человек сам берёт из своего расчётного листа.
-MonthSummary summarize(Iterable<Shift> shifts, int year, int month, double rate, double deductionPct) {
+/// [deductionPct] — процент вычетов, который человек сам берёт из своего расчётного листа
+/// (используется, когда [mode] не задан или [PayMode.custom]).
+MonthSummary summarize(
+  Iterable<Shift> shifts,
+  int year,
+  int month,
+  double rate,
+  double deductionPct, {
+  PayMode? mode,
+  bool sickness = false,
+  bool pit2 = false,
+}) {
   var n = 0, min = 0;
-  var brutto = 0.0;
+  var brutto = 0.0, before = 0.0;
   for (final s in shifts) {
     final d = parseDay(s.day);
-    if (d.year != year || d.month != month) continue;
+    if (d.year != year) continue;
+    if (d.month < month) {
+      before += s.pay(rate);
+      continue;
+    }
+    if (d.month != month) continue;
     n++;
     min += s.minutes;
     brutto += s.pay(rate);
   }
-  final pct = deductionPct.clamp(0, 100);
-  return MonthSummary(n, min, brutto, brutto * (1 - pct / 100));
+  final m = mode ?? (deductionPct > 0 ? PayMode.custom : PayMode.none);
+  return MonthSummary(n, min, netFromGross(brutto, m, sickness: sickness, pit2: pit2, deductionPct: deductionPct, ytdBefore: before));
 }
 
 /// Ближайшая смена, которая ещё не закончилась.

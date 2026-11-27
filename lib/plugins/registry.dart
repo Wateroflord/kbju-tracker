@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../i18n/i18n.dart';
 import '../kbju_app.dart';
+import 'budget/app.dart' as budget;
 import 'chess/app.dart' as chess;
 import 'draw/app.dart' as draw;
 import 'expiry/app.dart' as expiry;
@@ -187,6 +188,15 @@ final List<WinterPlugin> winterPlugins = [
     init: shifts.ShiftStore.I.load,
   ),
   WinterPlugin(
+    id: 'budget',
+    name: 'Бюджет',
+    tagline: 'Траты, доходы и копилки',
+    color: const Color(0xFFFFD166),
+    icon: 'assets/plugins/budget/icon.png',
+    build: () => const budget.BudgetApp(),
+    init: budget.BudgetStore.I.load,
+  ),
+  WinterPlugin(
     id: 'focus',
     name: 'Фокус',
     tagline: 'Помидоры и задачи по проектам',
@@ -204,13 +214,15 @@ WinterPlugin? pluginById(String id) {
   return null;
 }
 
-/// Связать плагины с КБЖУ: общий язык интерфейса, общий ключ Gemini, перенос учёбы.
+/// Связать плагины с КБЖУ: общий язык интерфейса, общий ключ Gemini, перенос учёбы, расходы на еду для «Бюджета».
 void connectPluginsToKbju({
   required void Function(AppLang lang) setLang,
   required String Function() geminiKey,
   required Map<String, dynamic> Function() life,
+  double Function(int year, int month)? foodSpent,
 }) {
   language_s.AppStore.onUiLang = setLang;
   language_s.AppStore.kbjuLife = life;
   mog_s.Store.sharedKey = geminiKey;
+  budget.BudgetStore.kbjuFood = foodSpent;
 }

@@ -41,6 +41,7 @@ Future<void> _main() async {
     setLang: store.setLang,
     geminiKey: () => store.apiKey,
     life: () => store.life.toJson(),
+    foodSpent: (y, m) => store.food.expensesOfMonth(y, m).fold<double>(0, (s, e) => s + store.food.toPln(e)),
   );
   await PluginHost.I.load();
   // Вкладки «Учёба» больше нет — языки только в плагине Winter Language. У кого есть выученные слова,

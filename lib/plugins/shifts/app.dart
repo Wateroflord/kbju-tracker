@@ -34,6 +34,8 @@ class ShiftStore extends ChangeNotifier {
   List<Shift> shifts = [];
   List<ShiftTemplate> templates = [];
   double rate = 0, deduction = 0;
+  PayMode mode = PayMode.none;
+  bool sickness = false, pit2 = false;
   String currency = 'zł';
   bool remind = false;
   int remindMin = 60;
@@ -52,6 +54,9 @@ class ShiftStore extends ChangeNotifier {
     }
     rate = (j['rate'] as num?)?.toDouble() ?? 0;
     deduction = (j['deduction'] as num?)?.toDouble() ?? 0;
+    mode = payModeFrom(j['mode'], deduction);
+    sickness = j['sick'] == true;
+    pit2 = j['pit2'] == true;
     currency = j['currency']?.toString() ?? 'zł';
     remind = j['remind'] == true;
     remindMin = (j['remindMin'] as num?)?.toInt() ?? 60;
@@ -63,6 +68,9 @@ class ShiftStore extends ChangeNotifier {
         'templates': [for (final t in templates) t.toJson()],
         'rate': rate,
         'deduction': deduction,
+        'mode': mode.name,
+        if (sickness) 'sick': true,
+        if (pit2) 'pit2': true,
         'currency': currency,
         'remind': remind,
         'remindMin': remindMin,
@@ -97,9 +105,36 @@ class ShiftStore extends ChangeNotifier {
   }
 
   String id() => '${DateTime.now().microsecondsSinceEpoch}';
+
+  /// Итог месяца с учётом выбранного способа расчёта «на руки».
+  MonthSummary summaryFor(int year, int month) =>
+      summarize(shifts, year, month, rate, deduction, mode: mode, sickness: sickness, pit2: pit2);
+
+  bool get showsNet => mode != PayMode.none;
 }
 
 String _money(double v) => '${money(v)} ${ShiftStore.I.currency}';
+
+/// Подпись под «на руки»: из чего сложились вычеты.
+String _netNote(NetBreakdown p) {
+  final st = ShiftStore.I;
+  switch (st.mode) {
+    case PayMode.none:
+      return '';
+    case PayMode.custom:
+      return 'Вычеты ${_pct(st.deduction)}% — как ты указал в настройках';
+    case PayMode.student:
+      return 'Студент до 26 лет: ZUS и налог не вычитают';
+    case PayMode.zlecenie:
+    case PayMode.zlecenieYoung:
+      final parts = [
+        'ZUS ${money(p.social)}',
+        'здоровье ${money(p.health)}',
+        p.pit > 0 ? 'налог ${money(p.pit)}' : (st.mode == PayMode.zlecenieYoung ? 'налог 0 (до 26 лет)' : 'налог 0'),
+      ];
+      return '${parts.join(' · ')} — примерно, точно будет в pasku';
+  }
+}
 
 class ShiftsHome extends StatefulWidget {
   const ShiftsHome({super.key});
@@ -144,14 +179,14 @@ class _ShiftsHomeState extends State<ShiftsHome> {
   @override
   Widget build(BuildContext context) {
     if (!st.loaded) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    final sum = summarize(st.shifts, month.year, month.month, st.rate, st.deduction);
+    final sum = st.summaryFor(month.year, month.month);
     final inMonth = st.shifts.where((s) {
       final d = parseDay(s.day);
       return d.year == month.year && d.month == month.month;
     }).toList();
     final now = DateTime.now();
     final next = nextShift(st.shifts, now);
-    final prevSum = summarize(st.shifts, month.month == 1 ? month.year - 1 : month.year, month.month == 1 ? 12 : month.month - 1, st.rate, st.deduction);
+    final prevSum = st.summaryFor(month.month == 1 ? month.year - 1 : month.year, month.month == 1 ? 12 : month.month - 1);
 
     return Scaffold(
       appBar: AppBar(
@@ -216,18 +251,18 @@ class _ShiftsHomeState extends State<ShiftsHome> {
               _stat('Часов', _hoursShort(sum.minutes)),
               _stat('Брутто', money(sum.brutto)),
             ]),
-            if (st.deduction > 0) ...[
+            if (st.showsNet && sum.brutto > 0) ...[
               const Divider(height: 22, color: W.border),
               Row(children: [
                 const Expanded(child: Text('На руки ≈', style: W.body)),
                 Text(_money(sum.netto), style: W.h2.copyWith(color: W.accent)),
               ]),
-              Text('Вычеты ${_pct(st.deduction)}% — как ты указал в настройках', style: W.small),
+              Text(_netNote(sum.pay), style: W.small),
             ],
             if (prevSum.shifts > 0) ...[
               const SizedBox(height: 8),
               Text(
-                'Прошлый месяц: ${_hoursShort(prevSum.minutes)} ч · ${_money(st.deduction > 0 ? prevSum.netto : prevSum.brutto)}',
+                'Прошлый месяц: ${_hoursShort(prevSum.minutes)} ч · ${_money(st.showsNet ? prevSum.netto : prevSum.brutto)}',
                 style: W.small,
               ),
             ],
@@ -610,6 +645,24 @@ class _ShiftEditorState extends State<ShiftEditor> {
 
 String _num(double v) => v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toString().replaceAll('.', ',');
 
+String _modeName(PayMode m) => switch (m) {
+      PayMode.none => 'Только брутто',
+      PayMode.zlecenieYoung => 'Zlecenie, до 26',
+      PayMode.zlecenie => 'Zlecenie, 26+',
+      PayMode.student => 'Студент до 26',
+      PayMode.custom => 'Свой %',
+    };
+
+String _modeHelp(PayMode m) => switch (m) {
+      PayMode.none => 'Покажу только брутто — без вычетов.',
+      PayMode.zlecenieYoung => 'Umowa zlecenie, тебе меньше 26 лет: вычитают ZUS (9,76 % + 1,5 %) и здоровье (9 %), '
+          'налог 0 благодаря uldze dla młodych (до 85 528 zł брутто в год — выше считаю налог сам).',
+      PayMode.zlecenie => 'Umowa zlecenie, 26 лет и старше: ZUS (9,76 % + 1,5 %), здоровье (9 %) и налог 12 % '
+          'с вычетом 20 % расходов (koszty uzyskania).',
+      PayMode.student => 'Учишься (студент или ученик) и тебе меньше 26: на zlecenie не вычитают ни ZUS, ни налог — на руки = брутто.',
+      PayMode.custom => 'Посмотри в расчётном листе (pasek), сколько процентов от брутто ушло, и впиши сюда.',
+    };
+
 // ───────────────────────────── Настройки ─────────────────────────────
 
 class ShiftSettings extends StatefulWidget {
@@ -757,20 +810,47 @@ class _ShiftSettingsState extends State<ShiftSettings> {
               ),
             ),
           ]),
-          const SizedBox(height: 12),
-          TextField(
-            controller: dedCtl,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(labelText: 'Вычеты, % (необязательно)', border: OutlineInputBorder(), suffixText: '%'),
-            onChanged: (_) => _apply(),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Налоги и взносы у всех разные (возраст, учёба, вид договора), поэтому приложение их не угадывает. '
-            'Посмотри в расчётном листе (pasek): сколько процентов от брутто ушло — и впиши сюда. '
-            'Тогда будет видно «на руки». Оставь пустым — покажу только брутто.',
-            style: W.small,
-          ),
+          const Section('Сколько на руки'),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final m in PayMode.values)
+              Chip2(_modeName(m), selected: st.mode == m, onTap: () {
+                setState(() => st.mode = m);
+                st.save(reschedule: false);
+              }),
+          ]),
+          const SizedBox(height: 8),
+          Text(_modeHelp(st.mode), style: W.small),
+          if (st.mode == PayMode.custom) ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: dedCtl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(labelText: 'Вычеты, %', border: OutlineInputBorder(), suffixText: '%'),
+              onChanged: (_) => _apply(),
+            ),
+          ],
+          if (st.mode == PayMode.zlecenie || st.mode == PayMode.zlecenieYoung) ...[
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: st.sickness,
+              onChanged: (v) {
+                setState(() => st.sickness = v);
+                st.save(reschedule: false);
+              },
+              title: const Text('Плачу больничный взнос (chorobowe 2,45 %)', style: W.body),
+              subtitle: const Text('По желанию. Если в pasku есть «chorobowe» — включи.', style: W.small),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: st.pit2,
+              onChanged: (v) {
+                setState(() => st.pit2 = v);
+                st.save(reschedule: false);
+              },
+              title: const Text('Подал работодателю PIT-2', style: W.body),
+              subtitle: const Text('Налог меньше на 300 zł в месяц. Не знаешь — оставь выключенным.', style: W.small),
+            ),
+          ],
           const Section('Напоминания'),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
