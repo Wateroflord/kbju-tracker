@@ -55,7 +55,7 @@ Grid? gridFromJson(Map<String, dynamic> j) {
     if (fen.isEmpty) return null;
     rows = fen.split(' ').first.split('/');
   }
-  final list = rows as List;
+  final list = rows;
   final g = <List<String>>[];
   for (var i = 0; i < 8; i++) {
     g.add(parseRow(i < list.length ? list[i] : ''));
