@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'board.dart';
+import 'camera.dart';
 import 'engine.dart';
 import 'lessons.dart';
 import 'online.dart';
@@ -18,6 +19,10 @@ const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 class Store {
   static final _s = JsonStore('chess.json');
   static Map<String, dynamic> d = {};
+
+  /// Ключ Gemini из КБЖУ — для чтения доски с камеры.
+  static String Function()? sharedKey;
+
   static Future<void> load() async => d = await _s.read();
   static Future<void> save() => _s.write(d);
 
@@ -165,6 +170,7 @@ class _MenuState extends State<Menu> {
                 tile(Icons.smart_toy_outlined, 'Игра с ботом', '8 уровней: от новичка до полного Stockfish', () => go(const BotSetup())),
                 tile(Icons.public, 'С другом по сети', 'Через сервер Winter Chat — ходите, когда удобно', () => go(const OnlineChessLobby())),
                 tile(Icons.people_outline, 'Вдвоём на одном устройстве', 'С часами, доска может поворачиваться', () => go(const LocalSetup())),
+                tile(Icons.photo_camera_outlined, 'Камера: лучший ход', 'Наведи на настоящую доску — покажу зелёной стрелкой, куда ходить', () => go(const CameraHint())),
                 tile(Icons.extension_outlined, 'Задачи', 'Мат в 1–3 хода, вилки, связки — ${Store.solved.length} решено', () => go(const PuzzleScreen())),
                 tile(Icons.school_outlined, 'Уроки', 'Правила и основы для начинающих — ${Store.lessonsDone.length} из ${lessons.length}', () => go(const LessonsScreen())),
                 tile(Icons.analytics_outlined, 'Мои партии и разбор', 'Ошибки, лучшие ходы, точность — ${Store.games.length} партий', () => go(const GamesScreen())),

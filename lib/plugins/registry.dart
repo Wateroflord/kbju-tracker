@@ -217,7 +217,7 @@ WinterPlugin? pluginById(String id) {
   return null;
 }
 
-/// Связать плагины с КБЖУ: общий язык интерфейса, общий ключ Gemini, перенос учёбы, расходы на еду для «Бюджета».
+/// Связать плагины с КБЖУ: общий язык интерфейса, общий ключ Gemini (Mog, камера в шахматах), перенос учёбы, расходы на еду для «Бюджета».
 void connectPluginsToKbju({
   required void Function(AppLang lang) setLang,
   required String Function() geminiKey,
@@ -228,6 +228,7 @@ void connectPluginsToKbju({
   language_s.AppStore.onUiLang = setLang;
   language_s.AppStore.kbjuLife = life;
   mog_s.Store.sharedKey = geminiKey;
+  chess.Store.sharedKey = geminiKey;
   budget.BudgetStore.kbjuFood = foodSpent;
   // Пробежки Winter Walks идут в Winter Arc как тренировки.
   ArcRules.runDays = () => walks_run_model.arcRunDays(walks_run.RunStore.I.runs);
